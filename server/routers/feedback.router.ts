@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import { logger } from "../lib/logger";
 import { successResponse } from "../lib/apiResponse";
 import { hashToken } from "../lib/auth-utils";
+import { validateBody } from "../middleware/validateBody";
 
 const router = Router();
 
@@ -159,10 +160,8 @@ async function createNewBucket(feedbackItem: typeof feedback.$inferSelect) {
   return bucketResult[0];
 }
 
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", validateBody(feedbackRequestSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const validatedData = feedbackRequestSchema.parse(req.body);
-    
     let userId: string | null = null;
     const authHeader = req.headers.authorization;
     
@@ -183,14 +182,14 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
       .insert(feedback)
       .values({
         userId,
-        type: validatedData.type,
-        category: validatedData.category || null,
-        message: validatedData.message,
-        userEmail: validatedData.userEmail || null,
-        deviceInfo: validatedData.deviceInfo || null,
-        screenContext: validatedData.screenContext || null,
-        stepsToReproduce: validatedData.stepsToReproduce || null,
-        severity: validatedData.severity || null,
+        type: req.body.type,
+        category: req.body.category || null,
+        message: req.body.message,
+        userEmail: req.body.userEmail || null,
+        deviceInfo: req.body.deviceInfo || null,
+        screenContext: req.body.screenContext || null,
+        stepsToReproduce: req.body.stepsToReproduce || null,
+        severity: req.body.severity || null,
         status: "new",
         priority: "medium",
       })
@@ -209,18 +208,15 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
       logger.error("Background categorization failed", { error: err instanceof Error ? err.message : String(err) });
     });
 
-    logger.info("New feedback submitted", { type: validatedData.type, feedbackId: createdFeedback.id });
+    logger.info("New feedback submitted", { type: req.body.type, feedbackId: createdFeedback.id });
 
     res.json(successResponse(
       { id: createdFeedback.id },
-      validatedData.type === "bug" 
+      req.body.type === "bug" 
         ? "Thank you for reporting this issue. We'll look into it!" 
         : "Thank you for your feedback!"
     ));
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(AppError.badRequest("Invalid feedback data", "VALIDATION_ERROR").withDetails(error.errors));
-    }
     next(error);
   }
 });
@@ -528,7 +524,7 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", validateBody(updateFeedbackSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     await getAuthenticatedAdmin(req.headers.authorization);
 
@@ -537,32 +533,30 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
       throw AppError.badRequest("Invalid feedback ID", "INVALID_FEEDBACK_ID");
     }
 
-    const validatedData = updateFeedbackSchema.parse(req.body);
-
     const updateValues: Record<string, any> = {
       updatedAt: new Date(),
     };
 
-    if (validatedData.status !== undefined) {
-      updateValues.status = validatedData.status;
-      if (validatedData.status === "resolved") {
+    if (req.body.status !== undefined) {
+      updateValues.status = req.body.status;
+      if (req.body.status === "resolved") {
         updateValues.resolvedAt = new Date();
       }
     }
-    if (validatedData.priority !== undefined) {
-      updateValues.priority = validatedData.priority;
+    if (req.body.priority !== undefined) {
+      updateValues.priority = req.body.priority;
     }
-    if (validatedData.adminNotes !== undefined) {
-      updateValues.adminNotes = validatedData.adminNotes;
+    if (req.body.adminNotes !== undefined) {
+      updateValues.adminNotes = req.body.adminNotes;
     }
-    if (validatedData.resolutionPrompt !== undefined) {
-      updateValues.resolutionPrompt = validatedData.resolutionPrompt;
+    if (req.body.resolutionPrompt !== undefined) {
+      updateValues.resolutionPrompt = req.body.resolutionPrompt;
     }
-    if (validatedData.assignedTo !== undefined) {
-      updateValues.assignedTo = validatedData.assignedTo;
+    if (req.body.assignedTo !== undefined) {
+      updateValues.assignedTo = req.body.assignedTo;
     }
-    if (validatedData.bucketId !== undefined) {
-      updateValues.bucketId = validatedData.bucketId;
+    if (req.body.bucketId !== undefined) {
+      updateValues.bucketId = req.body.bucketId;
     }
 
     const result = await db
@@ -579,9 +573,6 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
 
     res.json(successResponse(result[0]));
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(AppError.badRequest("Invalid update data", "VALIDATION_ERROR").withDetails(error.errors));
-    }
     next(error);
   }
 });

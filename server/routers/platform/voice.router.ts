@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../lib/logger";
 import { successResponse } from "../../lib/apiResponse";
+import { validateBody } from "../../middleware/validateBody";
 
 const router = Router();
 
@@ -231,18 +232,9 @@ router.post("/speak", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-router.post("/parse", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/parse", validateBody(parseCommandSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const parseResult = parseCommandSchema.safeParse(req.body);
-
-    if (!parseResult.success) {
-      const errorMessages = parseResult.error.errors
-        .map((e) => e.message)
-        .join(", ");
-      throw AppError.badRequest(errorMessages, "INVALID_INPUT");
-    }
-
-    const { text } = parseResult.data;
+    const { text } = req.body;
 
     const systemPrompt = `You are a voice command parser for a food inventory management app called FreshPantry.
 

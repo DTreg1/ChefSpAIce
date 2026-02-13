@@ -6,6 +6,7 @@ import { db } from "../../db";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { successResponse } from "../../lib/apiResponse";
+import { validateBody } from "../../middleware/validateBody";
 
 const router = Router();
 
@@ -21,16 +22,9 @@ const correctionSubmitSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/corrections", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/corrections", validateBody(correctionSubmitSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const parseResult = correctionSubmitSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      throw AppError.badRequest("Invalid submission data", "VALIDATION_ERROR").withDetails({
-        errors: parseResult.error.errors.map((e) => e.message).join(", "),
-      });
-    }
-
-    const data = parseResult.data;
+    const data = req.body;
     const userId = (req as any).userId || null;
 
     const [correction] = await db

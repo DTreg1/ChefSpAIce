@@ -1,8 +1,8 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { uploadRecipeImage, deleteRecipeImage } from "../services/objectStorageService";
-import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
+import { validateBody } from "../middleware/validateBody";
 
 const router = Router();
 
@@ -12,17 +12,9 @@ const uploadSchema = z.object({
   contentType: z.string().optional(),
 });
 
-router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res: Response, next: NextFunction) => {
+router.post("/upload", express.json({ limit: "10mb" }), validateBody(uploadSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const parseResult = uploadSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      throw AppError.badRequest(
-        "Invalid request data",
-        "INVALID_REQUEST_DATA"
-      ).withDetails({ validationErrors: parseResult.error.errors.map(e => e.message).join(", ") });
-    }
-
-    const { recipeId, base64Data, contentType } = parseResult.data;
+    const { recipeId, base64Data, contentType } = req.body;
     
     const { displayUrl, thumbnailUrl } = await uploadRecipeImage(recipeId, base64Data, contentType || "image/jpeg");
     

@@ -15,6 +15,7 @@ import {
 } from "../../services/subscriptionService";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
+import { validateBody } from "../../middleware/validateBody";
 import { successResponse, errorResponse } from "../../lib/apiResponse";
 import { processImageFromBase64 } from "../../services/imageProcessingService";
 
@@ -396,7 +397,7 @@ export function buildSmartPrompt(params: {
   return prompt;
 }
 
-router.post("/generate", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/generate", validateBody(generateRecipeSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.userId) {
       throw AppError.unauthorized("Authentication required");
@@ -409,15 +410,6 @@ router.post("/generate", async (req: Request, res: Response, next: NextFunction)
         "Monthly AI recipe limit reached. Upgrade your subscription for unlimited recipes.",
         "AI_RECIPE_LIMIT_REACHED",
       ).withDetails({ limit: limitCheck.limit, remaining: 0 });
-    }
-
-    const parseResult = generateRecipeSchema.safeParse(req.body);
-
-    if (!parseResult.success) {
-      const errorMessages = parseResult.error.errors
-        .map((e) => e.message)
-        .join(", ");
-      throw AppError.badRequest("Invalid input", "VALIDATION_ERROR").withDetails({ errors: errorMessages });
     }
 
     const {
@@ -434,7 +426,7 @@ router.post("/generate", async (req: Request, res: Response, next: NextFunction)
       macroTargets,
       previousRecipeTitles,
       ingredientCount,
-    } = parseResult.data;
+    } = req.body;
 
     if (!inventory || inventory.length === 0) {
       if (selectedIngredientIds && selectedIngredientIds.length === 0) {
@@ -1056,10 +1048,9 @@ const ALLOWED_CUISINES = [
   "african",
 ];
 
-router.post("/generate-image", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/generate-image", validateBody(generateImageSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = generateImageSchema.parse(req.body);
-    const { title, description, cuisine } = body;
+    const { title, description, cuisine } = req.body;
 
     // Sanitize inputs to prevent prompt injection
     const safeTitle = sanitizeForPrompt(title, 80);

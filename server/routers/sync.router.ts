@@ -12,6 +12,7 @@ import {
 } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
+import { validateBody } from "../middleware/validateBody";
 import { successResponse } from "../lib/apiResponse";
 import {
   getAuthToken, getSessionFromToken,
@@ -263,7 +264,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
   return result;
 }
 
-router.post("/import", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/import", validateBody(importRequestSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -275,12 +276,7 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
       throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
-    const parseResult = importRequestSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
-    }
-
-    const { backup, mode } = parseResult.data;
+    const { backup, mode } = req.body;
     const importData = backup.data as Record<string, unknown>;
     const userId = session.userId;
 
