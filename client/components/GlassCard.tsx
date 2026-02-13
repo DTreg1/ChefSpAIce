@@ -270,7 +270,7 @@ export function GlassCard({
     return (
       <AnimatedPressable
         testID={testID}
-        accessibilityRole="button"
+        accessibilityRole={(accessibilityRole as any) ?? "button"}
         accessibilityLabel={accessibilityLabel || title}
         accessibilityHint={accessibilityHint}
         onPress={onPress}
@@ -296,7 +296,7 @@ export function GlassCard({
     return (
       <AnimatedPressable
         testID={testID}
-        accessibilityRole="button"
+        accessibilityRole={(accessibilityRole as any) ?? "button"}
         accessibilityLabel={accessibilityLabel || title}
         accessibilityHint={accessibilityHint}
         onPress={onPress}
@@ -317,7 +317,7 @@ export function GlassCard({
   return (
     <AnimatedPressable
       testID={testID}
-      accessibilityRole="button"
+      accessibilityRole={(accessibilityRole as any) ?? "button"}
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}
       onPress={onPress}

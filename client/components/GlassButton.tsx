@@ -57,6 +57,7 @@ export const GlassButton = memo(function GlassButton({
   testID,
   accessibilityLabel,
   accessibilityHint,
+  accessibilityRole,
 }: GlassButtonProps) {
   const { theme, isDark } = useTheme();
   const scale = useSharedValue(1);
@@ -133,7 +134,7 @@ export const GlassButton = memo(function GlassButton({
     return (
       <AnimatedPressable
         testID={testID}
-        accessibilityRole="button"
+        accessibilityRole={(accessibilityRole as any) ?? "button"}
         accessibilityLabel={
           accessibilityLabel ||
           (typeof children === "string" ? children : undefined)
@@ -180,7 +181,7 @@ export const GlassButton = memo(function GlassButton({
   return (
     <AnimatedPressable
       testID={testID}
-      accessibilityRole="button"
+      accessibilityRole={(accessibilityRole as any) ?? "button"}
       accessibilityLabel={
         accessibilityLabel ||
         (typeof children === "string" ? children : undefined)
