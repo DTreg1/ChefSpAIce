@@ -7,7 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { StaticGradientBackground } from "@/components/StaticGradientBackground.web";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
 
@@ -31,7 +31,7 @@ export default function AboutScreen() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      <AnimatedBackground />
+      <StaticGradientBackground />
 
       {isWeb && (
         <View style={styles.header} role="banner" accessibilityLabel="Site header">
