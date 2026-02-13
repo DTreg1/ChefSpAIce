@@ -17,6 +17,7 @@ import { registerSessionCleanupJob } from "./jobs/sessionCleanupJob";
 import { registerWinbackJob } from "./jobs/winbackJob";
 import { registerCacheCleanupJob } from "./jobs/cacheCleanupJob";
 import { registerDataRetentionJob } from "./jobs/dataRetentionJob";
+import { registerSoftDeleteCleanupJob } from "./jobs/softDeleteCleanupJob";
 import { startJobScheduler } from "./jobs/jobScheduler";
 import { logger } from "./lib/logger";
 import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
@@ -630,6 +631,7 @@ async function ensureStripePrices() {
       registerWinbackJob(7 * 24 * 60 * 60 * 1000);
       registerCacheCleanupJob(24 * 60 * 60 * 1000);
       registerDataRetentionJob(30 * 24 * 60 * 60 * 1000);
+      registerSoftDeleteCleanupJob(7 * 24 * 60 * 60 * 1000);
       startJobScheduler().catch((err) => {
         logger.error("Job scheduler startup failed", { error: err instanceof Error ? err.message : String(err) });
       });
