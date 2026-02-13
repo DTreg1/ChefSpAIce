@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
+    "analyze:bundle": "npx react-native-bundle-visualizer",
     "build": "npm run server:build",
     "server:build": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server_dist",
     "eas:init": "npx eas-cli init",
@@ -136,6 +137,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@react-native-community/cli": "latest",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/bcrypt": "^6.0.0",

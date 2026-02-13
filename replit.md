@@ -3,6 +3,13 @@
 ## Overview
 ChefSpAIce is an AI-powered kitchen inventory management application designed to simplify meal preparation and grocery shopping. It offers intelligent recipe generation, comprehensive meal planning, and automated shopping list creation. The project aims to deliver a seamless user experience with a single subscription model, leveraging its innovative AI features and intuitive design to capture market potential.
 
+## Bundle Analysis
+See `docs/bundle-analysis.md` for full report. Key findings:
+- **Total minified JS:** 2.12 MB across 8 code-split chunks
+- **Largest dependency:** Sentry SDK at ~2,439 KB source (~67% of main bundle)
+- **Server leak check:** CLEAN — no server-only code/packages in client bundles
+- **Top optimization:** Disable Sentry session replay to save ~400 KB source
+
 ## Recent Changes
 - **2026-02-13**: Added retention offer duplicate prevention in `/apply-retention-offer` endpoint. Before creating a Stripe coupon, checks Stripe subscription discounts for active "Retention Offer" coupons and queries new `retention_offers` DB table for any offer applied in the last 6 months. Rejects with `RETENTION_OFFER_ALREADY_APPLIED` (409). New `retentionOffers` table tracks all retention offers for analytics.
 - **2026-02-13**: Added server-side waste analytics endpoint (`GET /api/analytics/waste-summary`) that aggregates `userWasteLogs` and `userConsumedLogs` by week/month, calculates waste reduction scores, and tracks streaks (consecutive weeks with score >= 80). AnalyticsScreen fetches server data and displays weekly trend bar charts and streak badges with client-side fallback.
