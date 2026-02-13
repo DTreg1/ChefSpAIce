@@ -142,7 +142,7 @@ export const useAuth = () => useContext(AuthContext);
 
 interface StoredAuthData {
   user: AuthUser;
-  token: string;
+  token: string | null;
 }
 
 const GOOGLE_ANDROID_CLIENT_ID =
@@ -258,10 +258,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logger.log("[Auth] Biometric verification successful");
           }
 
-          await storage.setAuthToken(token);
-
-          // Set StoreKit auth token and user ID, sync any pending purchases
-          storeKitService.setAuthToken(token);
+          if (token) {
+            await storage.setAuthToken(token);
+            storeKitService.setAuthToken(token);
+          }
           if (user?.id) {
             storeKitService
               .setUserId(String(user.id))
@@ -312,7 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const data = (await response.json()).data as any;
               const authData: StoredAuthData = {
                 user: data.user,
-                token: data.token,
+                token: null,
               };
 
               // Store in AsyncStorage for consistency
@@ -320,10 +320,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 AUTH_STORAGE_KEY,
                 JSON.stringify(authData),
               );
-              await storage.setAuthToken(data.token);
 
-              // Set StoreKit auth token and user ID, sync any pending purchases
-              storeKitService.setAuthToken(data.token);
+              // Set StoreKit user ID and sync any pending purchases
               if (data.user?.id) {
                 storeKitService
                   .setUserId(String(data.user.id))
@@ -342,7 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
               setState({
                 user: data.user,
-                token: data.token,
+                token: null,
                 isLoading: false,
               });
 
