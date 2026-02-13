@@ -7,7 +7,7 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { StaticGradientBackground } from "@/components/StaticGradientBackground.web";
+import { GradientBackground } from "@/components/GradientBackground.web";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
 
@@ -32,7 +32,7 @@ export default function PrivacyScreen() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      <StaticGradientBackground />
+      <GradientBackground />
 
       {isWeb && (
         <View style={styles.header} role="banner" accessibilityLabel="Site header">

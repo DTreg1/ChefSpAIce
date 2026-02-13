@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors } from "@/constants/theme";
 
-export function StaticGradientBackground() {
+export function GradientBackground() {
   const { isDark } = useTheme();
 
   const baseColor = isDark ? AppColors.backgroundBase : AppColors.backgroundHighlight;
