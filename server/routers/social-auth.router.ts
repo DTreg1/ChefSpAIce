@@ -19,6 +19,7 @@ async function createSyncDataIfNeeded(userId: string): Promise<void> {
       userId,
     }).onConflictDoNothing();
   } catch (error) {
+    logger.warn("Failed to create sync data row", { userId, error: error instanceof Error ? error.message : String(error) });
   }
 }
 

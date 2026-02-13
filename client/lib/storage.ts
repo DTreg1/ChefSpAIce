@@ -624,7 +624,7 @@ export const storage = {
     const token = await this.getAuthToken();
     if (token) {
       // Queue cloud upload in background (non-blocking)
-      this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(() => {});
+      this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch((err) => logger.warn("Background image upload failed", { recipeId: recipe.id, error: err instanceof Error ? err.message : String(err) }));
 
       // Queue sync change - cloudImageUri will be added after upload completes
       const recipeForSync = { ...recipeWithTimestamp, imageUri: undefined };
@@ -724,7 +724,7 @@ export const storage = {
             recipe.imageUri?.startsWith("file://"));
         if (imageChanged) {
           this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(
-            () => {},
+            (err) => logger.warn("Background image upload failed", { recipeId: recipe.id, error: err instanceof Error ? err.message : String(err) }),
           );
         }
 
@@ -1062,9 +1062,9 @@ export const storage = {
       // Fallback: If user has existing data, assume onboarding was completed
       // This prevents false redirects due to storage read failures or cleared cache
       const [recipes, inventory, preferences] = await Promise.all([
-        this.getRecipes().catch(() => []),
-        this.getInventory().catch(() => []),
-        this.getPreferences().catch(() => null),
+        this.getRecipes().catch((err) => { logger.warn("Failed to read recipes during onboarding check", { error: err instanceof Error ? err.message : String(err) }); return []; }),
+        this.getInventory().catch((err) => { logger.warn("Failed to read inventory during onboarding check", { error: err instanceof Error ? err.message : String(err) }); return []; }),
+        this.getPreferences().catch((err) => { logger.warn("Failed to read preferences during onboarding check", { error: err instanceof Error ? err.message : String(err) }); return null; }),
       ]);
 
       const hasExistingData =
@@ -1074,7 +1074,7 @@ export const storage = {
           `[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`,
         );
         // Auto-fix: Mark onboarding as completed since user has data
-        await this.setOnboardingCompleted().catch(() => {});
+        await this.setOnboardingCompleted().catch((err) => logger.warn("Failed to persist onboarding state", { error: err instanceof Error ? err.message : String(err) }));
         return false;
       }
 

@@ -87,7 +87,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
           body: "One of your sessions was accessed from a different device or browser. If this wasn't you, please review your active sessions in Settings and revoke any you don't recognize.",
           data: { sessionId: session.id },
           deepLink: "/settings/security",
-        }).catch(() => {});
+        }).catch((err) => logger.warn("Failed to queue UA mismatch notification", { error: err instanceof Error ? err.message : String(err) }));
       }
     }
 

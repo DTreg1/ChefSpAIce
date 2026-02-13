@@ -534,7 +534,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         credentials: "include",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }).catch(() => {});
+      }).catch((err) => logger.warn("Logout API call failed", { error: err instanceof Error ? err.message : String(err) }));
 
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();

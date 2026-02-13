@@ -82,8 +82,8 @@ export function ScreenIdentifierOverlay({
         await fetch(logoutUrl.toString(), {
           method: "POST",
           credentials: "include",
-        }).catch(() => {
-          // Ignore network errors during logout
+        }).catch((err) => {
+          logger.warn("Logout API call failed during reset", { error: err instanceof Error ? err.message : String(err) });
         });
 
         // 3. Clear all local storage and caches

@@ -48,7 +48,7 @@ export function useFunFact(items: FoodItem[], nutritionTotals: NutritionTotals) 
           }
         }
       } catch (e) {
-        // Ignore parse errors
+        logger.warn("Failed to parse cached fun fact", { error: e instanceof Error ? e.message : String(e) });
       }
     }
 
