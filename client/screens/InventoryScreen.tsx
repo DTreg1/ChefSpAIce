@@ -14,6 +14,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
 
+import * as Haptics from "expo-haptics";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { InventorySkeleton } from "@/components/inventory/InventorySkeleton";
@@ -236,7 +237,8 @@ export default function InventoryScreen() {
     setRefreshing(false);
   };
 
-  const handleMarkAsConsumed = (item: FoodItem) => {
+  const handleMarkAsConsumed = async (item: FoodItem) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
       "Mark as Consumed",
       `Mark "${item.name}" as consumed? This will remove it from your inventory.`,
@@ -256,6 +258,7 @@ export default function InventoryScreen() {
             };
             await storage.addConsumedEntry(entry);
             await storage.deleteInventoryItem(item.id);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             loadItems();
           },
         },
@@ -263,7 +266,8 @@ export default function InventoryScreen() {
     );
   };
 
-  const handleMarkAsWasted = (item: FoodItem) => {
+  const handleMarkAsWasted = async (item: FoodItem) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert("Mark as Wasted", "What happened to this item?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -293,6 +297,7 @@ export default function InventoryScreen() {
     };
     await storage.addWasteEntry(entry);
     await storage.deleteInventoryItem(item.id);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     loadItems();
   };
 

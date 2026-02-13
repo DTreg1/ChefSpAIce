@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Platform, ActionSheetIOS, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -12,6 +13,7 @@ import Animated, {
   withSequence,
   interpolate,
   Extrapolation,
+  runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { LinearGradient } from "expo-linear-gradient";
@@ -137,8 +139,10 @@ export function SwipeableItemCard({
     })
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD) {
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
         translateX.value = withSpring(ACTION_WIDTH);
       } else if (event.translationX < -SWIPE_THRESHOLD) {
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
         translateX.value = withSpring(-ACTION_WIDTH);
       } else {
         translateX.value = withSpring(0);
