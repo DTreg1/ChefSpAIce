@@ -176,6 +176,18 @@ export default function MealPlanScreen() {
     });
   };
 
+  const handleRemoveMealByDateStr = useCallback(async (dateStr: string, slotId: string) => {
+    const date = new Date(dateStr + "T00:00:00");
+    await handleRemoveMeal(date, slotId);
+  }, [mealPlans]);
+
+  const handleSwapRecipeByDateStr = useCallback((dateStr: string, slotId: string) => {
+    navigation.navigate("SelectRecipe", {
+      date: dateStr,
+      mealType: slotId,
+    });
+  }, [navigation]);
+
   const closeActionSheet = () => {
     setActionSheet({
       visible: false,
@@ -299,6 +311,8 @@ export default function MealPlanScreen() {
                 selectedDay={selectedDay}
                 onMealPress={handleMealPress}
                 onAddMeal={handleAddMeal}
+                onRemoveMeal={handleRemoveMealByDateStr}
+                onSwapRecipe={handleSwapRecipeByDateStr}
               />
             </View>
           </View>
@@ -401,6 +415,8 @@ export default function MealPlanScreen() {
                             selectedDay={day}
                             onMealPress={handleMealPress}
                             onAddMeal={handleAddMeal}
+                            onRemoveMeal={handleRemoveMealByDateStr}
+                            onSwapRecipe={handleSwapRecipeByDateStr}
                           />
                         ))}
                       </View>

@@ -466,9 +466,18 @@ export function RecipeVoiceControls({
     </>
   );
 
+  const handleMagicTap = useCallback(() => {
+    handlePlayPausePress();
+    return true;
+  }, [handlePlayPausePress]);
+
   if (IS_WEB) {
     return (
-      <View style={[containerStyle, styles.webFallback]}>
+      <View
+        style={[containerStyle, styles.webFallback]}
+        accessibilityLabel={`Voice controls, step ${currentStep + 1} of ${totalSteps}`}
+        onMagicTap={handleMagicTap}
+      >
         {renderContent()}
       </View>
     );
@@ -478,7 +487,12 @@ export function RecipeVoiceControls({
 
   if (useLiquidGlass) {
     return (
-      <GlassView glassEffectStyle="regular" style={containerStyle}>
+      <GlassView
+        glassEffectStyle="regular"
+        style={containerStyle}
+        accessibilityLabel={`Voice controls, step ${currentStep + 1} of ${totalSteps}`}
+        onMagicTap={handleMagicTap}
+      >
         {renderContent()}
       </GlassView>
     );
@@ -489,6 +503,8 @@ export function RecipeVoiceControls({
       intensity={GlassEffect.blur.regular}
       tint={isDark ? "dark" : "light"}
       style={containerStyle}
+      accessibilityLabel={`Voice controls, step ${currentStep + 1} of ${totalSteps}`}
+      onMagicTap={handleMagicTap}
     >
       {renderContent()}
     </BlurView>

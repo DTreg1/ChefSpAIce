@@ -24,6 +24,8 @@ interface MealPlanSlotCardProps {
   selectedDay: Date;
   onMealPress: (date: Date, slotId: string, recipe: Recipe) => void;
   onAddMeal: (date: string, slotId: string) => void;
+  onRemoveMeal?: (date: string, slotId: string) => void;
+  onSwapRecipe?: (date: string, slotId: string) => void;
 }
 
 export function MealPlanSlotCard({
@@ -32,6 +34,8 @@ export function MealPlanSlotCard({
   selectedDay,
   onMealPress,
   onAddMeal,
+  onRemoveMeal,
+  onSwapRecipe,
 }: MealPlanSlotCardProps) {
   const { theme } = useTheme();
 
@@ -62,6 +66,25 @@ export function MealPlanSlotCard({
           accessibilityRole="button"
           accessibilityLabel={`${recipe.title} for ${slot.name}, ${recipe.prepTime + recipe.cookTime} minutes`}
           accessibilityHint="Opens meal options"
+          accessibilityActions={[
+            { name: "activate", label: "View meal options" },
+            ...(onRemoveMeal ? [{ name: "delete", label: "Remove meal" }] : []),
+            ...(onSwapRecipe ? [{ name: "magicTap", label: "Swap recipe" }] : []),
+          ]}
+          onAccessibilityAction={(event) => {
+            const dateStr = format(selectedDay, "yyyy-MM-dd");
+            switch (event.nativeEvent.actionName) {
+              case "activate":
+                onMealPress(selectedDay, slot.id, recipe);
+                break;
+              case "delete":
+                onRemoveMeal?.(dateStr, slot.id);
+                break;
+              case "magicTap":
+                onSwapRecipe?.(dateStr, slot.id);
+                break;
+            }
+          }}
         >
           <View style={styles.mealContentInner}>
             <View style={styles.mealTextContainer}>

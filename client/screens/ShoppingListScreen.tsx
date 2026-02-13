@@ -145,6 +145,20 @@ export default function ShoppingListScreen() {
           accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}`}
           accessibilityState={{ checked: item.isChecked }}
           accessibilityHint="Double tap to toggle checked"
+          accessibilityActions={[
+            { name: "activate", label: item.isChecked ? "Mark unchecked" : "Mark checked" },
+            { name: "delete", label: "Remove from list" },
+          ]}
+          onAccessibilityAction={(event) => {
+            switch (event.nativeEvent.actionName) {
+              case "activate":
+                handleToggleItem(item.id);
+                break;
+              case "delete":
+                handleDeleteItem(item.id);
+                break;
+            }
+          }}
         >
           <View
             style={[

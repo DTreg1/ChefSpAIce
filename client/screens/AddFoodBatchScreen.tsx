@@ -134,7 +134,27 @@ function SwipeableItem({
               animatedStyle,
             ]}
           >
-            <Pressable style={styles.itemMainRow} onPress={() => onEdit(index)} accessibilityRole="button" accessibilityLabel={`Edit item ${item.name}`}>
+            <Pressable
+              style={styles.itemMainRow}
+              onPress={() => onEdit(index)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name}, ${item.quantity} ${item.quantityUnit}, ${item.category}`}
+              accessibilityHint="Double tap to edit. Use actions to remove."
+              accessibilityActions={[
+                { name: "activate", label: "Edit item" },
+                { name: "delete", label: "Remove from batch" },
+              ]}
+              onAccessibilityAction={(event) => {
+                switch (event.nativeEvent.actionName) {
+                  case "activate":
+                    onEdit(index);
+                    break;
+                  case "delete":
+                    handleRemove();
+                    break;
+                }
+              }}
+            >
               <Pressable
                 style={styles.checkbox}
                 onPress={() => onToggleSelect(index)}
