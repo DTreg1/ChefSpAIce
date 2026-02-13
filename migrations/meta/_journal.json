@@ -36,6 +36,13 @@
       "when": 1770897600000,
       "tag": "0004_cron_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770998400000,
+      "tag": "0005_check_constraints",
+      "breakpoints": true
     }
   ]
 }
