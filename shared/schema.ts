@@ -146,6 +146,8 @@ export const users = pgTable("users", {
   referralCode: varchar("referral_code", { length: 8 }).unique(),
   referredBy: varchar("referred_by"),
   aiRecipeBonusCredits: integer("ai_recipe_bonus_credits").notNull().default(0),
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+  lastFailedLoginAt: timestamp("last_failed_login_at"),
 }, (table) => [
   index("idx_users_created_at").on(table.createdAt),
   index("idx_users_subscription_tier").on(table.subscriptionTier),
