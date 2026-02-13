@@ -384,14 +384,6 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
     let finalCookware = importedCookware;
 
     if (mode === "replace") {
-      await Promise.all([
-        db.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId)),
-        db.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
-        db.delete(userMealPlans).where(eq(userMealPlans.userId, userId)),
-        db.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
-        db.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
-      ]);
-
       if (finalInventory.length > pantryMax) {
         truncationWarnings.push(`Inventory truncated from ${finalInventory.length} to ${pantryMax} items (plan limit)`);
         finalInventory = finalInventory.slice(0, pantryMax);
@@ -401,110 +393,120 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
         finalCookware = finalCookware.slice(0, cookwareMax);
       }
 
-      const insertPromises: Promise<unknown>[] = [];
+      await db.transaction(async (tx) => {
+        await Promise.all([
+          tx.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId)),
+          tx.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
+          tx.delete(userMealPlans).where(eq(userMealPlans.userId, userId)),
+          tx.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
+          tx.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
+        ]);
 
-      if (finalInventory.length > 0) {
-        insertPromises.push(db.insert(userInventoryItems).values(
-          finalInventory.map(item => ({
-            userId,
-            itemId: String(item.id),
-            name: String(item.name || ""),
-            barcode: item.barcode as string | undefined,
-            quantity: Number(item.quantity) || 1,
-            unit: String(item.unit || "unit"),
-            storageLocation: String(item.storageLocation || "pantry"),
-            purchaseDate: item.purchaseDate as string | undefined,
-            expirationDate: item.expirationDate as string | undefined,
-            category: String(item.category || "other"),
-            usdaCategory: item.usdaCategory as string | undefined,
-            nutrition: item.nutrition as Record<string, unknown> | undefined,
-            notes: item.notes as string | undefined,
-            imageUri: item.imageUri as string | undefined,
-            fdcId: item.fdcId as number | undefined,
-            updatedAt: new Date(),
-          }))
-        ));
-      }
+        const insertPromises: Promise<unknown>[] = [];
 
-      if (importedRecipes.length > 0) {
-        insertPromises.push(db.insert(userSavedRecipes).values(
-          importedRecipes.map(r => {
-            const extra = extractExtraData(r, recipeKnownKeys);
-            return {
+        if (finalInventory.length > 0) {
+          insertPromises.push(tx.insert(userInventoryItems).values(
+            finalInventory.map(item => ({
               userId,
-              itemId: String(r.id),
-              title: String(r.title || ""),
-              description: r.description as string | undefined,
-              ingredients: r.ingredients as unknown,
-              instructions: r.instructions as unknown,
-              prepTime: r.prepTime as number | undefined,
-              cookTime: r.cookTime as number | undefined,
-              servings: r.servings as number | undefined,
-              imageUri: r.imageUri as string | undefined,
-              cloudImageUri: r.cloudImageUri as string | undefined,
-              nutrition: r.nutrition as Record<string, unknown> | undefined,
-              isFavorite: r.isFavorite as boolean | undefined,
-              extraData: extra,
+              itemId: String(item.id),
+              name: String(item.name || ""),
+              barcode: item.barcode as string | undefined,
+              quantity: Number(item.quantity) || 1,
+              unit: String(item.unit || "unit"),
+              storageLocation: String(item.storageLocation || "pantry"),
+              purchaseDate: item.purchaseDate as string | undefined,
+              expirationDate: item.expirationDate as string | undefined,
+              category: String(item.category || "other"),
+              usdaCategory: item.usdaCategory as string | undefined,
+              nutrition: item.nutrition as Record<string, unknown> | undefined,
+              notes: item.notes as string | undefined,
+              imageUri: item.imageUri as string | undefined,
+              fdcId: item.fdcId as number | undefined,
               updatedAt: new Date(),
-            };
-          })
-        ));
-      }
+            }))
+          ));
+        }
 
-      if (importedMealPlans.length > 0) {
-        insertPromises.push(db.insert(userMealPlans).values(
-          importedMealPlans.map(m => {
-            const extra = extractExtraData(m, mealPlanKnownKeys);
-            return {
-              userId,
-              itemId: String(m.id),
-              date: String(m.date || ""),
-              meals: m.meals as unknown,
-              extraData: extra,
-              updatedAt: new Date(),
-            };
-          })
-        ));
-      }
+        if (importedRecipes.length > 0) {
+          insertPromises.push(tx.insert(userSavedRecipes).values(
+            importedRecipes.map(r => {
+              const extra = extractExtraData(r, recipeKnownKeys);
+              return {
+                userId,
+                itemId: String(r.id),
+                title: String(r.title || ""),
+                description: r.description as string | undefined,
+                ingredients: r.ingredients as unknown,
+                instructions: r.instructions as unknown,
+                prepTime: r.prepTime as number | undefined,
+                cookTime: r.cookTime as number | undefined,
+                servings: r.servings as number | undefined,
+                imageUri: r.imageUri as string | undefined,
+                cloudImageUri: r.cloudImageUri as string | undefined,
+                nutrition: r.nutrition as Record<string, unknown> | undefined,
+                isFavorite: r.isFavorite as boolean | undefined,
+                extraData: extra,
+                updatedAt: new Date(),
+              };
+            })
+          ));
+        }
 
-      if (importedShoppingList.length > 0) {
-        insertPromises.push(db.insert(userShoppingItems).values(
-          importedShoppingList.map(s => {
-            const extra = extractExtraData(s, shoppingListKnownKeys);
-            return {
-              userId,
-              itemId: String(s.id),
-              name: String(s.name || ""),
-              quantity: Number(s.quantity) || 1,
-              unit: String(s.unit || "unit"),
-              isChecked: Boolean(s.isChecked),
-              category: s.category as string | undefined,
-              recipeId: s.recipeId as string | undefined,
-              extraData: extra,
-              updatedAt: new Date(),
-            };
-          })
-        ));
-      }
+        if (importedMealPlans.length > 0) {
+          insertPromises.push(tx.insert(userMealPlans).values(
+            importedMealPlans.map(m => {
+              const extra = extractExtraData(m, mealPlanKnownKeys);
+              return {
+                userId,
+                itemId: String(m.id),
+                date: String(m.date || ""),
+                meals: m.meals as unknown,
+                extraData: extra,
+                updatedAt: new Date(),
+              };
+            })
+          ));
+        }
 
-      if (finalCookware.length > 0) {
-        insertPromises.push(db.insert(userCookwareItems).values(
-          finalCookware.map(c => {
-            const extra = extractExtraData(c, cookwareKnownKeys);
-            return {
-              userId,
-              itemId: String(c.id),
-              name: c.name as string | undefined,
-              category: c.category as string | undefined,
-              alternatives: c.alternatives as string[] | undefined,
-              extraData: extra,
-              updatedAt: new Date(),
-            };
-          })
-        ));
-      }
+        if (importedShoppingList.length > 0) {
+          insertPromises.push(tx.insert(userShoppingItems).values(
+            importedShoppingList.map(s => {
+              const extra = extractExtraData(s, shoppingListKnownKeys);
+              return {
+                userId,
+                itemId: String(s.id),
+                name: String(s.name || ""),
+                quantity: Number(s.quantity) || 1,
+                unit: String(s.unit || "unit"),
+                isChecked: Boolean(s.isChecked),
+                category: s.category as string | undefined,
+                recipeId: s.recipeId as string | undefined,
+                extraData: extra,
+                updatedAt: new Date(),
+              };
+            })
+          ));
+        }
 
-      await Promise.all(insertPromises);
+        if (finalCookware.length > 0) {
+          insertPromises.push(tx.insert(userCookwareItems).values(
+            finalCookware.map(c => {
+              const extra = extractExtraData(c, cookwareKnownKeys);
+              return {
+                userId,
+                itemId: String(c.id),
+                name: c.name as string | undefined,
+                category: c.category as string | undefined,
+                alternatives: c.alternatives as string[] | undefined,
+                extraData: extra,
+                updatedAt: new Date(),
+              };
+            })
+          ));
+        }
+
+        await Promise.all(insertPromises);
+      });
     } else {
       if (finalInventory.length > pantryMax) {
         truncationWarnings.push(`Inventory truncated from ${finalInventory.length} to ${pantryMax} items (plan limit)`);
