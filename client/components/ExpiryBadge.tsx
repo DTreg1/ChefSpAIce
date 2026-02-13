@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   cancelAnimation,
+  useReducedMotion,
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -99,11 +100,12 @@ export function ExpiryBadge({
   const sizeStyles = getSizeStyles(size);
   const isUrgent = daysUntilExpiry <= 1;
 
+  const reduceMotion = useReducedMotion();
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(1);
 
   useEffect(() => {
-    if (isUrgent) {
+    if (isUrgent && !reduceMotion) {
       pulseScale.value = withRepeat(
         withSequence(
           withTiming(1.05, { duration: 600 }),
@@ -131,7 +133,7 @@ export function ExpiryBadge({
       cancelAnimation(pulseScale);
       cancelAnimation(pulseOpacity);
     };
-  }, [isUrgent, pulseScale, pulseOpacity]);
+  }, [isUrgent, reduceMotion, pulseScale, pulseOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
