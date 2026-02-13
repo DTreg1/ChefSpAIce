@@ -681,11 +681,59 @@ export const syncConsumedLogEntrySchema = z.object({
   date: z.string().optional(),
 }).passthrough();
 
-export const syncPreferencesSchema = z.record(z.unknown());
-export const syncAnalyticsSchema = z.record(z.unknown());
-export const syncOnboardingSchema = z.record(z.unknown());
-export const syncCustomLocationsSchema = z.record(z.unknown());
-export const syncUserProfileSchema = z.record(z.unknown());
+export const syncPreferencesSchema = z.object({
+  dietaryRestrictions: z.array(z.string()).optional(),
+  allergens: z.array(z.string()).optional(),
+  favoriteCategories: z.array(z.string()).optional(),
+  cuisinePreferences: z.array(z.string()).optional(),
+  foodsToAvoid: z.array(z.string()).optional(),
+  storageAreas: z.array(z.string()).optional(),
+  storageAreasEnabled: z.array(z.string()).optional(),
+  cookingLevel: z.string().optional(),
+  cookingSkillLevel: z.string().optional(),
+  preferredUnits: z.string().optional(),
+  householdSize: z.coerce.number().int().min(1).optional(),
+  dailyMeals: z.coerce.number().int().min(1).optional(),
+  servingSize: z.coerce.number().int().min(1).optional(),
+  expirationAlertDays: z.coerce.number().int().min(1).optional(),
+  notificationsEnabled: z.boolean().optional(),
+  notifyExpiringFood: z.boolean().optional(),
+  notifyRecipeSuggestions: z.boolean().optional(),
+  notifyMealReminders: z.boolean().optional(),
+  notificationTime: z.string().optional(),
+}).passthrough();
+
+export const syncAnalyticsSchema = z.object({
+  currentStreak: z.coerce.number().int().min(0).optional(),
+  longestStreak: z.coerce.number().int().min(0).optional(),
+  lastUpdated: z.string().optional(),
+  totalRecipesCooked: z.coerce.number().int().min(0).optional(),
+  totalItemsTracked: z.coerce.number().int().min(0).optional(),
+  wasteReductionPercent: z.coerce.number().min(0).max(100).optional(),
+}).passthrough();
+
+export const syncOnboardingSchema = z.object({
+  completedAt: z.string().optional(),
+  currentStep: z.union([z.string(), z.number()]).optional(),
+  skipped: z.boolean().optional(),
+  stepsCompleted: z.array(z.string()).optional(),
+}).passthrough();
+
+export const syncCustomLocationsSchema = z.array(
+  z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+    name: z.string(),
+    type: z.string().optional().nullable(),
+  }).passthrough()
+);
+
+export const syncUserProfileSchema = z.object({
+  displayName: z.string().optional(),
+  email: z.string().email().optional(),
+  profileImageUrl: z.string().optional().nullable(),
+  bio: z.string().optional(),
+  location: z.string().optional(),
+}).passthrough();
 
 export type SyncInventoryItem = z.infer<typeof syncInventoryItemSchema>;
 export type SyncRecipe = z.infer<typeof syncRecipeSchema>;
