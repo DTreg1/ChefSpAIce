@@ -97,7 +97,6 @@ export default function InventoryScreen() {
   const { isActive: hasActiveSubscription } = useSubscription();
 
   const [showExpiringModal, setShowExpiringModal] = useState(false);
-  const [expiringModalDismissed, setExpiringModalDismissed] = useState(false);
 
   useEffect(() => {
     // No trial milestone checks needed
@@ -105,7 +104,6 @@ export default function InventoryScreen() {
 
   const handleDismissExpiringModal = async () => {
     setShowExpiringModal(false);
-    setExpiringModalDismissed(true);
     await AsyncStorage.setItem("@trial_expiring_modal_dismissed", "true");
   };
 
