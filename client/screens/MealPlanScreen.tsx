@@ -17,6 +17,7 @@ import DraggableFlatList, {
   ScaleDecorator,
 } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as Haptics from "expo-haptics";
 import { syncManager } from "@/lib/sync-manager";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -198,6 +199,7 @@ export default function MealPlanScreen() {
   };
 
   const handleAddMeal = (date: string, slotId: string) => {
+    Haptics.selectionAsync();
     navigation.navigate("SelectRecipe", {
       date,
       mealType: slotId as "breakfast" | "lunch" | "dinner",
@@ -432,7 +434,10 @@ export default function MealPlanScreen() {
               weekDays={getWeekDays()}
               selectedDay={selectedDay}
               mealPlans={mealPlans}
-              onSelectDay={setSelectedDay}
+              onSelectDay={(day) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedDay(day);
+              }}
             />
 
             <View style={styles.hintRow}>
@@ -480,6 +485,9 @@ export default function MealPlanScreen() {
                     data={draggableSlotItems}
                     keyExtractor={(item) => item.slotId}
                     renderItem={renderDraggableSlot}
+                    onDragBegin={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }}
                     onDragEnd={handleDragEnd}
                     containerStyle={styles.draggableListContainer}
                     scrollEnabled={false}

@@ -44,6 +44,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -333,6 +334,7 @@ export default function RecipesScreen() {
   ]);
 
   const handleToggleFavorite = async (recipe: Recipe) => {
+    Haptics.selectionAsync();
     await storage.toggleRecipeFavorite(recipe.id);
     loadData();
   };
@@ -597,13 +599,14 @@ export default function RecipesScreen() {
                           borderWidth: 1,
                         },
                       ]}
-                      onPress={() =>
+                      onPress={() => {
+                        Haptics.selectionAsync();
                         setSelectedCuisines((prev) =>
                           isSelected
                             ? prev.filter((c) => c !== cuisine)
                             : [...prev, cuisine],
-                        )
-                      }
+                        );
+                      }}
                     >
                       <Feather
                         name="globe"
@@ -645,13 +648,14 @@ export default function RecipesScreen() {
                           borderWidth: 1,
                         },
                       ]}
-                      onPress={() =>
+                      onPress={() => {
+                        Haptics.selectionAsync();
                         setSelectedDietaryTags((prev) =>
                           isSelected
                             ? prev.filter((t) => t !== tag)
                             : [...prev, tag],
-                        )
-                      }
+                        );
+                      }}
                     >
                       <Feather
                         name="check-circle"
