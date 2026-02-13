@@ -33,6 +33,7 @@ interface GlassButtonProps {
   testID?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessibilityRole?: string;
 }
 
 const springConfig: WithSpringConfig = {

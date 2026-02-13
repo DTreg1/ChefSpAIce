@@ -83,7 +83,7 @@ export default function BarcodeScannerScreen() {
     navigation.goBack();
   };
 
-  if (!permission) return <ActivityIndicator size="large" />;
+  if (!permission) return <ActivityIndicator size="large" accessibilityLabel="Loading camera permissions" />;
 
   if (!permission.granted) {
     return (
@@ -105,6 +105,7 @@ export default function BarcodeScannerScreen() {
           styles.centered,
           { backgroundColor: theme.backgroundRoot },
         ]}
+        accessibilityRole="text"
       >
         <Feather name="smartphone" size={64} color={theme.textSecondary} />
         <ThemedText type="h3" style={styles.permissionTitle}>
@@ -118,6 +119,8 @@ export default function BarcodeScannerScreen() {
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           Go Back
         </GlassButton>
@@ -126,7 +129,7 @@ export default function BarcodeScannerScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel="Barcode scanner camera view">
       {isCameraActive && (
         <CameraView
           style={[StyleSheet.absoluteFill, styles.cameraView]}
@@ -142,6 +145,7 @@ export default function BarcodeScannerScreen() {
             ],
           }}
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          accessibilityLabel="Camera viewfinder for barcode scanning"
         />
       )}
 
@@ -156,7 +160,7 @@ export default function BarcodeScannerScreen() {
           <View style={styles.placeholder} />
         </View>
 
-        <View style={styles.scanArea}>
+        <View style={styles.scanArea} accessibilityRole="image" accessibilityLabel="Barcode scanning frame. Position barcode within the frame">
           <View style={styles.corner} />
           <View style={[styles.corner, styles.topRight]} />
           <View style={[styles.corner, styles.bottomLeft]} />
@@ -166,13 +170,15 @@ export default function BarcodeScannerScreen() {
         <View
           style={[styles.footer, { paddingBottom: insets.bottom + Spacing.xl }]}
         >
-          <ThemedText type="body" style={styles.footerText}>
+          <ThemedText type="body" style={styles.footerText} accessibilityRole="text">
             Position the barcode within the frame
           </ThemedText>
           {scanned ? (
             <GlassButton
               onPress={() => setScanned(false)}
               style={styles.rescanButton}
+              accessibilityRole="button"
+              accessibilityLabel="Tap to scan again"
             >
               Tap to Scan Again
             </GlassButton>

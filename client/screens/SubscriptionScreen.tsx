@@ -445,8 +445,8 @@ export default function SubscriptionScreen() {
           { backgroundColor: theme.backgroundRoot },
         ]}
       >
-        <ActivityIndicator size="large" />
-        <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading subscription...</ThemedText>
+        <ActivityIndicator size="large" accessibilityLabel="Loading subscription data" />
+        <ThemedText style={{ marginTop: 12, color: theme.textSecondary }} accessibilityRole="text" accessibilityLabel="Loading subscription">Loading subscription...</ThemedText>
       </View>
     );
   }
@@ -480,6 +480,8 @@ export default function SubscriptionScreen() {
               styles.blockingBanner,
               { backgroundColor: `${AppColors.warning}15` },
             ]}
+            accessibilityRole="alert"
+            accessibilityLabel="Subscription required. Subscribe to continue using ChefSpAIce."
           >
             <Feather name="alert-circle" size={24} color={AppColors.warning} />
             <View style={styles.blockingTextContainer}>
@@ -500,8 +502,8 @@ export default function SubscriptionScreen() {
           statusInfo={statusInfo}
         />
 
-        <GlassCard style={styles.usageCard}>
-          <View style={styles.sectionHeader}>
+        <GlassCard style={styles.usageCard} accessibilityRole="summary" accessibilityLabel="Usage summary">
+          <View style={styles.sectionHeader} accessibilityRole="header">
             <Feather
               name="bar-chart-2"
               size={20}
@@ -512,12 +514,14 @@ export default function SubscriptionScreen() {
                 styles.sectionTitle,
                 { color: theme.textSecondaryOnGlass },
               ]}
+              accessibilityRole="header"
+              accessibilityLabel="Usage Summary"
             >
               Usage Summary
             </ThemedText>
           </View>
           <View style={styles.usageGrid}>
-            <View style={styles.usageItem}>
+            <View style={styles.usageItem} accessibilityRole="text" accessibilityLabel={`Pantry Items: ${formatLimit(entitlements.maxPantryItems, usage.pantryItemCount)}`}>
               <View
                 style={[
                   styles.usageIconContainer,
@@ -541,7 +545,7 @@ export default function SubscriptionScreen() {
               </View>
             </View>
 
-            <View style={styles.usageItem}>
+            <View style={styles.usageItem} accessibilityRole="text" accessibilityLabel={`AI Recipes This Month: ${formatLimit(entitlements.maxAiRecipes, usage.aiRecipesUsedThisMonth)}`}>
               <View
                 style={[
                   styles.usageIconContainer,
@@ -565,7 +569,7 @@ export default function SubscriptionScreen() {
               </View>
             </View>
 
-            <View style={styles.usageItem}>
+            <View style={styles.usageItem} accessibilityRole="text" accessibilityLabel={`Cookware: ${formatLimit(entitlements.maxCookware, usage.cookwareCount)}`}>
               <View
                 style={[
                   styles.usageIconContainer,
@@ -594,7 +598,7 @@ export default function SubscriptionScreen() {
 
         {(!isAuthenticated || !isStandardUser) && (
           <GlassCard style={styles.upgradeCard}>
-            <View style={styles.upgradeHeader}>
+            <View style={styles.upgradeHeader} accessibilityRole="header">
               <Feather
                 name="shopping-bag"
                 size={20}
@@ -605,6 +609,8 @@ export default function SubscriptionScreen() {
                   styles.upgradeTitle,
                   { color: theme.textSecondaryOnGlass },
                 ]}
+                accessibilityRole="header"
+                accessibilityLabel="Subscribe to ChefSpAIce"
               >
                 Subscribe to ChefSpAIce
               </ThemedText>
@@ -639,6 +645,8 @@ export default function SubscriptionScreen() {
                 )
               }
               testID="button-subscribe"
+              accessibilityRole="button"
+              accessibilityLabel={isCheckingOut ? "Loading subscription" : `Subscribe now for ${getSubscribeButtonPrice()}`}
             >
               {isCheckingOut
                 ? "Loading..."
@@ -654,7 +662,7 @@ export default function SubscriptionScreen() {
 
         {isStandardUser && isActive && (
           <GlassCard style={styles.manageCard}>
-            <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeader} accessibilityRole="header">
               <Feather
                 name="settings"
                 size={20}
@@ -665,6 +673,8 @@ export default function SubscriptionScreen() {
                   styles.sectionTitle,
                   { color: theme.textSecondaryOnGlass },
                 ]}
+                accessibilityRole="header"
+                accessibilityLabel="Manage Subscription"
               >
                 Manage Subscription
               </ThemedText>
@@ -692,6 +702,8 @@ export default function SubscriptionScreen() {
                 )
               }
               testID="button-manage-subscription"
+              accessibilityRole="button"
+              accessibilityLabel={isManaging ? "Opening subscription management" : "Manage subscription"}
             >
               {isManaging ? "Opening..." : "Manage Subscription"}
             </GlassButton>
@@ -709,6 +721,8 @@ export default function SubscriptionScreen() {
                   />
                 }
                 testID="button-cancel-subscription"
+                accessibilityRole="button"
+                accessibilityLabel="Cancel subscription"
               >
                 Cancel Subscription
               </GlassButton>
@@ -764,6 +778,8 @@ export default function SubscriptionScreen() {
                 )
               }
               testID="button-trial-subscribe"
+              accessibilityRole="button"
+              accessibilityLabel={isCheckingOut ? "Loading subscription" : `Subscribe now for ${getSubscribeButtonPrice()}`}
             >
               {isCheckingOut
                 ? "Loading..."
@@ -831,8 +847,8 @@ export default function SubscriptionScreen() {
         )}
 
         {!isAuthenticated && isActive && (
-          <GlassCard style={styles.successCard}>
-            <View style={styles.sectionHeader}>
+          <GlassCard style={styles.successCard} accessibilityRole="summary" accessibilityLabel="Subscription is active. You can start using ChefSpAIce.">
+            <View style={styles.sectionHeader} accessibilityRole="header">
               <Feather
                 name="check-circle"
                 size={20}
@@ -840,6 +856,8 @@ export default function SubscriptionScreen() {
               />
               <ThemedText
                 style={[styles.sectionTitle, { color: AppColors.success }]}
+                accessibilityRole="header"
+                accessibilityLabel="Subscription Active"
               >
                 Subscription Active!
               </ThemedText>
@@ -857,6 +875,8 @@ export default function SubscriptionScreen() {
               style={styles.continueButton}
               icon={<Feather name="arrow-right" size={18} color="#FFFFFF" />}
               testID="button-continue-to-app"
+              accessibilityRole="button"
+              accessibilityLabel="Continue to app"
             >
               Continue to App
             </GlassButton>
@@ -865,7 +885,7 @@ export default function SubscriptionScreen() {
 
         {!isAuthenticated && (
           <GlassCard style={styles.signInCard}>
-            <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeader} accessibilityRole="header">
               <Feather
                 name="user"
                 size={20}
@@ -876,6 +896,8 @@ export default function SubscriptionScreen() {
                   styles.sectionTitle,
                   { color: theme.textSecondaryOnGlass },
                 ]}
+                accessibilityRole="header"
+                accessibilityLabel={isActive ? "Optional: Create an Account" : "Already have an account?"}
               >
                 {isActive
                   ? "Optional: Create an Account"
@@ -900,6 +922,8 @@ export default function SubscriptionScreen() {
                 <Feather name="log-in" size={18} color={AppColors.primary} />
               }
               testID="button-sign-in"
+              accessibilityRole="button"
+              accessibilityLabel={isActive ? "Create account" : "Sign in"}
             >
               {isActive ? "Create Account" : "Sign In"}
             </GlassButton>

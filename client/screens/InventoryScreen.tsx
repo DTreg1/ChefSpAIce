@@ -314,14 +314,19 @@ export default function InventoryScreen() {
   const renderListHeader = () => (
     <>
       
-      <InventoryFunFact
-        funFact={funFact}
-        funFactLoading={funFactLoading}
-        funFactTimeRemaining={funFactTimeRemaining}
-        onRefresh={handleRefreshFunFact}
-        theme={theme}
-        showFunFact={showFunFact}
-      />
+      <View
+        accessibilityLabel={funFact ? `Fun fact: ${funFact}` : "Loading fun fact"}
+        accessibilityRole="text"
+      >
+        <InventoryFunFact
+          funFact={funFact}
+          funFactLoading={funFactLoading}
+          funFactTimeRemaining={funFactTimeRemaining}
+          onRefresh={handleRefreshFunFact}
+          theme={theme}
+          showFunFact={showFunFact}
+        />
+      </View>
     </>
   );
 
@@ -331,7 +336,12 @@ export default function InventoryScreen() {
     return (
       <>
         {showNutrition && (
-          <InventoryNutritionSummary nutritionTotals={nutritionTotals} />
+          <View
+            accessibilityLabel={`Nutrition summary: ${nutritionTotals.calories.toLocaleString()} calories, ${nutritionTotals.protein}g protein, ${nutritionTotals.carbs}g carbs, ${nutritionTotals.fat}g fat`}
+            accessibilityRole="summary"
+          >
+            <InventoryNutritionSummary nutritionTotals={nutritionTotals} />
+          </View>
         )}
         {recentlyDeletedCount > 0 && (
           <Pressable
@@ -363,6 +373,8 @@ export default function InventoryScreen() {
               type="caption"
               style={{ color: AppColors.primary }}
               testID="text-recently-deleted-count"
+              accessibilityRole="text"
+              accessibilityLabel={`${recentlyDeletedCount} recently deleted ${recentlyDeletedCount === 1 ? "item" : "items"}, tap to recover`}
             >
               {recentlyDeletedCount} recently deleted {recentlyDeletedCount === 1 ? "item" : "items"} — Tap to recover
             </ThemedText>
@@ -386,7 +398,11 @@ export default function InventoryScreen() {
     index: number;
   }) => {
     return (
-      <View style={{ flex: 1 }}>
+      <View
+        style={{ flex: 1 }}
+        accessibilityLabel={`${item.title} section, ${item.itemCount} ${item.itemCount === 1 ? "item" : "items"}`}
+        accessibilityRole="header"
+      >
         <InventoryGroupSection
           section={item}
           isCollapsed={!!collapsedSections[item.key]}
@@ -436,7 +452,11 @@ export default function InventoryScreen() {
         searchPlaceholder="Search items..."
         menuItems={menuItems}
         headerRight={
-          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}
+            accessibilityLabel="Sync status"
+            accessibilityRole="text"
+          >
             <SyncStatusIndicator />
           </View>
         }
@@ -444,6 +464,8 @@ export default function InventoryScreen() {
       <View
         style={[styles.searchContainer, { top: 56 + insets.top }]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
+        accessibilityLabel="Food group filters"
+        accessibilityRole="toolbar"
       >
         <InventoryFilters
           selectedFoodGroups={selectedFoodGroups}
@@ -483,6 +505,8 @@ export default function InventoryScreen() {
             refreshing={refreshing}
             onRefresh={handleRefresh}
             tintColor={AppColors.primary}
+            accessibilityLabel={refreshing ? "Refreshing inventory" : "Pull to refresh inventory"}
+            accessibilityRole="button"
           />
         }
       />

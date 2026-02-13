@@ -1082,12 +1082,14 @@ export default function SettingsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add storage modal content"
           >
-            <ThemedText type="h4" style={addStorageStyles.title}>
+            <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
               Add Storage Area
             </ThemedText>
             <ThemedText
               type="caption"
               style={[addStorageStyles.description, { color: theme.textSecondary }]}
+              accessibilityRole="text"
+              accessibilityLabel="Enter a name for your new storage area, for example Garage, Cellar, or Spice Rack"
             >
               Enter a name for your new storage area (e.g., Garage, Cellar, Spice Rack)
             </ThemedText>
@@ -1107,6 +1109,8 @@ export default function SettingsScreen() {
               autoFocus
               onSubmitEditing={handleConfirmAddStorageArea}
               data-testid="input-new-storage-area"
+              accessibilityLabel="Enter new storage area name"
+              accessibilityRole="text"
             />
             <View style={addStorageStyles.buttons}>
               <Pressable

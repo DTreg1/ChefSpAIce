@@ -121,6 +121,7 @@ interface GlassCardProps {
   testID?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessibilityRole?: string;
 }
 
 const springConfig: WithSpringConfig = {
@@ -160,6 +161,7 @@ export function GlassCard({
   testID,
   accessibilityLabel,
   accessibilityHint,
+  accessibilityRole,
 }: GlassCardProps) {
   const { theme, isDark } = useTheme();
   const scale = useSharedValue(1);
@@ -215,6 +217,9 @@ export function GlassCard({
       return (
         <View
           testID={testID}
+          accessibilityRole={accessibilityRole as any}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint={accessibilityHint}
           style={[
             styles.card,
             styles.webGlass,
@@ -234,6 +239,8 @@ export function GlassCard({
       return (
         <GlassView
           testID={testID}
+          accessibilityRole={accessibilityRole as any}
+          accessibilityLabel={accessibilityLabel}
           glassEffectStyle={glassEffectStyle}
           style={[styles.card, style]}
         >
@@ -243,7 +250,7 @@ export function GlassCard({
     }
 
     return (
-      <View testID={testID}>
+      <View testID={testID} accessibilityRole={accessibilityRole as any} accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint}>
         <BlurView
           intensity={blurIntensity}
           tint={glassTint}

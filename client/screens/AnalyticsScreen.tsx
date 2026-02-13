@@ -213,7 +213,11 @@ export default function AnalyticsScreen() {
     };
 
     return (
-      <View style={styles.gaugeContainer}>
+      <View
+        style={styles.gaugeContainer}
+        accessibilityRole="text"
+        accessibilityLabel={`Waste reduction score: ${score} out of 100, rated ${getScoreLabel()}`}
+      >
         <View style={[styles.gaugeOuter, { borderColor: theme.border }]}>
           <View
             style={[styles.gaugeInner, { backgroundColor: getScoreColor() }]}
@@ -287,7 +291,7 @@ export default function AnalyticsScreen() {
         {renderScoreGauge(wasteSummary?.currentPeriod.wasteScore ?? wasteReductionScore)}
 
         {wasteSummary && wasteSummary.trends.length > 0 ? (
-          <GlassCard style={styles.section} data-testid="section-weekly-trends">
+          <GlassCard style={styles.section} data-testid="section-weekly-trends" accessibilityRole="summary" accessibilityLabel="Weekly waste reduction trends">
             <ThemedText type="h4" style={styles.sectionTitle}>
               Weekly Trends
             </ThemedText>
@@ -304,7 +308,7 @@ export default function AnalyticsScreen() {
                     : AppColors.error;
                 const weekLabel = t.weekStart.slice(5);
                 return (
-                  <View key={t.weekStart} style={styles.trendBarContainer}>
+                  <View key={t.weekStart} style={styles.trendBarContainer} accessibilityRole="text" accessibilityLabel={`Week ${weekLabel}: waste score ${t.wasteScore}`}>
                     <View style={[styles.trendBarTrack, { backgroundColor: theme.backgroundSecondary }]}>
                       <View
                         style={[styles.trendBarFill, { height: barHeight, backgroundColor: barColor }]}
@@ -322,7 +326,7 @@ export default function AnalyticsScreen() {
 
         {wasteSummary && wasteSummary.streak.currentStreak > 0 ? (
           <GlassCard style={styles.section} data-testid="section-streak">
-            <View style={styles.streakHeader}>
+            <View style={styles.streakHeader} accessibilityLabel={`${wasteSummary.streak.currentStreak} week streak of consecutive weeks with 80 or higher waste score`}>
               <Feather name="zap" size={24} color={AppColors.warning} />
               <View>
                 <ThemedText type="h4" data-testid="text-streak-count">
@@ -424,7 +428,7 @@ export default function AnalyticsScreen() {
                       : AppColors.success;
 
                 return (
-                  <View key={item.id} style={styles.timelineItem}>
+                  <View key={item.id} style={styles.timelineItem} accessibilityRole="text" accessibilityLabel={`${item.name}, expires ${daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : 'in ' + daysLeft + ' days'}, stored in ${item.storageLocation}`}>
                     <View
                       style={[
                         styles.timelineDot,
@@ -465,7 +469,7 @@ export default function AnalyticsScreen() {
           {sortedCategories.length > 0 ? (
             <View style={styles.categoryList}>
               {sortedCategories.map(([category, count], index) => (
-                <View key={category} style={styles.categoryRow}>
+                <View key={category} style={styles.categoryRow} accessibilityRole="text" accessibilityLabel={`${category}: ${count} items`}>
                   <View style={styles.categoryLabel}>
                     <View
                       style={[
@@ -487,7 +491,7 @@ export default function AnalyticsScreen() {
               ))}
             </View>
           ) : (
-            <View style={styles.emptyState}>
+            <View style={styles.emptyState} accessibilityRole="text" accessibilityLabel="No categories yet. Add items to see category breakdown">
               <Feather name="pie-chart" size={32} color={theme.textSecondary} />
               <ThemedText type="small" style={styles.emptyText}>
                 Add items to see category breakdown
@@ -532,7 +536,7 @@ export default function AnalyticsScreen() {
               </View>
               <View style={styles.reasonBreakdown}>
                 {Object.entries(wasteByReason).map(([reason, count]) => (
-                  <View key={reason} style={styles.reasonRow}>
+                  <View key={reason} style={styles.reasonRow} accessibilityRole="text" accessibilityLabel={`${reason}: ${count} items wasted`}>
                     <ThemedText type="body">{reason}</ThemedText>
                     <View style={styles.reasonBar}>
                       <View
@@ -551,7 +555,7 @@ export default function AnalyticsScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.emptyState}>
+            <View style={styles.emptyState} accessibilityRole="text" accessibilityLabel="No waste recorded. Great job keeping waste to a minimum">
               <Feather name="thumbs-up" size={32} color={AppColors.success} />
               <ThemedText
                 type="body"
@@ -597,7 +601,7 @@ export default function AnalyticsScreen() {
             </View>
           </View>
           <View style={styles.macroGrid}>
-            <View style={styles.macroItem}>
+            <View style={styles.macroItem} accessibilityRole="text" accessibilityLabel={`Protein: ${totalNutrition.protein} grams`}>
               <View
                 style={[
                   styles.macroIndicator,
@@ -609,7 +613,7 @@ export default function AnalyticsScreen() {
                 <ThemedText type="caption">Protein</ThemedText>
               </View>
             </View>
-            <View style={styles.macroItem}>
+            <View style={styles.macroItem} accessibilityRole="text" accessibilityLabel={`Carbs: ${totalNutrition.carbs} grams`}>
               <View
                 style={[
                   styles.macroIndicator,
@@ -621,7 +625,7 @@ export default function AnalyticsScreen() {
                 <ThemedText type="caption">Carbs</ThemedText>
               </View>
             </View>
-            <View style={styles.macroItem}>
+            <View style={styles.macroItem} accessibilityRole="text" accessibilityLabel={`Fat: ${totalNutrition.fat} grams`}>
               <View
                 style={[
                   styles.macroIndicator,

@@ -535,10 +535,12 @@ export default function GenerateRecipeScreen() {
               styles.iconContainer,
               { backgroundColor: `${AppColors.primary}15` },
             ]}
+            accessibilityLabel="Recipe generation"
+            accessibilityRole="image"
           >
             <Feather name="zap" size={48} color={AppColors.primary} />
           </View>
-          <ThemedText type="h2" style={styles.title}>
+          <ThemedText type="h2" style={styles.title} accessibilityRole="header">
             {greeting}!
           </ThemedText>
           <ThemedText type="body" style={styles.subtitle}>
@@ -548,10 +550,10 @@ export default function GenerateRecipeScreen() {
           </ThemedText>
 
           {/* AI Recipe Usage Indicator */}
-          <View style={styles.usageIndicatorRow}>
+          <View style={styles.usageIndicatorRow} accessibilityRole="text" accessibilityLabel={isStandardUser ? "AI Recipes: Unlimited" : `AI Recipes: ${usage.aiRecipesUsedThisMonth} of ${typeof entitlements.maxAiRecipes === "number" ? entitlements.maxAiRecipes : 5} used`}>
             <ThemedText type="caption">AI Recipes</ThemedText>
             {isStandardUser ? (
-              <View style={styles.unlimitedBadge}>
+              <View style={styles.unlimitedBadge} accessibilityLabel="Unlimited AI recipes" accessibilityRole="text">
                 <MaterialCommunityIcons
                   name="infinity"
                   size={12}
@@ -580,7 +582,7 @@ export default function GenerateRecipeScreen() {
         {!hasNoInventory ? (
           <GlassCard style={styles.summaryCard}>
             <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
+              <View style={styles.summaryItem} accessibilityRole="text" accessibilityLabel={`${inventory.length} items available`}>
                 <View
                   style={[
                     styles.summaryIcon,
@@ -594,7 +596,7 @@ export default function GenerateRecipeScreen() {
                   <ThemedText type="caption">Items Available</ThemedText>
                 </View>
               </View>
-              <View style={styles.summaryItem}>
+              <View style={styles.summaryItem} accessibilityRole="text" accessibilityLabel={`${expiringItems.length} items expiring soon`}>
                 <View
                   style={[
                     styles.summaryIcon,
@@ -649,7 +651,7 @@ export default function GenerateRecipeScreen() {
                 </View>
                 <View style={styles.expiringTags}>
                   {expiringItems.slice(0, 4).map((item) => (
-                    <View key={item.id} style={styles.expiringTag}>
+                    <View key={item.id} style={styles.expiringTag} accessibilityLabel={`${item.name}, expires in ${item.daysUntilExpiry} days`} accessibilityRole="text">
                       <ThemedText type="small" numberOfLines={1}>
                         {item.name}
                       </ThemedText>
@@ -672,7 +674,7 @@ export default function GenerateRecipeScreen() {
           </GlassCard>
         ) : null}
 
-        <View style={styles.mealTypeCard}>
+        <View style={styles.mealTypeCard} accessibilityRole="text" accessibilityLabel={`Meal type: ${mealType}. Recipe will be optimized for this meal`}>
           <View style={styles.mealTypeHeader}>
             <Feather
               name={
@@ -702,6 +704,8 @@ export default function GenerateRecipeScreen() {
           onPress={() => navigation.goBack()}
           style={styles.actionButton}
           icon={<Feather name="plus" size={20} color="#FFFFFF" />}
+          accessibilityLabel="Go to inventory to add items"
+          accessibilityRole="button"
         >
           Go to Inventory
         </GlassButton>
@@ -714,13 +718,15 @@ export default function GenerateRecipeScreen() {
         statusBarTranslucent
       >
         <View style={styles.modalOverlay}>
-          <GlassCard style={styles.progressModal}>
-            <ActivityIndicator size="large" data-testid="spinner-recipe-generating" />
+          <GlassCard style={styles.progressModal} accessibilityRole="alert" accessibilityLabel="Generating recipe, please wait">
+            <ActivityIndicator size="large" data-testid="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
             <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}</ThemedText>
             {streamingText.length > 0 ? (
               <ScrollView
                 style={styles.streamPreview}
                 contentContainerStyle={styles.streamPreviewContent}
+                accessibilityRole="text"
+                accessibilityLabel="Recipe generation progress"
               >
                 <ThemedText
                   type="small"
@@ -731,7 +737,7 @@ export default function GenerateRecipeScreen() {
                 </ThemedText>
               </ScrollView>
             ) : expiringItems.length > 0 ? (
-              <View style={styles.progressExpiringNote} accessibilityLiveRegion="polite">
+              <View style={styles.progressExpiringNote} accessibilityLiveRegion="polite" accessibilityLabel={`Considering ${expiringItems.length} item${expiringItems.length !== 1 ? "s" : ""} expiring soon`}>
                 <Feather name="clock" size={16} color={AppColors.warning} />
                 <ThemedText type="caption" style={{ color: AppColors.warning }}>
                   Considering {expiringItems.length} item
