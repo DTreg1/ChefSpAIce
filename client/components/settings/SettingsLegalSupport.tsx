@@ -82,6 +82,23 @@ export function SettingsLegalSupport({
           color={theme.textSecondary}
         />
       </Pressable>
+
+      <View
+        style={[styles.retentionInfo, { borderColor: theme.glass.border }]}
+        data-testid="info-data-retention"
+      >
+        <View style={styles.legalMenuIcon}>
+          <Feather name="clock" size={18} color={theme.textSecondary} />
+        </View>
+        <View style={styles.legalMenuText}>
+          <ThemedText type="body">Data Retention</ThemedText>
+          <ThemedText type="caption">
+            Waste and consumed logs older than 12 months are automatically
+            archived into monthly summaries to keep the app fast. Your
+            long-term trends are preserved.
+          </ThemedText>
+        </View>
+      </View>
     </GlassCard>
   );
 }
@@ -111,5 +128,14 @@ const styles = StyleSheet.create({
   legalMenuText: {
     flex: 1,
     gap: 2,
+  },
+  retentionInfo: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.md,
+    opacity: 0.8,
   },
 });

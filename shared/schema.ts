@@ -28,6 +28,7 @@ import {
   text,
   varchar,
   integer,
+  bigint,
   timestamp,
   index,
   boolean,
@@ -523,6 +524,37 @@ export const insertUserConsumedLogSchema = createInsertSchema(userConsumedLogs).
 });
 export type InsertUserConsumedLog = z.infer<typeof insertUserConsumedLogSchema>;
 export type UserConsumedLog = typeof userConsumedLogs.$inferSelect;
+
+export const monthlyLogSummaries = pgTable(
+  "monthly_log_summaries",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    month: text("month").notNull(),
+    logType: text("log_type").notNull(),
+    category: text("category").notNull(),
+    totalItems: integer("total_items").notNull().default(0),
+    totalQuantity: doublePrecision("total_quantity").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_monthly_log_summaries_unique").on(
+      table.userId,
+      table.month,
+      table.logType,
+      table.category,
+    ),
+    index("idx_monthly_log_summaries_user_type").on(table.userId, table.logType),
+  ],
+);
+
+export const insertMonthlyLogSummarySchema = createInsertSchema(monthlyLogSummaries).omit({
+  createdAt: true,
+});
+export type InsertMonthlyLogSummary = z.infer<typeof insertMonthlyLogSummarySchema>;
+export type MonthlyLogSummary = typeof monthlyLogSummaries.$inferSelect;
 
 export const userCustomLocations = pgTable(
   "user_custom_locations",
@@ -1381,7 +1413,7 @@ export type WinbackCampaign = typeof winbackCampaigns.$inferSelect;
 
 export const cronJobs = pgTable("cron_jobs", {
   name: varchar("name", { length: 100 }).primaryKey(),
-  intervalMs: integer("interval_ms").notNull(),
+  intervalMs: bigint("interval_ms", { mode: "number" }).notNull(),
   lastRunAt: timestamp("last_run_at"),
   lastRunDurationMs: integer("last_run_duration_ms"),
   lastError: text("last_error"),
