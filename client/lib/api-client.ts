@@ -1,4 +1,4 @@
-import { getApiUrl, getStoredAuthToken } from "@/lib/query-client";
+import { getApiUrl, getStoredAuthToken, handleAuthError } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
 
 export class ApiClientError extends Error {
@@ -78,12 +78,12 @@ async function parseErrorResponse(response: Response): Promise<ApiClientError> {
   return new ApiClientError(response.status, message, errorCode, responseBody);
 }
 
-function unwrapEnvelope<T>(body: unknown): T {
+function unwrapEnvelope<T>(body: unknown, httpStatus: number): T {
   if (body && typeof body === "object" && "success" in body) {
     const typed = body as { success: boolean; data?: unknown; error?: string; errorCode?: string };
     if (!typed.success) {
       throw new ApiClientError(
-        400,
+        httpStatus,
         typed.error || "Request failed",
         typed.errorCode,
         body,
@@ -148,6 +148,10 @@ async function request<T>(
       signal,
     });
 
+    if (response.status === 401 && !options?.skipAuth) {
+      handleAuthError();
+    }
+
     if (!response.ok) {
       throw await parseErrorResponse(response);
     }
@@ -162,7 +166,7 @@ async function request<T>(
     }
 
     const body = await response.json();
-    return unwrapEnvelope<T>(body);
+    return unwrapEnvelope<T>(body, response.status);
   } finally {
     timeoutCleanup?.();
   }
@@ -250,6 +254,10 @@ export const apiClient = {
       signal: options?.signal,
     });
 
+    if (response.status === 401 && !options?.skipAuth) {
+      handleAuthError();
+    }
+
     if (!response.ok) {
       throw await parseErrorResponse(response);
     }
@@ -259,7 +267,7 @@ export const apiClient = {
     }
 
     const body = await response.json();
-    return unwrapEnvelope<T>(body);
+    return unwrapEnvelope<T>(body, response.status);
   },
 
   raw,

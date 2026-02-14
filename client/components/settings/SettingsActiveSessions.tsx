@@ -10,7 +10,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
-import { apiRequestJson } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import type { ThemeColors } from "@/lib/types";
 
 interface Session {
@@ -102,7 +102,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiRequestJson<{ sessions: Session[] }>("GET", "/api/auth/sessions");
+      const data = await apiClient.get<{ sessions: Session[] }>("/api/auth/sessions");
       setSessions(data.sessions || []);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -128,7 +128,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
           onPress: async () => {
             setRevokingId(sessionId);
             try {
-              await apiRequestJson("DELETE", `/api/auth/sessions/${sessionId}`);
+              await apiClient.delete(`/api/auth/sessions/${sessionId}`);
               await fetchSessions();
             } catch (err: unknown) {
               const errMsg = err instanceof Error ? err.message : String(err);
@@ -154,7 +154,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
           onPress: async () => {
             setIsRevokingAll(true);
             try {
-              await apiRequestJson("DELETE", "/api/auth/sessions");
+              await apiClient.delete("/api/auth/sessions");
               await fetchSessions();
             } catch (err: unknown) {
               const errMsg = err instanceof Error ? err.message : String(err);

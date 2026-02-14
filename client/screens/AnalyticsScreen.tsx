@@ -21,7 +21,7 @@ import {
   getExpirationStatus,
   getDaysUntilExpiration,
 } from "@/lib/storage";
-import { apiRequestJson } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 
 type TimeRange = "week" | "month" | "all";
 
@@ -53,11 +53,11 @@ export default function AnalyticsScreen() {
 
     try {
       const period = timeRange === "week" ? "week" : "month";
-      const data = await apiRequestJson<{
+      const data = await apiClient.get<{
         currentPeriod: { wasteCount: number; consumedCount: number; totalItems: number; wasteScore: number; periodLabel: string };
         trends: Array<{ weekStart: string; wasteCount: number; consumedCount: number; wasteScore: number }>;
         streak: { currentStreak: number; longestStreak: number; lastUpdated: string | null };
-      }>("GET", `/api/analytics/waste-summary?period=${period}&weeks=12`);
+      }>(`/api/analytics/waste-summary?period=${period}&weeks=12`);
       setWasteSummary(data);
     } catch (e) {
     }

@@ -90,7 +90,7 @@ export function clearAuthErrorCallback() {
 }
 
 // Handle auth errors by calling the registered callback
-function handleAuthError() {
+export function handleAuthError() {
   if (authErrorCallback) {
     authErrorCallback();
   }
