@@ -489,6 +489,8 @@ export default function AuthScreen() {
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                textContentType="oneTimeCode"
+                autoComplete="off"
                 returnKeyType={isSignUp ? "next" : "done"}
                 onSubmitEditing={() => {
                   if (isSignUp) {
@@ -547,6 +549,8 @@ export default function AuthScreen() {
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  textContentType="oneTimeCode"
+                  autoComplete="off"
                   returnKeyType="done"
                   onSubmitEditing={handleAuth}
                   testID="input-confirm-password"
