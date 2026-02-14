@@ -6,7 +6,7 @@ import { AppError } from "./errorHandler";
 import { SubscriptionTier } from "@shared/subscription";
 import { subscriptionCache, type CachedSubscriptionStatus } from "../lib/subscription-cache";
 
-const ACTIVE_STATUSES = ["active", "past_due"];
+const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
 const GRACE_PERIOD_DAYS = 7;
 
 export async function requireSubscription(
