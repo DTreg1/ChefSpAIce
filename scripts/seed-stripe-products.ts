@@ -7,7 +7,7 @@ async function seedProducts() {
   
   const stripe = await getUncachableStripeClient();
   
-  for (const tier of [SubscriptionTier.PRO, SubscriptionTier.PRO]) {
+  for (const tier of [SubscriptionTier.STANDARD, SubscriptionTier.STANDARD]) {
     const config = PRODUCTS[tier];
     
     console.log(`\nProcessing ${config.name}...`);

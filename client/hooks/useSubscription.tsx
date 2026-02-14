@@ -8,7 +8,7 @@ import {
   useRef,
   ReactNode,
 } from "react";
-import { Platform, Alert, AppState, AppStateStatus, Linking } from "react-native";
+import { Platform, AppState, AppStateStatus, Linking } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
@@ -157,7 +157,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [isManaging, setIsManaging] = useState(false);
 
   const {
-    isAvailable: isStoreKitAvailable,
     presentCustomerCenter,
     isCustomerCenterAvailable,
   } = useStoreKit();
@@ -179,17 +178,32 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
     setIsLoading(true);
     try {
-      const data = await apiClient.get<Record<string, unknown>>("/api/subscriptions/me");
+      const data = await apiClient.get<{
+        tier?: SubscriptionTier;
+        status?: SubscriptionStatus;
+        planType?: "monthly" | "annual" | null;
+        usage?: Usage;
+        remaining?: {
+          pantryItems: number | "unlimited";
+          aiRecipes: number | "unlimited";
+          cookware: number | "unlimited";
+        };
+        currentPeriodEnd?: string | null;
+        cancelAtPeriodEnd?: boolean;
+        paymentFailedAt?: string | null;
+        gracePeriodEnd?: string | null;
+        graceDaysRemaining?: number | null;
+      }>("/api/subscriptions/me");
       if (data) {
 
         const tierConfig =
-          TIER_CONFIG[data.tier as SubscriptionTier] ||
+          TIER_CONFIG[data.tier ?? SubscriptionTier.STANDARD] ||
           TIER_CONFIG[SubscriptionTier.STANDARD];
 
         const sub: SubscriptionData = {
-          tier: data.tier || SubscriptionTier.STANDARD,
-          status: data.status || "none",
-          planType: data.planType || null,
+          tier: data.tier ?? SubscriptionTier.STANDARD,
+          status: data.status ?? "none",
+          planType: data.planType ?? null,
           entitlements: {
             maxPantryItems:
               tierConfig.maxPantryItems === -1
@@ -210,19 +224,19 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             canUseWeeklyMealPrepping: tierConfig.canUseWeeklyMealPrepping,
           },
           usage: {
-            pantryItemCount: data.usage?.pantryItemCount || 0,
-            aiRecipesUsedThisMonth: data.usage?.aiRecipesUsedThisMonth || 0,
-            cookwareCount: data.usage?.cookwareCount || 0,
+            pantryItemCount: data.usage?.pantryItemCount ?? 0,
+            aiRecipesUsedThisMonth: data.usage?.aiRecipesUsedThisMonth ?? 0,
+            cookwareCount: data.usage?.cookwareCount ?? 0,
           },
           remaining: {
             pantryItems: data.remaining?.pantryItems ?? "unlimited",
             aiRecipes: data.remaining?.aiRecipes ?? "unlimited",
             cookware: data.remaining?.cookware ?? "unlimited",
           },
-          currentPeriodEnd: data.currentPeriodEnd || null,
-          cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
-          paymentFailedAt: data.paymentFailedAt || null,
-          gracePeriodEnd: data.gracePeriodEnd || null,
+          currentPeriodEnd: data.currentPeriodEnd ?? null,
+          cancelAtPeriodEnd: data.cancelAtPeriodEnd ?? false,
+          paymentFailedAt: data.paymentFailedAt ?? null,
+          gracePeriodEnd: data.gracePeriodEnd ?? null,
           graceDaysRemaining: data.graceDaysRemaining ?? null,
         };
 
