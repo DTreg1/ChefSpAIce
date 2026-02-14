@@ -19,40 +19,33 @@ name: Inventory Flow
     id: "add-button"
 
 - tapOn:
-    id: "menu-manual"
+    text: "Manual Entry"
+    optional: true
+
+- tapOn:
+    text: "Add Manually"
     optional: true
 
 - extendedWaitUntil:
     visible:
-      id: "input-item-name"
+      text: "Item name"
     timeout: 10000
 
 - tapOn:
-    id: "input-item-name"
+    text: "Item name"
 - inputText: "Test Apple"
-
-- tapOn:
-    id: "input-item-quantity"
-- clearText
-- inputText: "3"
-
-- tapOn:
-    id: "chip-category-fruits"
-    optional: true
 
 - scrollUntilVisible:
     element:
-      id: "chip-category-fruits"
+      text: "Fruits"
     direction: DOWN
     timeout: 5000
-    optional: true
 
 - tapOn:
-    id: "chip-category-fruits"
-    optional: true
+    text: "Fruits"
 
 - tapOn:
-    id: "button-save-item"
+    text: "Save"
 
 - extendedWaitUntil:
     visible:
@@ -72,7 +65,7 @@ name: Inventory Flow
     optional: true
 
 - tapOn:
-    id: "button-wasted-.*"
+    text: "Remove"
     optional: true
 
 - extendedWaitUntil:

@@ -110,7 +110,7 @@ APP_ID=com.chefspaice.app
    - inputText: "Hello World"
    ```
 
-2. Reference elements using `id:` for React Native `testID` attributes, or `text:` for visible text content.
+2. Reference elements using `id:` for React Native `testID` attributes, or `text:` for visible text/placeholder content. Note: some screens use `data-testid` (web-compatible) instead of `testID`. Maestro's `id:` selector only resolves native `testID` props. For screens using `data-testid`, use `text:` selectors targeting placeholder text or visible labels instead.
 
 3. Use `extendedWaitUntil` for elements that load asynchronously:
 

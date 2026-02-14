@@ -9,6 +9,10 @@ name: Settings Flow
     optional: true
 
 - tapOn:
+    id: "button-open-drawer"
+    optional: true
+
+- tapOn:
     text: "Profile"
     optional: true
 
@@ -29,11 +33,11 @@ name: Settings Flow
     optional: true
 
 - tapOn:
-    id: "button-theme-dark"
+    text: "Dark"
     optional: true
 
 - tapOn:
-    id: "button-theme-light"
+    text: "Light"
     optional: true
 
 - assertVisible:
