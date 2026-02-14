@@ -103,9 +103,7 @@
       }
     },
     "owner": "dtreg1",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/5b92d512-fd14-4e4f-b537-76dc95139451"
     }
