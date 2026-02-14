@@ -176,7 +176,7 @@ export default function AuthScreen() {
     await recheckOnboarding();
     const needsOnboarding = await storage.needsOnboarding();
 
-    if (needsOnboarding) {
+    if (isSignUp || needsOnboarding) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -188,7 +188,7 @@ export default function AuthScreen() {
 
     const subscriptionData = await apiClient.get<{ status?: string } | null>("/api/subscriptions/me");
     const isSubscriptionActive =
-      subscriptionData?.status === "active";
+      subscriptionData?.status === "active" || subscriptionData?.status === "trialing";
 
     if (isSubscriptionActive) {
       markOnboardingComplete();

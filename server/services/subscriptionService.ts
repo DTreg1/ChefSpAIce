@@ -397,7 +397,7 @@ export async function checkAndRedeemReferralCredits(userId: string): Promise<voi
       if (subscription) {
         const thirtyDays = 30 * 24 * 60 * 60 * 1000;
 
-        if (subscription.status === "active") {
+        if (subscription.status === "active" || subscription.status === "trialing") {
           const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
 
           await tx

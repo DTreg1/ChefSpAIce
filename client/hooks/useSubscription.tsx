@@ -26,6 +26,7 @@ declare global {
 
 type SubscriptionStatus =
   | "active"
+  | "trialing"
   | "past_due"
   | "canceled"
   | "expired"
@@ -317,7 +318,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const isStandardUser = tier === SubscriptionTier.STANDARD;
   const isPastDue = status === "past_due";
   const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
-  const isActive = status === "active" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
+  const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;

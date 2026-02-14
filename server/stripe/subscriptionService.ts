@@ -143,7 +143,7 @@ export async function linkStripeCustomerToUser(userId: string, customerId: strin
  */
 export function isSubscriptionActive(subscription: Subscription | null): boolean {
   if (!subscription) return false;
-  return subscription.status === "active";
+  return subscription.status === "active" || subscription.status === "trialing";
 }
 
 /**
