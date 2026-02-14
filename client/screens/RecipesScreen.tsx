@@ -352,7 +352,7 @@ export default function RecipesScreen() {
       <Animated.View
         entering={FadeIn.delay(index * 50)}
         style={styles.cardWrapper}
-        data-testid={`card-recipe-${recipe.id}`}
+        testID={`card-recipe-${recipe.id}`}
         {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})}
         accessibilityLabel={`${recipe.title}, ${getMatchPercentage(recipe)}% ingredient match`}
       >
@@ -371,7 +371,7 @@ export default function RecipesScreen() {
           {recipe.imageUri ? (
             <View
               style={styles.recipeImageContainer}
-              data-testid={`container-recipe-image-${recipe.id}`}
+              testID={`container-recipe-image-${recipe.id}`}
             >
               <Image
                 source={{ uri: recipe.imageUri }}
@@ -379,7 +379,7 @@ export default function RecipesScreen() {
                 contentFit="cover"
                 cachePolicy="memory-disk"
                 accessibilityLabel={`Photo of ${recipe.title}`}
-                data-testid={`img-recipe-${recipe.id}`}
+                testID={`img-recipe-${recipe.id}`}
               />
               {hasCookwareData && !hasCookware ? (
                 <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">

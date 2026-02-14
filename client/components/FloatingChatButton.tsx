@@ -122,7 +122,7 @@ export function FloatingChatButton() {
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[styles.buttonWrapper, animatedStyle]}
-        data-testid="button-floating-chat"
+        testID="button-floating-chat"
         accessibilityRole="button"
         accessibilityLabel={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
         accessibilityHint={isChatOpen ? "Double-tap to close the AI chat" : "Double-tap to open the AI kitchen assistant"}

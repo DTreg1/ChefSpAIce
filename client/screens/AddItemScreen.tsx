@@ -767,7 +767,7 @@ export default function AddItemScreen() {
               />
             }
             style={styles.scanButton}
-            data-testid="button-scan-barcode"
+            testID="button-scan-barcode"
           >
             Scan Barcode
           </GlassButton>
@@ -785,7 +785,7 @@ export default function AddItemScreen() {
               styles.scanButton,
               { borderColor: AppColors.secondary },
             ]}
-            data-testid="button-ai-scan"
+            testID="button-ai-scan"
           >
             AI Photo Scan
           </GlassButton>
@@ -813,7 +813,7 @@ export default function AddItemScreen() {
               onChangeText={setName}
               placeholder="Item name"
               placeholderTextColor={theme.textSecondary}
-              data-testid="input-item-name"
+              testID="input-item-name"
             />
           </View>
 
@@ -834,7 +834,7 @@ export default function AddItemScreen() {
               onChangeText={setBrand}
               placeholder="Brand name (optional)"
               placeholderTextColor={theme.textSecondary}
-              data-testid="input-item-brand"
+              testID="input-item-brand"
             />
           </View>
 
@@ -856,7 +856,7 @@ export default function AddItemScreen() {
               placeholder="UPC barcode (optional)"
               placeholderTextColor={theme.textSecondary}
               keyboardType="numeric"
-              data-testid="input-item-barcode"
+              testID="input-item-barcode"
             />
           </View>
 
@@ -879,7 +879,7 @@ export default function AddItemScreen() {
                 keyboardType="numeric"
                 placeholder="1"
                 placeholderTextColor={theme.textSecondary}
-                data-testid="input-item-quantity"
+                testID="input-item-quantity"
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
@@ -899,7 +899,7 @@ export default function AddItemScreen() {
                 onChangeText={setUnit}
                 placeholder="pcs"
                 placeholderTextColor={theme.textSecondary}
-                data-testid="input-item-unit"
+                testID="input-item-unit"
               />
             </View>
           </View>
@@ -926,7 +926,7 @@ export default function AddItemScreen() {
                           : theme.glass.border,
                     },
                   ]}
-                  data-testid={`chip-category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
+                  testID={`chip-category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Select category ${cat}`}
                 >
@@ -1198,7 +1198,7 @@ export default function AddItemScreen() {
             variant="outline"
             onPress={() => navigation.goBack()}
             style={styles.cancelButton}
-            data-testid="button-cancel-add-item"
+            testID="button-cancel-add-item"
           >
             Cancel
           </GlassButton>
@@ -1208,7 +1208,7 @@ export default function AddItemScreen() {
             loading={saving}
             disabled={saving || !name.trim()}
             style={styles.saveButton}
-            data-testid="button-save-item"
+            testID="button-save-item"
           >
             {saving ? "Saving..." : "Add Item"}
           </GlassButton>
@@ -1221,7 +1221,7 @@ export default function AddItemScreen() {
         animationType="fade"
         onRequestClose={() => setShowUpgradePrompt(false)}
         accessibilityViewIsModal={true}
-        data-testid="modal-upgrade-pantry-limit"
+        testID="modal-upgrade-pantry-limit"
       >
         <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt

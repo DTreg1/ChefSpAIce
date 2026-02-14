@@ -363,7 +363,7 @@ export default function AuthScreen() {
                     ]}
                     onPress={() => handleSocialAuth("apple")}
                     disabled={authLoading}
-                    data-testid="button-signin-apple"
+                    testID="button-signin-apple"
                     {...webAccessibilityProps(() => handleSocialAuth("apple"))}
                     accessibilityRole="button"
                     accessibilityLabel="Sign in with Apple"
@@ -387,7 +387,7 @@ export default function AuthScreen() {
                     ]}
                     onPress={() => handleSocialAuth("google")}
                     disabled={authLoading}
-                    data-testid="button-signin-google"
+                    testID="button-signin-google"
                     {...webAccessibilityProps(() => handleSocialAuth("google"))}
                     accessibilityRole="button"
                     accessibilityLabel="Sign in with Google"
@@ -461,7 +461,7 @@ export default function AuthScreen() {
                 textContentType="emailAddress"
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
-                data-testid="input-email"
+                testID="input-email"
               />
             </View>
 
@@ -497,7 +497,7 @@ export default function AuthScreen() {
                     handleAuth();
                   }
                 }}
-                data-testid="input-password"
+                testID="input-password"
               />
               <Pressable
                 accessibilityLabel="Toggle password visibility"
@@ -516,7 +516,7 @@ export default function AuthScreen() {
 
             {isSignUp && (
               <View style={{ paddingHorizontal: 4, marginTop: -4, marginBottom: 4 }}>
-                <ThemedText data-testid="text-password-requirements" style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 18 }}>
+                <ThemedText testID="text-password-requirements" style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 18 }}>
                   Password must be at least 8 characters and contain an uppercase letter, lowercase letter, and number.
                 </ThemedText>
               </View>
@@ -549,7 +549,7 @@ export default function AuthScreen() {
                   autoCapitalize="none"
                   returnKeyType="done"
                   onSubmitEditing={handleAuth}
-                  data-testid="input-confirm-password"
+                  testID="input-confirm-password"
                 />
               </View>
             )}
@@ -563,7 +563,7 @@ export default function AuthScreen() {
             ]}
             onPress={handleAuth}
             disabled={authLoading}
-            data-testid="button-auth-submit"
+            testID="button-auth-submit"
             {...webAccessibilityProps(handleAuth)}
             accessibilityRole="button"
             accessibilityLabel={isSignUp ? "Create account" : "Sign in"}
@@ -584,7 +584,7 @@ export default function AuthScreen() {
               setAuthError(null);
             }}
             style={styles.authSwitchButton}
-            data-testid="button-switch-auth-mode"
+            testID="button-switch-auth-mode"
             {...webAccessibilityProps(() => { setIsSignUp(!isSignUp); setAuthError(null); })}
             accessibilityRole="button"
             accessibilityLabel={isSignUp ? "Switch to sign in" : "Switch to sign up"}
@@ -607,7 +607,7 @@ export default function AuthScreen() {
             <Pressable
               onPress={handleForgotPassword}
               style={styles.forgotPasswordButton}
-              data-testid="button-forgot-password"
+              testID="button-forgot-password"
               {...webAccessibilityProps(handleForgotPassword)}
               accessibilityRole="button"
               accessibilityLabel="Forgot password"
@@ -631,7 +631,7 @@ export default function AuthScreen() {
             <View style={styles.legalLinksRow}>
               <Pressable
                 onPress={handleOpenPrivacyPolicy}
-                data-testid="link-auth-privacy-policy"
+                testID="link-auth-privacy-policy"
                 {...webAccessibilityProps(handleOpenPrivacyPolicy)}
                 accessibilityRole="link"
                 accessibilityLabel="Open privacy policy"
@@ -649,7 +649,7 @@ export default function AuthScreen() {
               </ThemedText>
               <Pressable
                 onPress={handleOpenTermsOfUse}
-                data-testid="link-auth-terms-of-use"
+                testID="link-auth-terms-of-use"
                 {...webAccessibilityProps(handleOpenTermsOfUse)}
                 accessibilityRole="link"
                 accessibilityLabel="Open terms of service"

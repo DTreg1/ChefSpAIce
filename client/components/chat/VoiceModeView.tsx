@@ -117,7 +117,7 @@ export function VoiceModeView({
           onPressIn={onVoicePressIn}
           onPressOut={onVoicePressOut}
           disabled={voiceChat.isProcessing || voiceChat.isSpeaking}
-          data-testid="button-voice-mic"
+          testID="button-voice-mic"
           accessibilityRole="button"
           accessibilityLabel={getStatusText()}
           accessibilityHint="Tap to start voice input. Press and hold for push-to-talk"
@@ -200,7 +200,7 @@ export function VoiceModeView({
             },
           ]}
           onPress={() => voiceChat.cancelConversation()}
-          data-testid="button-voice-cancel"
+          testID="button-voice-cancel"
           accessibilityRole="button"
           accessibilityLabel="Cancel voice conversation"
         >

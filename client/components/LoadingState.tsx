@@ -43,7 +43,7 @@ function ListItemSkeleton() {
           borderColor: theme.glass.border,
         },
       ]}
-      data-testid="skeleton-list-item"
+      testID="skeleton-list-item"
     >
       <View style={styles.listItemRow}>
         <MotiSkeleton colorMode={colorMode} width={40} height={40} radius={20} />
@@ -59,7 +59,7 @@ function ListItemSkeleton() {
 
 function ListSkeleton({ count }: { count: number }) {
   return (
-    <View style={styles.listContainer} data-testid="loading-list">
+    <View style={styles.listContainer} testID="loading-list">
       {Array.from({ length: count }).map((_, i) => (
         <ListItemSkeleton key={i} />
       ))}
@@ -81,7 +81,7 @@ function CardSkeleton() {
           borderColor: theme.glass.border,
         },
       ]}
-      data-testid="skeleton-card"
+      testID="skeleton-card"
     >
       <MotiSkeleton colorMode={colorMode} width={CARD_WIDTH} height={100} radius={0} />
       <View style={styles.cardContent}>
@@ -100,7 +100,7 @@ function CardSkeleton() {
 
 function CardGridSkeleton({ count }: { count: number }) {
   return (
-    <View style={styles.cardGrid} data-testid="loading-card-grid">
+    <View style={styles.cardGrid} testID="loading-card-grid">
       {Array.from({ length: count }).map((_, i) => (
         <View key={i} style={styles.cardWrapper}>
           <CardSkeleton />
@@ -115,7 +115,7 @@ function DetailSkeleton() {
   const colorMode = isDark ? "dark" : "light";
 
   return (
-    <View style={styles.detailContainer} data-testid="loading-detail">
+    <View style={styles.detailContainer} testID="loading-detail">
       <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.6} height={22} radius={8} />
       <View style={{ height: Spacing.lg }} />
 
@@ -172,7 +172,7 @@ function FullPageSkeleton() {
   const colorMode = isDark ? "dark" : "light";
 
   return (
-    <View style={styles.fullPageContainer} data-testid="loading-full-page">
+    <View style={styles.fullPageContainer} testID="loading-full-page">
       <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH} height={180} radius={BorderRadius.lg} />
       <View style={{ height: Spacing.lg }} />
       <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.7} height={24} radius={8} />

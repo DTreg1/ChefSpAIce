@@ -356,7 +356,7 @@ export default function ProfileScreen() {
                             : theme.glass.border,
                         },
                       ]}
-                      data-testid={`button-theme-${option}`}
+                      testID={`button-theme-${option}`}
                     >
                       <Feather
                         name={
@@ -576,7 +576,7 @@ export default function ProfileScreen() {
             onPress={() => navigation.navigate("Subscription")}
             accessibilityLabel="Subscription"
             accessibilityRole="button"
-            data-testid="link-subscription"
+            testID="link-subscription"
           >
             <View
               style={[
@@ -775,7 +775,7 @@ export default function ProfileScreen() {
                 <Pressable
                   style={styles.manageSubscriptionButton}
                   onPress={handleManageSubscription}
-                  data-testid="button-manage-subscription"
+                  testID="button-manage-subscription"
                   accessibilityRole="button"
                   accessibilityLabel="Manage subscription"
                 >
@@ -792,7 +792,7 @@ export default function ProfileScreen() {
                 <Pressable
                   style={styles.manageSubscriptionButton}
                   onPress={handleUpgradeSubscription}
-                  data-testid="button-upgrade-subscription"
+                  testID="button-upgrade-subscription"
                   accessibilityRole="button"
                   accessibilityLabel="Choose plan"
                 >

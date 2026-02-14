@@ -66,7 +66,7 @@ export function ChatMessageItem({
             onPress={() => onReplayMessage(item.id, item.content)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             disabled={isReplayLoading !== null || replayVoiceSpeaking}
-            data-testid={`button-replay-${item.id}`}
+            testID={`button-replay-${item.id}`}
             accessibilityRole="button"
             accessibilityLabel="Replay message"
           >

@@ -89,7 +89,7 @@ export function SettingsAccountData({
             ]}
             onPress={onExportData}
             disabled={isExporting}
-            data-testid="button-export-data"
+            testID="button-export-data"
             accessibilityRole="button"
             accessibilityLabel="Export my data"
             accessibilityState={{ disabled: isExporting }}
@@ -117,7 +117,7 @@ export function SettingsAccountData({
             ]}
             onPress={onImportFilePick}
             disabled={isImporting}
-            data-testid="button-import-data"
+            testID="button-import-data"
             accessibilityRole="button"
             accessibilityLabel="Import data from backup"
             accessibilityState={{ disabled: isImporting }}
@@ -145,7 +145,7 @@ export function SettingsAccountData({
             ]}
             onPress={onDownloadMyData}
             disabled={isDownloadingData}
-            data-testid="button-download-my-data"
+            testID="button-download-my-data"
             accessibilityRole="button"
             accessibilityLabel="Download my data"
             accessibilityHint="Downloads all your personal data as a JSON file for GDPR compliance"
@@ -181,7 +181,7 @@ export function SettingsAccountData({
           { borderColor: theme.glass.border },
         ]}
         onPress={onDeletionLevelsPress}
-        data-testid="button-manage-account-data"
+        testID="button-manage-account-data"
         accessibilityRole="button"
         accessibilityLabel="Manage account data"
       >
@@ -204,7 +204,7 @@ export function SettingsAccountData({
         onRequestClose={onDeletionLevelsClose}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.deleteModalOverlay} data-testid="modal-deletion-levels">
+        <View style={styles.deleteModalOverlay} testID="modal-deletion-levels">
           <View ref={containerRef1} style={[styles.deleteModalContent, { backgroundColor: modalBg }]} onAccessibilityEscape={onAccessibilityEscape1}>
             <View ref={focusTargetRef1} style={[styles.warningBanner, { backgroundColor: `${theme.textSecondary}15`, marginBottom: Spacing.md }]}>
               <Feather name="sliders" size={24} color={theme.text} />
@@ -219,7 +219,7 @@ export function SettingsAccountData({
                 { borderColor: theme.glass.border, marginBottom: Spacing.sm },
               ]}
               onPress={() => handleDeletionOption(onClearData)}
-              data-testid="button-clear-app-data"
+              testID="button-clear-app-data"
               accessibilityRole="button"
               accessibilityLabel="Clear app data"
             >
@@ -241,7 +241,7 @@ export function SettingsAccountData({
                 { borderColor: AppColors.error, borderWidth: 1, marginBottom: Spacing.sm },
               ]}
               onPress={() => handleDeletionOption(onDeleteAccountPress)}
-              data-testid="button-delete-account-level"
+              testID="button-delete-account-level"
               accessibilityRole="button"
               accessibilityLabel="Delete my account permanently"
             >
@@ -266,7 +266,7 @@ export function SettingsAccountData({
                   { borderColor: theme.glass.border, marginBottom: Spacing.sm },
                 ]}
                 onPress={() => handleDeletionOption(onResetForTesting)}
-                data-testid="button-reset-app-level"
+                testID="button-reset-app-level"
                 accessibilityRole="button"
                 accessibilityLabel="Reset app for testing"
               >
@@ -355,7 +355,7 @@ export function SettingsAccountData({
               autoCapitalize="characters"
               autoCorrect={false}
               editable={!isDeleting}
-              data-testid="input-delete-confirm"
+              testID="input-delete-confirm"
             />
 
             <View style={styles.deleteButtonRow}>

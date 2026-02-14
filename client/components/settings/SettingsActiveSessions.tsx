@@ -177,14 +177,14 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
       </ThemedText>
 
       {isLoading ? (
-        <View style={styles.centerContainer} data-testid="loading-sessions">
+        <View style={styles.centerContainer} testID="loading-sessions">
           <ActivityIndicator size="small" color={AppColors.primary} />
           <ThemedText type="caption" style={{ marginTop: Spacing.sm }}>
             Loading sessions...
           </ThemedText>
         </View>
       ) : error ? (
-        <View style={styles.centerContainer} data-testid="error-sessions">
+        <View style={styles.centerContainer} testID="error-sessions">
           <Feather name="alert-circle" size={20} color={AppColors.error} />
           <ThemedText type="caption" style={{ marginTop: Spacing.sm, color: AppColors.error }}>
             {error}
@@ -192,7 +192,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
           <Pressable
             style={[styles.retryButton, { borderColor: theme.glass?.border }]}
             onPress={fetchSessions}
-            data-testid="button-retry-sessions"
+            testID="button-retry-sessions"
             accessibilityRole="button"
             accessibilityLabel="Retry loading sessions"
           >
@@ -207,7 +207,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
             <View
               key={session.id}
               style={[styles.sessionCard, { borderColor: theme.glass?.border || AppColors.border }]}
-              data-testid={`session-card-${session.id}`}
+              testID={`session-card-${session.id}`}
             >
               <View style={styles.sessionInfo}>
                 <View style={styles.sessionHeader}>
@@ -220,7 +220,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
                     {parseUserAgent(session.userAgent)}
                   </ThemedText>
                   {session.isCurrent ? (
-                    <View style={[styles.currentBadge, { backgroundColor: AppColors.accent }]} data-testid="badge-current-session">
+                    <View style={[styles.currentBadge, { backgroundColor: AppColors.accent }]} testID="badge-current-session">
                       <ThemedText type="caption" style={styles.currentBadgeText}>
                         Current
                       </ThemedText>
@@ -239,7 +239,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
                   style={styles.revokeButton}
                   onPress={() => handleRevokeSession(session.id)}
                   disabled={revokingId === session.id}
-                  data-testid={`button-revoke-session-${session.id}`}
+                  testID={`button-revoke-session-${session.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Revoke session for ${parseUserAgent(session.userAgent)}`}
                   accessibilityState={{ disabled: revokingId === session.id }}
@@ -261,7 +261,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
               style={[styles.revokeAllButton, { borderColor: AppColors.error }]}
               onPress={handleRevokeAll}
               disabled={isRevokingAll}
-              data-testid="button-revoke-all-sessions"
+              testID="button-revoke-all-sessions"
               accessibilityRole="button"
               accessibilityLabel="Revoke all other sessions"
               accessibilityState={{ disabled: isRevokingAll }}

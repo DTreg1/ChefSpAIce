@@ -121,7 +121,7 @@ export function ScreenIdentifierOverlay({
         style={styles.overlay}
         onPress={handleCopy}
         activeOpacity={0.8}
-        data-testid="button-copy-screen-name"
+        testID="button-copy-screen-name"
         accessibilityRole="button"
         accessibilityLabel={`Copy screen name ${screenName}`}
       >
@@ -136,7 +136,7 @@ export function ScreenIdentifierOverlay({
         onPress={handleReset}
         activeOpacity={0.8}
         disabled={resetting}
-        data-testid="button-reset-storage"
+        testID="button-reset-storage"
         accessibilityRole="button"
         accessibilityLabel="Reset app storage"
         accessibilityState={{ disabled: resetting }}

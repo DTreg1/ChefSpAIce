@@ -59,7 +59,7 @@ export function SettingsChipSelector({
                   borderColor: isSelected ? selectedColor : theme.border,
                 },
               ]}
-              data-testid={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${option.value}`}
+              testID={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${option.value}`}
               accessibilityRole="button"
               accessibilityLabel={`${isSelected ? 'Remove' : 'Add'} ${option.label}`}
               accessibilityState={{ selected: isSelected }}
@@ -92,7 +92,7 @@ export function SettingsChipSelector({
                 borderStyle: "dashed" as const,
               },
             ]}
-            data-testid={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-add-new`}
+            testID={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-add-new`}
             accessibilityRole="button"
             accessibilityLabel={`Add new ${title.toLowerCase()} option`}
           >

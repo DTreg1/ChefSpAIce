@@ -124,7 +124,7 @@ function StatsCardSkeleton() {
 
 export function MealPlanSkeleton() {
   return (
-    <View style={styles.container} data-testid="skeleton-meal-plan">
+    <View style={styles.container} testID="skeleton-meal-plan">
       <WeekNavSkeleton />
       <DaySelectorSkeleton />
       <HintRowSkeleton />

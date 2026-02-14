@@ -90,7 +90,6 @@ export function PendingSyncBanner() {
         type="caption"
         style={[styles.text, { color: AppColors.primary }]}
         testID="text-pending-sync-message"
-        data-testid="text-pending-sync-message"
       >
         {getMessage()}
       </ThemedText>
@@ -101,7 +100,6 @@ export function PendingSyncBanner() {
         accessibilityRole="button"
         accessibilityLabel="Sync now"
         testID="button-sync-now"
-        data-testid="button-sync-now"
       >
         <ThemedText type="caption" style={[styles.syncText, { color: AppColors.primary }]}>
           Sync now
@@ -122,7 +120,6 @@ export function PendingSyncBanner() {
       accessibilityRole="summary"
       accessibilityLabel={`${totalPending} changes pending sync`}
       testID="banner-pending-sync"
-      data-testid="banner-pending-sync"
     >
       {Platform.OS === "ios" ? (
         <BlurView intensity={80} tint="light" style={styles.blur}>

@@ -37,7 +37,7 @@ function RecipeCardSkeleton() {
 
 export function RecipesSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <View style={styles.recipeGrid} data-testid="skeleton-recipes">
+    <View style={styles.recipeGrid} testID="skeleton-recipes">
       {Array.from({ length: count }).map((_, i) => (
         <View key={i} style={styles.recipeCardWrapper}>
           <RecipeCardSkeleton />

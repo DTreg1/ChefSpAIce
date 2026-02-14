@@ -33,7 +33,7 @@ function ShoppingItemSkeleton() {
 
 export function ShoppingListSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <View style={styles.listContainer} data-testid="skeleton-shopping-list">
+    <View style={styles.listContainer} testID="skeleton-shopping-list">
       {Array.from({ length: count }).map((_, i) => (
         <ShoppingItemSkeleton key={i} />
       ))}

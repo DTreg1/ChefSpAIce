@@ -569,7 +569,7 @@ export default function AddFoodBatchScreen() {
         animationType="fade"
         onRequestClose={() => setShowUpgradePrompt(false)}
         accessibilityViewIsModal={true}
-        data-testid="modal-upgrade-pantry-limit"
+        testID="modal-upgrade-pantry-limit"
       >
         <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt

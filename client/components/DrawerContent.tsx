@@ -50,7 +50,7 @@ function StatusBadge() {
       <Pressable
         style={[styles.statusBadge, styles.pastDueBadge]}
         onPress={handleManageSubscription}
-        data-testid="drawer-past-due-badge"
+        testID="drawer-past-due-badge"
         accessibilityRole="button"
         accessibilityLabel={`Payment status: ${daysText}. Manage subscription`}
       >
@@ -66,7 +66,7 @@ function StatusBadge() {
       <Pressable
         style={[styles.statusBadge, styles.cancelingBadge]}
         onPress={handleManageSubscription}
-        data-testid="drawer-canceling-badge"
+        testID="drawer-canceling-badge"
         accessibilityRole="button"
         accessibilityLabel="Subscription ending soon. Manage subscription"
       >

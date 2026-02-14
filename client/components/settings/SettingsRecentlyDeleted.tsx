@@ -95,7 +95,7 @@ export function SettingsRecentlyDeleted({ theme }: SettingsRecentlyDeletedProps)
       <Pressable
         style={styles.headerRow}
         onPress={() => setExpanded(!expanded)}
-        data-testid="button-recently-deleted-toggle"
+        testID="button-recently-deleted-toggle"
         accessibilityRole="button"
         accessibilityLabel={`Recently Deleted, ${itemCount} items`}
       >
@@ -138,7 +138,7 @@ export function SettingsRecentlyDeleted({ theme }: SettingsRecentlyDeletedProps)
               <View
                 key={item.id}
                 style={[styles.deletedItem, { borderColor: theme.glass.border }]}
-                data-testid={`card-deleted-item-${item.id}`}
+                testID={`card-deleted-item-${item.id}`}
               >
                 <View style={styles.itemInfo}>
                   <ThemedText type="body" style={styles.itemName}>
@@ -155,7 +155,7 @@ export function SettingsRecentlyDeleted({ theme }: SettingsRecentlyDeletedProps)
                   style={[styles.restoreButton, { borderColor: AppColors.primary }]}
                   onPress={() => handleRestore(item)}
                   disabled={isRestoring}
-                  data-testid={`button-restore-item-${item.id}`}
+                  testID={`button-restore-item-${item.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Restore ${item.name}`}
                 >

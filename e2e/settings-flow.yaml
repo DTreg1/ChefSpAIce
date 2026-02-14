@@ -33,11 +33,11 @@ name: Settings Flow
     optional: true
 
 - tapOn:
-    text: "Dark"
+    id: "button-theme-dark"
     optional: true
 
 - tapOn:
-    text: "Light"
+    id: "button-theme-light"
     optional: true
 
 - assertVisible:

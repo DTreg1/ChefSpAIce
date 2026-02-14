@@ -189,7 +189,7 @@ function ReceiptResultsView({
           style={styles.retakeButton}
           accessibilityLabel="Retake photo"
           accessibilityRole="button"
-          data-testid="button-retake"
+          testID="button-retake"
         >
           <Feather name="arrow-left" size={24} color={theme.text} />
         </Pressable>
@@ -279,7 +279,7 @@ function ReceiptResultsView({
                   styles.itemCard,
                   { backgroundColor: theme.surface, borderColor: theme.border },
                 ]}
-                data-testid={`receipt-item-${index}`}
+                testID={`receipt-item-${index}`}
               >
                 <View style={styles.itemHeader}>
                   <ThemedText
@@ -382,7 +382,7 @@ function ReceiptResultsView({
             onPress={onAddToInventory}
             loading={isLoading}
             style={styles.addButton}
-            data-testid="button-add-to-inventory"
+            testID="button-add-to-inventory"
           >
             Add {result.items.length} Items to Inventory
           </GlassButton>
@@ -642,7 +642,7 @@ export default function ReceiptScanScreen() {
                 style={styles.closeButton}
                 accessibilityLabel="Close scanner"
                 accessibilityRole="button"
-                data-testid="button-close"
+                testID="button-close"
               >
                 <Feather name="x" size={28} color="#FFFFFF" />
               </Pressable>
@@ -677,7 +677,7 @@ export default function ReceiptScanScreen() {
               <Pressable
                 onPress={handlePickImage}
                 style={styles.controlButton}
-                data-testid="button-gallery"
+                testID="button-gallery"
                 accessibilityRole="button"
                 accessibilityLabel="Pick image from gallery"
               >
@@ -692,7 +692,7 @@ export default function ReceiptScanScreen() {
               <Pressable
                 onPress={handleCapture}
                 style={styles.captureButton}
-                data-testid="button-capture"
+                testID="button-capture"
                 accessibilityRole="button"
                 accessibilityLabel="Capture receipt photo"
               >
@@ -726,7 +726,7 @@ export default function ReceiptScanScreen() {
                 style={styles.closeButton}
                 accessibilityLabel="Retake photo"
                 accessibilityRole="button"
-                data-testid="button-retake-preview"
+                testID="button-retake-preview"
               >
                 <Feather name="arrow-left" size={28} color="#FFFFFF" />
               </Pressable>
@@ -752,7 +752,7 @@ export default function ReceiptScanScreen() {
               <GlassButton
                 onPress={handleAnalyze}
                 style={styles.previewButton}
-                data-testid="button-analyze"
+                testID="button-analyze"
               >
                 Analyze Receipt
               </GlassButton>

@@ -31,7 +31,7 @@ export function PlanToggle({
           selectedPlan === "monthly" && styles.billingToggleButtonActive,
         ]}
         onPress={() => onSelectPlan("monthly")}
-        data-testid={monthlyTestId}
+        testID={monthlyTestId}
         {...webAccessibilityProps(() => onSelectPlan("monthly"))}
         accessibilityRole="button"
         accessibilityLabel={`Select monthly billing${selectedPlan === "monthly" ? ", currently selected" : ""}`}
@@ -52,7 +52,7 @@ export function PlanToggle({
           selectedPlan === "annual" && styles.billingToggleButtonActive,
         ]}
         onPress={() => onSelectPlan("annual")}
-        data-testid={annualTestId}
+        testID={annualTestId}
         {...webAccessibilityProps(() => onSelectPlan("annual"))}
         accessibilityRole="button"
         accessibilityLabel={`Select annual billing, best value${selectedPlan === "annual" ? ", currently selected" : ""}`}

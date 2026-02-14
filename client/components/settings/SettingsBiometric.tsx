@@ -64,7 +64,7 @@ export function SettingsBiometric({ biometric, theme }: SettingsBiometricProps) 
           }}
           thumbColor="#FFFFFF"
           accessibilityLabel={`Toggle ${biometric.biometricType || "biometric"} login`}
-          data-testid="switch-biometric-login"
+          testID="switch-biometric-login"
         />
       </View>
     </GlassCard>

@@ -188,7 +188,7 @@ export function CancellationFlowModal({
   };
 
   const renderStepIndicator = () => (
-    <View style={styles.stepIndicator} data-testid="step-indicator">
+    <View style={styles.stepIndicator} testID="step-indicator">
       {[1, 2, 3].map((s) => (
         <View
           key={s}
@@ -226,7 +226,7 @@ export function CancellationFlowModal({
             },
           ]}
           onPress={() => setSelectedReason(reason.key)}
-          data-testid={`button-reason-${reason.key}`}
+          testID={`button-reason-${reason.key}`}
           accessibilityRole="radio"
           accessibilityState={{ selected: selectedReason === reason.key }}
           accessibilityLabel={reason.label}
@@ -260,7 +260,7 @@ export function CancellationFlowModal({
           onChangeText={setDetails}
           multiline
           numberOfLines={3}
-          data-testid="input-other-details"
+          testID="input-other-details"
         />
       )}
 
@@ -350,7 +350,7 @@ export function CancellationFlowModal({
               },
             ]}
             onPress={() => setPauseDuration(months)}
-            data-testid={`button-pause-${months}-month`}
+            testID={`button-pause-${months}-month`}
             accessibilityRole="radio"
             accessibilityLabel={`Pause for ${months} month${months > 1 ? 's' : ''}`}
             accessibilityState={{ selected: pauseDuration === months }}
@@ -425,7 +425,7 @@ export function CancellationFlowModal({
         onChangeText={setFeatureFeedback}
         multiline
         numberOfLines={3}
-        data-testid="input-feature-feedback"
+        testID="input-feature-feedback"
       />
 
       <GlassButton
@@ -546,7 +546,7 @@ export function CancellationFlowModal({
         style={[styles.destructiveButton, isSubmitting && { opacity: 0.7 }]}
         onPress={handleConfirmCancel}
         disabled={isSubmitting}
-        data-testid="button-confirm-cancel"
+        testID="button-confirm-cancel"
         accessibilityRole="button"
         accessibilityLabel="Cancel Subscription"
         accessibilityState={{ disabled: isSubmitting }}
@@ -584,7 +584,7 @@ export function CancellationFlowModal({
             <Pressable
               onPress={handleClose}
               style={styles.closeButton}
-              data-testid="button-close-cancellation-modal"
+              testID="button-close-cancellation-modal"
               accessibilityRole="button"
               accessibilityLabel="Close"
             >

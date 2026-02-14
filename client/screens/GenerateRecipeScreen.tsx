@@ -712,7 +712,7 @@ export default function GenerateRecipeScreen() {
       >
         <View style={styles.modalOverlay}>
           <GlassCard style={styles.progressModal} accessibilityRole="alert" accessibilityLabel="Generating recipe, please wait">
-            <ActivityIndicator size="large" data-testid="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
+            <ActivityIndicator size="large" testID="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
             <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}</ThemedText>
             {streamingText.length > 0 ? (
               <ScrollView
@@ -724,7 +724,7 @@ export default function GenerateRecipeScreen() {
                 <ThemedText
                   type="small"
                   style={{ color: theme.textSecondary, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" }}
-                  data-testid="text-streaming-preview"
+                  testID="text-streaming-preview"
                 >
                   {streamingText.slice(-400)}
                 </ThemedText>

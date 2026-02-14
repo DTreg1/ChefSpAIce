@@ -59,7 +59,7 @@ export function SettingsReferral({
                 marginBottom: 12,
               },
             ]}
-            data-testid="text-referral-code"
+            testID="text-referral-code"
           >
             <View style={styles.settingInfo}>
               <Feather name="gift" size={20} color={AppColors.primary} />
@@ -87,7 +87,7 @@ export function SettingsReferral({
                   color={referralCopied ? AppColors.success : theme.text}
                 />
               }
-              data-testid="button-copy-referral"
+              testID="button-copy-referral"
             >
               <ThemedText>
                 {referralCopied ? "Copied!" : "Copy Link"}
@@ -101,7 +101,7 @@ export function SettingsReferral({
               icon={
                 <Feather name="share-2" size={16} color="#fff" />
               }
-              data-testid="button-share-referral"
+              testID="button-share-referral"
             >
               <ThemedText style={{ color: "#fff" }}>Share</ThemedText>
             </GlassButton>
@@ -117,7 +117,7 @@ export function SettingsReferral({
                 marginBottom: 12,
               },
             ]}
-            data-testid="text-referral-stats"
+            testID="text-referral-stats"
           >
             <View style={styles.settingInfo}>
               <Feather name="users" size={18} color={theme.textSecondary} />
@@ -143,7 +143,7 @@ export function SettingsReferral({
                 padding: 12,
               },
             ]}
-            data-testid="text-referral-credits"
+            testID="text-referral-credits"
           >
             <View style={styles.settingInfo}>
               <Feather name="star" size={18} color={AppColors.primary} />

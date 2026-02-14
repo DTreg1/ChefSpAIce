@@ -1045,7 +1045,7 @@ export default function SettingsScreen() {
                       borderRadius: BorderRadius.md,
                     },
                   ]}
-                  data-testid={`button-settings-category-${cat.key}`}
+                  testID={`button-settings-category-${cat.key}`}
                 >
                   <Feather
                     name={cat.icon}
@@ -1133,7 +1133,7 @@ export default function SettingsScreen() {
                 onChangeText={setNewStorageAreaName}
                 autoFocus
                 onSubmitEditing={handleConfirmAddStorageArea}
-                data-testid="input-new-storage-area"
+                testID="input-new-storage-area"
                 accessibilityLabel="Enter new storage area name"
                 accessibilityRole="text"
               />
@@ -1144,7 +1144,7 @@ export default function SettingsScreen() {
                     addStorageStyles.button,
                     { backgroundColor: theme.backgroundSecondary },
                   ]}
-                  data-testid="button-cancel-add-storage"
+                  testID="button-cancel-add-storage"
                   accessibilityRole="button"
                   accessibilityLabel="Cancel add storage area"
                 >
@@ -1160,7 +1160,7 @@ export default function SettingsScreen() {
                     },
                   ]}
                   disabled={!newStorageAreaName.trim()}
-                  data-testid="button-confirm-add-storage"
+                  testID="button-confirm-add-storage"
                   accessibilityRole="button"
                   accessibilityLabel="Add storage area"
                   accessibilityState={{ disabled: !newStorageAreaName.trim() }}
@@ -1403,7 +1403,7 @@ export default function SettingsScreen() {
               onChangeText={setNewStorageAreaName}
               autoFocus
               onSubmitEditing={handleConfirmAddStorageArea}
-              data-testid="input-new-storage-area"
+              testID="input-new-storage-area"
               accessibilityLabel="Enter new storage area name"
               accessibilityRole="text"
             />
@@ -1414,7 +1414,7 @@ export default function SettingsScreen() {
                   addStorageStyles.button,
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
-                data-testid="button-cancel-add-storage"
+                testID="button-cancel-add-storage"
                 accessibilityRole="button"
                 accessibilityLabel="Cancel add storage area"
               >
@@ -1430,7 +1430,7 @@ export default function SettingsScreen() {
                   },
                 ]}
                 disabled={!newStorageAreaName.trim()}
-                data-testid="button-confirm-add-storage"
+                testID="button-confirm-add-storage"
                 accessibilityRole="button"
                 accessibilityLabel="Add storage area"
                 accessibilityState={{ disabled: !newStorageAreaName.trim() }}

@@ -21,7 +21,7 @@ export function WelcomeStep({ theme, onNext }: WelcomeStepProps) {
       entering={SlideInRight.duration(300)}
       exiting={SlideOutLeft.duration(200)}
       style={styles.stepContainer}
-      data-testid="onboarding-welcome-step"
+      testID="onboarding-welcome-step"
     >
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: Spacing.xl }}>
         <View
@@ -68,7 +68,7 @@ export function WelcomeStep({ theme, onNext }: WelcomeStepProps) {
           onPress={onNext}
           variant="primary"
           style={{ width: "100%" }}
-          data-testid="button-get-started"
+          testID="button-get-started"
         >
           Get Started
         </GlassButton>

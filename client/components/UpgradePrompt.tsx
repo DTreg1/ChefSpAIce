@@ -40,14 +40,14 @@ export function UpgradePrompt({
   const priceInfo = `$${annualMonthly}/mo (billed annually at $${ANNUAL_PRICE.toFixed(2)}/yr) or $${MONTHLY_PRICE.toFixed(2)}/mo`;
 
   return (
-    <View style={styles.overlay} data-testid="upgrade-prompt-overlay">
+    <View style={styles.overlay} testID="upgrade-prompt-overlay">
       <GlassCard style={styles.card} testID="upgrade-prompt-card">
         <Pressable
           style={styles.closeButton}
           onPress={onDismiss}
           accessibilityLabel="Close upgrade prompt"
           accessibilityRole="button"
-          data-testid="button-dismiss-upgrade"
+          testID="button-dismiss-upgrade"
         >
           <Feather name="x" size={22} color={theme.textSecondary} />
         </Pressable>
@@ -57,15 +57,15 @@ export function UpgradePrompt({
             <Feather name={iconName} size={32} color={AppColors.primary} />
           </View>
 
-          <ThemedText type="h3" style={styles.title} data-testid="text-upgrade-title">
+          <ThemedText type="h3" style={styles.title} testID="text-upgrade-title">
             {title}
           </ThemedText>
 
-          <ThemedText type="body" style={[styles.message, { color: theme.textSecondary }]} data-testid="text-upgrade-message">
+          <ThemedText type="body" style={[styles.message, { color: theme.textSecondary }]} testID="text-upgrade-message">
             {message}
           </ThemedText>
 
-          <ThemedText type="caption" style={[styles.priceInfo, { color: theme.textSecondary }]} data-testid="text-upgrade-price">
+          <ThemedText type="caption" style={[styles.priceInfo, { color: theme.textSecondary }]} testID="text-upgrade-price">
             {priceInfo}
           </ThemedText>
 
@@ -84,7 +84,7 @@ export function UpgradePrompt({
             style={styles.laterButton}
             accessibilityLabel="Maybe Later"
             accessibilityRole="button"
-            data-testid="button-maybe-later"
+            testID="button-maybe-later"
           >
             <ThemedText type="small" style={{ color: theme.textSecondary }}>
               Maybe Later
@@ -111,7 +111,7 @@ export function UsageBadge({ label, used, max }: UsageBadgeProps) {
   return (
     <View
       style={[styles.badge, { backgroundColor: `${AppColors.primary}15` }]}
-      data-testid={`badge-usage-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      testID={`badge-usage-${label.toLowerCase().replace(/\s+/g, "-")}`}
     >
       <ThemedText type="caption" style={{ color: theme.textSecondary }}>
         {displayText}

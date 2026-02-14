@@ -425,7 +425,7 @@ export function VoiceQuickAction() {
           onPressIn={handleFabPressIn}
           onPressOut={handleFabPressOut}
           style={[styles.fabWrapper, fabAnimatedStyle]}
-          data-testid="button-voice-quick-action"
+          testID="button-voice-quick-action"
           accessibilityRole="button"
           accessibilityLabel="Quick voice command"
         >
@@ -442,7 +442,7 @@ export function VoiceQuickAction() {
           <Pressable
             style={styles.overlayBackground}
             onPress={handleCancel}
-            data-testid="button-voice-overlay-dismiss"
+            testID="button-voice-overlay-dismiss"
             accessibilityRole="button"
             accessibilityLabel="Dismiss voice overlay"
           />
@@ -450,7 +450,7 @@ export function VoiceQuickAction() {
           <Pressable
             style={styles.cancelButton}
             onPress={handleCancel}
-            data-testid="button-voice-cancel"
+            testID="button-voice-cancel"
             accessibilityRole="button"
             accessibilityLabel="Cancel"
           >
@@ -506,7 +506,7 @@ export function VoiceQuickAction() {
                 ]}
                 onPress={handleMicPress}
                 disabled={voiceState === "processing" || voiceState === "speaking"}
-                data-testid="button-voice-mic-overlay"
+                testID="button-voice-mic-overlay"
                 accessibilityRole="button"
                 accessibilityLabel={statusText}
                 accessibilityState={{ disabled: voiceState === "processing" || voiceState === "speaking" }}

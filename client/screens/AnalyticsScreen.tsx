@@ -291,14 +291,14 @@ export default function AnalyticsScreen() {
         {renderScoreGauge(wasteSummary?.currentPeriod.wasteScore ?? wasteReductionScore)}
 
         {wasteSummary && wasteSummary.trends.length > 0 ? (
-          <GlassCard style={styles.section} data-testid="section-weekly-trends" accessibilityRole="summary" accessibilityLabel="Weekly waste reduction trends">
+          <GlassCard style={styles.section} testID="section-weekly-trends" accessibilityRole="summary" accessibilityLabel="Weekly waste reduction trends">
             <ThemedText type="h4" style={styles.sectionTitle}>
               Weekly Trends
             </ThemedText>
             <ThemedText type="caption" style={styles.sectionSubtitle}>
               Waste reduction score over time
             </ThemedText>
-            <View style={styles.trendChart} data-testid="chart-waste-trends">
+            <View style={styles.trendChart} testID="chart-waste-trends">
               {wasteSummary.trends.slice(-8).map((t, i) => {
                 const barHeight = Math.max(4, (t.wasteScore / 100) * 80);
                 const barColor = t.wasteScore >= 80
@@ -325,11 +325,11 @@ export default function AnalyticsScreen() {
         ) : null}
 
         {wasteSummary && wasteSummary.streak.currentStreak > 0 ? (
-          <GlassCard style={styles.section} data-testid="section-streak">
+          <GlassCard style={styles.section} testID="section-streak">
             <View style={styles.streakHeader} accessibilityLabel={`${wasteSummary.streak.currentStreak} week streak of consecutive weeks with 80 or higher waste score`}>
               <Feather name="zap" size={24} color={AppColors.warning} />
               <View>
-                <ThemedText type="h4" data-testid="text-streak-count">
+                <ThemedText type="h4" testID="text-streak-count">
                   {wasteSummary.streak.currentStreak} Week Streak
                 </ThemedText>
                 <ThemedText type="caption">
@@ -340,7 +340,7 @@ export default function AnalyticsScreen() {
             {wasteSummary.streak.longestStreak > wasteSummary.streak.currentStreak ? (
               <View style={[styles.longestStreakBadge, { backgroundColor: `${AppColors.secondary}15` }]}>
                 <Feather name="award" size={14} color={AppColors.secondary} />
-                <ThemedText type="small" style={{ color: AppColors.secondary }} data-testid="text-longest-streak">
+                <ThemedText type="small" style={{ color: AppColors.secondary }} testID="text-longest-streak">
                   Best: {wasteSummary.streak.longestStreak} weeks
                 </ThemedText>
               </View>

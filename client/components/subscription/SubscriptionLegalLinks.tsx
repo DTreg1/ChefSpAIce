@@ -40,7 +40,7 @@ export function SubscriptionLegalLinks({
       <View style={styles.legalLinksContainer}>
         <Pressable
           onPress={onOpenPrivacyPolicy}
-          data-testid={privacyTestId}
+          testID={privacyTestId}
           {...webAccessibilityProps(onOpenPrivacyPolicy)}
           accessibilityRole="button"
           accessibilityLabel="View privacy policy"
@@ -58,7 +58,7 @@ export function SubscriptionLegalLinks({
         </ThemedText>
         <Pressable
           onPress={onOpenTermsOfUse}
-          data-testid={termsTestId}
+          testID={termsTestId}
           {...webAccessibilityProps(onOpenTermsOfUse)}
           accessibilityRole="button"
           accessibilityLabel="View terms of use"
@@ -84,7 +84,7 @@ export function SubscriptionLegalLinks({
                   Linking.openURL(GOOGLE_PLAY_TERMS_URL);
                 }
               }}
-              data-testid={eulaTestId}
+              testID={eulaTestId}
               {...webAccessibilityProps(() => {
                 if (Platform.OS === "ios") {
                   Linking.openURL(APPLE_EULA_URL);

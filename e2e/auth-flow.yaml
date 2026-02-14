@@ -11,21 +11,19 @@ name: Authentication Flow
     text: "Create Account"
 
 - tapOn:
-    text: "Email"
+    id: "input-email"
 - inputText: "${output.TEST_EMAIL}"
 
 - tapOn:
-    text: "Password"
-    index: 0
+    id: "input-password"
 - inputText: "TestP@ssw0rd123!"
 
 - tapOn:
-    text: "Confirm Password"
+    id: "input-confirm-password"
 - inputText: "TestP@ssw0rd123!"
 
 - tapOn:
-    text: "Create Account"
-    index: 0
+    id: "button-auth-submit"
 
 - extendedWaitUntil:
     visible:

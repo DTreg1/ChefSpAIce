@@ -754,7 +754,7 @@ export default function SubscriptionScreen() {
             onPress={handleRestorePurchases}
             disabled={isRestoring}
             style={[styles.refreshButton, { borderColor: theme.border }]}
-            data-testid="button-restore-purchases"
+            testID="button-restore-purchases"
             {...webAccessibilityProps(handleRestorePurchases)}
             accessibilityRole="button"
             accessibilityLabel="Restore purchases"
@@ -787,7 +787,7 @@ export default function SubscriptionScreen() {
           <Pressable
             onPress={refetch}
             style={[styles.refreshButton, { borderColor: theme.border }]}
-            data-testid="button-refresh-subscription"
+            testID="button-refresh-subscription"
             {...webAccessibilityProps(refetch)}
             accessibilityRole="button"
             accessibilityLabel="Refresh subscription status"

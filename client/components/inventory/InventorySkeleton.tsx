@@ -69,7 +69,7 @@ function InventorySectionSkeleton() {
 
 export function InventorySkeleton({ sectionCount = 3 }: { sectionCount?: number }) {
   return (
-    <View style={styles.inventoryList} data-testid="skeleton-inventory">
+    <View style={styles.inventoryList} testID="skeleton-inventory">
       {Array.from({ length: sectionCount }).map((_, i) => (
         <InventorySectionSkeleton key={i} />
       ))}

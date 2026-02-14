@@ -116,7 +116,7 @@ export function SettingsInstacart({
             styles.preferredRetailer,
             { borderColor: AppColors.primary },
           ]}
-          data-testid="container-preferred-retailer"
+          testID="container-preferred-retailer"
         >
           <View style={styles.retailerInfo}>
             {preferences.preferredRetailerLogo ? (
@@ -126,7 +126,7 @@ export function SettingsInstacart({
                 contentFit="contain"
                 cachePolicy="memory-disk"
                 transition={200}
-                data-testid="img-preferred-retailer-logo"
+                testID="img-preferred-retailer-logo"
                 accessibilityLabel={`${preferences.preferredRetailerName || 'Preferred retailer'} logo`}
               />
             ) : (
@@ -154,7 +154,7 @@ export function SettingsInstacart({
           <Pressable
             onPress={handleClearRetailer}
             style={styles.clearButton}
-            data-testid="button-clear-retailer"
+            testID="button-clear-retailer"
             accessibilityRole="button"
             accessibilityLabel="Clear preferred retailer"
           >
@@ -185,7 +185,7 @@ export function SettingsInstacart({
                     : "transparent",
               },
             ]}
-            data-testid={`button-country-${code}`}
+            testID={`button-country-${code}`}
             accessibilityRole="button"
             accessibilityLabel={`Select ${code === "US" ? "United States" : "Canada"}`}
             accessibilityState={{ selected: countryCode === code }}
@@ -219,7 +219,7 @@ export function SettingsInstacart({
           placeholder={countryCode === "US" ? "Enter zip code" : "Enter postal code"}
           placeholderTextColor={theme.textSecondary}
           keyboardType="default"
-          data-testid="input-postal-code"
+          testID="input-postal-code"
         />
         <Pressable
           onPress={handleFindStores}
@@ -232,7 +232,7 @@ export function SettingsInstacart({
                 : theme.backgroundSecondary,
             },
           ]}
-          data-testid="button-find-stores"
+          testID="button-find-stores"
           accessibilityRole="button"
           accessibilityLabel="Find nearby stores"
           accessibilityState={{ disabled: isLoading || !postalCode.trim() }}
@@ -253,7 +253,7 @@ export function SettingsInstacart({
       </View>
 
       {error ? (
-        <View style={styles.errorContainer} data-testid="text-retailer-error">
+        <View style={styles.errorContainer} testID="text-retailer-error">
           <Feather name="alert-circle" size={16} color={AppColors.error} />
           <ThemedText type="small" style={{ color: AppColors.error }}>
             {error}
@@ -265,7 +265,7 @@ export function SettingsInstacart({
         <ThemedText
           type="caption"
           style={styles.noResults}
-          data-testid="text-no-retailers"
+          testID="text-no-retailers"
         >
           No retailers found for this area
         </ThemedText>
@@ -275,7 +275,7 @@ export function SettingsInstacart({
         <ScrollView
           style={styles.retailerList}
           nestedScrollEnabled
-          data-testid="list-retailers"
+          testID="list-retailers"
         >
           {retailers.map((retailer) => {
             const isSelected =
@@ -295,7 +295,7 @@ export function SettingsInstacart({
                       : "transparent",
                   },
                 ]}
-                data-testid={`button-retailer-${retailer.retailer_key}`}
+                testID={`button-retailer-${retailer.retailer_key}`}
                 accessibilityRole="button"
                 accessibilityLabel={`Select ${retailer.name} as preferred retailer${isSelected ? ', currently selected' : ''}`}
                 accessibilityState={{ selected: isSelected }}
@@ -307,7 +307,7 @@ export function SettingsInstacart({
                     contentFit="contain"
                     cachePolicy="memory-disk"
                     transition={200}
-                    data-testid={`img-retailer-logo-${retailer.retailer_key}`}
+                    testID={`img-retailer-logo-${retailer.retailer_key}`}
                     accessibilityLabel={`${retailer.name} logo`}
                   />
                 ) : (

@@ -24,7 +24,7 @@ export function SettingsLegalSupport({
       <Pressable
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => navigation.navigate("PrivacyPolicy")}
-        data-testid="button-privacy-policy"
+        testID="button-privacy-policy"
         accessibilityRole="button"
         accessibilityLabel="View privacy policy"
       >
@@ -45,7 +45,7 @@ export function SettingsLegalSupport({
       <Pressable
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => navigation.navigate("TermsOfService")}
-        data-testid="button-terms-of-service"
+        testID="button-terms-of-service"
         accessibilityRole="button"
         accessibilityLabel="View terms of service"
       >
@@ -66,7 +66,7 @@ export function SettingsLegalSupport({
       <Pressable
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => Linking.openURL("https://chefspaice.com/support")}
-        data-testid="button-support"
+        testID="button-support"
         accessibilityRole="button"
         accessibilityLabel="Open help and support"
       >
@@ -86,7 +86,7 @@ export function SettingsLegalSupport({
 
       <View
         style={[styles.retentionInfo, { borderColor: theme.glass.border }]}
-        data-testid="info-data-retention"
+        testID="info-data-retention"
       >
         <View style={styles.legalMenuIcon}>
           <Feather name="clock" size={18} color={theme.textSecondary} />

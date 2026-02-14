@@ -24,7 +24,7 @@ export function SettingsIntegrations({
       <Pressable
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => navigation.navigate("SiriShortcutsGuide")}
-        data-testid="button-siri-shortcuts"
+        testID="button-siri-shortcuts"
         accessibilityRole="button"
         accessibilityLabel="Set up Siri shortcuts"
       >

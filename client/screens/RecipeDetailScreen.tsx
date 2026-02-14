@@ -544,7 +544,6 @@ export default function RecipeDetailScreen() {
             onPress={handleShare}
             style={styles.shareButton}
             testID="button-share-recipe"
-            data-testid="button-share-recipe"
             accessibilityRole="button"
             accessibilityLabel="Share this recipe"
           >

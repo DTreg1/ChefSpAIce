@@ -300,7 +300,7 @@ export function ChatModal() {
             ]}
             onPress={() => setIsVoiceMode(false)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            data-testid="button-mode-text"
+            testID="button-mode-text"
             accessibilityRole="button"
             accessibilityLabel="Switch to text mode"
           >
@@ -328,7 +328,7 @@ export function ChatModal() {
               },
             ]}
             placeholder="Type a message..."
-            data-testid="input-chat-message"
+            testID="input-chat-message"
             placeholderTextColor={theme.textSecondary}
             value={inputText}
             onChangeText={setInputText}
@@ -349,7 +349,7 @@ export function ChatModal() {
             ]}
             onPress={() => setIsVoiceMode(true)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            data-testid="button-mode-voice"
+            testID="button-mode-voice"
             accessibilityRole="button"
             accessibilityLabel="Switch to voice mode"
           >
@@ -368,7 +368,7 @@ export function ChatModal() {
             onPress={handleSend}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             disabled={!inputText.trim() || sending}
-            data-testid="button-chat-send"
+            testID="button-chat-send"
             accessibilityRole="button"
             accessibilityLabel={sending ? "Sending message" : "Send message"}
             accessibilityState={{ disabled: !inputText.trim() || sending }}

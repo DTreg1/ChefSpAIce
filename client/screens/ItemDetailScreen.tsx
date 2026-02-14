@@ -300,7 +300,7 @@ export default function ItemDetailScreen() {
                   type="body"
                   style={{ color: theme.text }}
                   numberOfLines={1}
-                  data-testid="text-item-brand"
+                  testID="text-item-brand"
                 >
                   {item.brand}
                 </ThemedText>
@@ -329,7 +329,7 @@ export default function ItemDetailScreen() {
                     type="body"
                     style={{ color: theme.text }}
                     numberOfLines={1}
-                    data-testid="text-item-barcode"
+                    testID="text-item-barcode"
                   >
                     {item.barcode}
                   </ThemedText>
