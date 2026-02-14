@@ -68,34 +68,17 @@ Test by verifying:
 
 ## 3. Large File Extraction (Code Quality)
 
-**Source:** `09-code-quality.md` — File Size & Complexity graded B-
-**Impact:** 13 files exceed 1,000 lines. The largest, `OnboardingScreen.tsx` at 3,153 lines, is difficult to maintain, review, and test. Other oversized files include `chat-actions.ts` (1,720 lines), `AddItemScreen.tsx` (1,435 lines), `storage.ts` (1,433 lines), and `ChatModal.tsx` (1,415 lines).
+**Source:** `09-code-quality.md` — File Size & Complexity graded B
+**Impact:** 10 non-data files still exceed 1,000 lines. Four large files were already successfully split (OnboardingScreen 3,153→499, ChatModal 1,426→~550, AuthContext 972→538, sync-manager 1,073→774). The remaining oversized files are: `chat-actions.ts` (1,720), `SettingsScreen.tsx` (1,537), `AddItemScreen.tsx` (1,449), `storage.ts` (1,385), `recipeGenerationService.ts` (1,359), `ProfileScreen.tsx` (1,150), `AddFoodBatchScreen.tsx` (1,120), `RecipesScreen.tsx` (1,103), `ReceiptScanScreen.tsx` (1,080), `SubscriptionScreen.tsx` (1,037).
 
 <details>
 <summary>Prompt</summary>
 
 ```
-Split the following oversized files into smaller modules. Target: no non-data file should exceed 800 lines.
-
-### OnboardingScreen.tsx (3,153 lines → target ~500 lines)
-File: client/screens/OnboardingScreen.tsx
-
-1. Extract each onboarding step into its own component in `client/components/onboarding/`:
-   - WelcomeStep.tsx
-   - DietaryPreferencesStep.tsx
-   - CookingSkillStep.tsx
-   - AllergiesStep.tsx
-   - HouseholdSizeStep.tsx
-   - GoalsStep.tsx
-   - NotificationPermissionStep.tsx
-   - CompletionStep.tsx
-   (Check which steps actually exist — names above are examples)
-2. Extract shared step logic (navigation, validation, progress tracking) into a `useOnboardingFlow` hook in `client/hooks/useOnboardingFlow.ts`.
-3. Extract step animations into `client/components/onboarding/StepTransition.tsx`.
-4. The main OnboardingScreen.tsx should only orchestrate steps and contain the step array/router logic.
+Split the following oversized files into smaller modules. Target: no non-data file should exceed 800 lines. Four large files were already split in a prior session (OnboardingScreen, ChatModal, AuthContext, sync-manager) — do NOT touch those.
 
 ### chat-actions.ts (1,720 lines → target ~400 lines per file)
-File: server/services/chat-actions.ts (or wherever this file lives)
+File: server/lib/chat-actions.ts
 
 1. Group related AI chat actions by domain:
    - `chat-actions-inventory.ts` — inventory lookup, expiry check, add/remove items
@@ -105,7 +88,18 @@ File: server/services/chat-actions.ts (or wherever this file lives)
 2. Create an `index.ts` that re-exports all action handlers as a unified registry.
 3. Each domain file should export a map of `{ actionName: handlerFunction }`.
 
-### AddItemScreen.tsx (1,435 lines → target ~500 lines)
+### SettingsScreen.tsx (1,537 lines → target ~500 lines)
+File: client/screens/SettingsScreen.tsx
+
+1. Extract each settings section into its own component in `client/components/settings/`:
+   - AccountSettings.tsx — profile, email, password
+   - PreferenceSettings.tsx — dietary, units, cooking skill
+   - NotificationSettings.tsx — push notification toggles
+   - AppSettings.tsx — theme, data export, cache
+   - AboutSection.tsx — version, licenses, support
+2. The main SettingsScreen.tsx should only render the section list and route to detail views.
+
+### AddItemScreen.tsx (1,449 lines → target ~500 lines)
 File: client/screens/AddItemScreen.tsx
 
 1. Extract the form sections into separate components:
@@ -115,6 +109,26 @@ File: client/screens/AddItemScreen.tsx
    - `LocationSelector.tsx` — storage location picker
    - `ShelfLifeSuggestion.tsx` — shelf life suggestion banner
 2. Extract form validation and submission logic into `useAddItemForm` hook.
+
+### storage.ts (1,385 lines → target ~500 lines)
+File: client/lib/storage.ts
+
+1. Split by data domain:
+   - `storage-inventory.ts` — inventory CRUD operations
+   - `storage-recipes.ts` — recipe CRUD operations
+   - `storage-mealplan.ts` — meal plan CRUD operations
+   - `storage-shopping.ts` — shopping list CRUD operations
+   - `storage-core.ts` — base storage class, initialization, migration
+2. Re-export everything from a new `storage/index.ts`.
+
+### ProfileScreen.tsx (1,150 lines → target ~500 lines)
+File: client/screens/ProfileScreen.tsx
+
+1. Extract profile sections into components:
+   - `ProfileHeader.tsx` — avatar, name, email display
+   - `SubscriptionCard.tsx` — subscription status, plan info, upgrade CTA
+   - `StatsSection.tsx` — usage statistics, streaks
+   - `AccountActions.tsx` — logout, delete account, export data
 
 For all extractions:
 - Preserve all existing props, types, and accessibility attributes.

@@ -43,22 +43,29 @@
 
 ---
 
-### 3. File Size & Complexity (B-)
+### 3. File Size & Complexity (B)
 
 **Strengths:**
-- Schema file is large (1,494 lines) but justified — single source of truth for all data models with thorough JSDoc
+- Schema file is large (1,642 lines) but justified — single source of truth for all data models with thorough JSDoc
 - `shelf-life-data.ts` (1,108 lines) is a data file, not logic — acceptable
+- **[REMEDIATED] OnboardingScreen split**: Previously 3,153 lines, now 499 lines. Extracted into 8 files in `client/components/onboarding/` (WelcomeStep, PreferencesStep, FoodsStep, CookwareStep, StorageStep, CompleteStep, onboarding-data, index).
+- **[REMEDIATED] ChatModal split**: Previously 1,426 lines, now extracted into 5 files in `client/components/chat/` (ChatMessageItem, VoiceModeView, TipBanner, index) + `client/hooks/useChatMessages.ts`.
+- **[REMEDIATED] AuthContext split**: Previously 972 lines, now 538 lines with `client/lib/auth-api.ts` and `client/lib/auth-storage.ts` extracted.
+- **[REMEDIATED] sync-manager split**: Previously 1,073 lines, now 774 lines with `client/lib/sync-types.ts` and `client/lib/sync-conflicts.ts` extracted.
 
-**Weaknesses:**
-- **13 files exceed 1,000 lines** (excluding tests and data files):
-  - `OnboardingScreen.tsx` — **3,153 lines** (should be split into step components)
-  - `chat-actions.ts` — **1,720 lines** (server-side AI actions monolith)
-  - `AddItemScreen.tsx` — **1,435 lines**
-  - `storage.ts` (client) — **1,433 lines**
-  - `ChatModal.tsx` — **1,415 lines**
-  - And additional large files
+**Remaining large files (>1,000 lines, excluding data/schema):**
+- `chat-actions.ts` — **1,720 lines** (server-side AI actions — could be split by domain)
+- `SettingsScreen.tsx` — **1,537 lines**
+- `AddItemScreen.tsx` — **1,449 lines**
+- `storage.ts` (client) — **1,385 lines**
+- `recipeGenerationService.ts` — **1,359 lines**
+- `ProfileScreen.tsx` — **1,150 lines**
+- `AddFoodBatchScreen.tsx` — **1,120 lines**
+- `RecipesScreen.tsx` — **1,103 lines**
+- `ReceiptScanScreen.tsx` — **1,080 lines**
+- `SubscriptionScreen.tsx` — **1,037 lines**
 
-**Score Justification:** Too many oversized files. The codebase has 20+ files over 800 lines.
+**Score Justification:** 10 non-data files still exceed 1,000 lines (down from 13+). The largest files were successfully split, but several screens remain oversized.
 
 ---
 
@@ -137,7 +144,7 @@
 |---|---|---|---|
 | Type Safety | A- | 15% | Strict TS, `any` reduced from 227 to 97 |
 | Code Organization | A- | 20% | Good DDD + services, centralized API client |
-| File Size & Complexity | B- | 15% | 13 files >1,000 lines, OnboardingScreen at 3,153 |
+| File Size & Complexity | B | 15% | 10 files >1,000 lines (down from 13+); OnboardingScreen, ChatModal, AuthContext, sync-manager split |
 | Testing | A- | 20% | 45+ tests + 4 integration test suites |
 | Code Hygiene | A- | 15% | Zero TODOs, structured logging, API client |
 | Input Validation | A- | 10% | Zod middleware applied broadly |
@@ -153,10 +160,14 @@
 | 2 | Centralize client HTTP calls | **Done** (apiClient in api-client.ts) |
 | 3 | Add integration tests for critical server flows | **Done** (4 test suites) |
 | 4 | Add Zod validation to remaining route handlers | **Done** (validateBody middleware) |
+| 5 | Split OnboardingScreen.tsx (3,153 → 499 lines) | **Done** (8 files in components/onboarding/) |
+| 6 | Split ChatModal.tsx (1,426 → ~550 lines) | **Done** (5 files in components/chat/) |
+| 7 | Split AuthContext.tsx (972 → 538 lines) | **Done** (auth-api.ts, auth-storage.ts extracted) |
+| 8 | Split sync-manager.ts (1,073 → 774 lines) | **Done** (sync-types.ts, sync-conflicts.ts extracted) |
 
 ## Remaining Items
 
-- Extract OnboardingScreen.tsx (3,153 lines) and other oversized files into smaller modules.
+- Split remaining 10 files over 1,000 lines (chat-actions.ts, SettingsScreen, AddItemScreen, etc.).
 - Clean up remaining unused dependencies (run Knip analysis).
 - Further reduce `any` count from 97 toward zero — focus on web compatibility workarounds.
 - Move remaining business logic from fat routers to service modules.
