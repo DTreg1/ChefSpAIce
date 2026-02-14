@@ -82,6 +82,7 @@ import {
 } from "@/contexts/OnboardingContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
+import { NetworkStatusProvider } from "@/hooks/useNetworkStatus";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { VoiceQuickAction } from "@/components/VoiceQuickAction";
@@ -292,15 +293,17 @@ function RootWrapper() {
     <ThemeProvider>
       <GestureHandlerRootView>
         <KeyboardProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <OnboardingProvider>
-                <SearchProvider>
-                  <MobileAppContent />
-                </SearchProvider>
-              </OnboardingProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
+          <NetworkStatusProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <OnboardingProvider>
+                  <SearchProvider>
+                    <MobileAppContent />
+                  </SearchProvider>
+                </OnboardingProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </NetworkStatusProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
     </ThemeProvider>

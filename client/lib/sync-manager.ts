@@ -135,6 +135,20 @@ class SyncManager {
     }
   }
 
+  setNetworkStatus(isConnected: boolean) {
+    const wasOffline = !this.isOnline;
+    this.isOnline = isConnected;
+
+    if (wasOffline && isConnected) {
+      logger.log("[Sync] Network status set to online via NetInfo, processing sync queue");
+      this.processSyncQueue();
+    } else if (!wasOffline && !isConnected) {
+      logger.log("[Sync] Network status set to offline via NetInfo");
+    }
+
+    this.notifyListeners();
+  }
+
   subscribe(listener: SyncListener): () => void {
     this.listeners.add(listener);
     this.getState().then(listener);

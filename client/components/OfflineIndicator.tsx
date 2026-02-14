@@ -12,7 +12,8 @@ import Animated, {
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
-import { syncManager, SyncState } from "@/lib/sync-manager";
+import { syncManager } from "@/lib/sync-manager";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
@@ -21,7 +22,8 @@ const DISMISS_REAPPEAR_MS = 60_000;
 export function OfflineIndicator() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const [syncState, setSyncState] = useState<SyncState | null>(null);
+  const { isConnected } = useNetworkStatus();
+  const [pendingChanges, setPendingChanges] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const translateY = useSharedValue(-100);
@@ -29,13 +31,13 @@ export function OfflineIndicator() {
 
   useEffect(() => {
     const unsubscribe = syncManager.subscribe((state) => {
-      setSyncState(state);
+      setPendingChanges(state.pendingChanges);
     });
     return unsubscribe;
   }, []);
 
-  const isOffline = syncState ? !syncState.isOnline : false;
-  const hasPending = syncState ? syncState.pendingChanges > 0 : false;
+  const isOffline = !isConnected;
+  const hasPending = pendingChanges > 0;
 
   useEffect(() => {
     if (!isOffline) {
@@ -88,11 +90,9 @@ export function OfflineIndicator() {
     ),
   }));
 
-  if (!syncState) return null;
-
   const getMessage = () => {
     if (isOffline && hasPending) {
-      return `You're offline \u2022 ${syncState.pendingChanges} change${syncState.pendingChanges > 1 ? "s" : ""} pending`;
+      return `You're offline \u2022 ${pendingChanges} change${pendingChanges > 1 ? "s" : ""} pending`;
     }
     if (isOffline) {
       return "You're offline";
