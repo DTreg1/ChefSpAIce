@@ -35,9 +35,8 @@
 ## Remediation Progress
 
 **Total remediation items tracked:** 52
-**Completed:** 44 (85%)
-**Partially done:** 2 (4%)
-**Remaining:** 6 (12%)
+**Completed:** 50 (96%)
+**Remaining:** 2 (4%)
 
 ### Key Improvements Since Initial Review
 1. **Security hardened**: CSRF/encryption key startup validation, Content-Type enforcement, per-account lockout, Zod validation middleware
@@ -51,11 +50,15 @@
 8. **Monetization**: Retention offer deduplication, corrected MRR calculations
 
 ### Remaining Priority Items
-1. **Image alt text** — ~20 images lack accessibility annotations (Accessibility)
-2. **Import transaction safety** — Replace-mode import not wrapped in DB transaction (Data Management)
-3. **Large file extraction** — 10 files still over 1,000 lines; OnboardingScreen/ChatModal/AuthContext/sync-manager already split (Code Quality)
-4. **Tablet layouts** — No master-detail patterns, no iPad split-view (Mobile)
-5. **Winback Stripe coupon** — Notification sent but discount application not fully automated (Monetization)
-6. **Focus management in modals** — No focus trapping or restoration (Accessibility)
+1. **Large file extraction** — 10 files still over 1,000 lines (Code Quality)
+2. **Reduce `any` types** — 97 remaining, down from 227 (Code Quality)
+
+### Previously Listed but Now Confirmed Done
+- ~~Image alt text~~ — All Image components now have labels or hidden markers
+- ~~Import transaction safety~~ — Replace mode wrapped in `db.transaction()` at `syncBackupService.ts:403`
+- ~~Tablet layouts~~ — 4 screens have tablet-responsive layouts via `useDeviceType()`
+- ~~Winback Stripe coupon~~ — Full automation: job creates coupons, checkout applies them
+- ~~Focus management in modals~~ — `useFocusTrap` hook used in 8+ screens with `onAccessibilityEscape`
+- ~~SwipeableItemCard haptics~~ — `Haptics.impactAsync(Medium)` fires at swipe threshold
 
 Files are numbered in recommended execution order — start with Security (01), end with Mobile (10).

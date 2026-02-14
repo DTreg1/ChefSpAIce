@@ -160,8 +160,8 @@ The app demonstrates a solid accessibility foundation with 741+ combined accessi
 
 ## Remaining Items
 
-- **Image alt text** remains the weakest area — ~20 images lack accessibility annotation.
-- **Focus management in modals** — no focus trapping, auto-focus on open, or focus restoration on dismiss.
+- ~~**Image alt text** remains the weakest area~~ — **[REMEDIATED]** All files with Image components now have accessibility attributes (labels or hidden markers). ProfileScreen, GrocerySearchScreen, RecipeHero, FloatingChatButton, ImageAnalysisResult, CookwareScreen, FoodCameraScreen, ReceiptScanScreen, SelectRecipeScreen, RecipesScreen all verified.
+- ~~**Focus management in modals**~~ — **[REMEDIATED]** `useFocusTrap` hook at `client/hooks/useFocusTrap.ts` used in 8+ screens with `onAccessibilityEscape` handlers for VoiceOver Z-gesture dismissal.
 - **No skip-navigation links** on web platform.
 - **No `announceForAccessibility()`** calls for transient action confirmations.
 - **Color contrast ratios** not verified against WCAG AA/AAA standards.

@@ -163,12 +163,12 @@ ChefSpAIce has a mature, well-architected monetization stack spanning Stripe (we
 | 1 | Fix free tier definition and enforce feature gating | **Done** (single STANDARD tier model) |
 | 2 | Fix MRR calculation in admin stats | **Done** (correct values in advanced metrics) |
 | 3 | Add retention offer deduplication | **Done** (retentionOffers table + 6-month check) |
-| 4 | Wire winback discount to Stripe | Partially done (notification sent, coupon wiring incomplete) |
+| 4 | Wire winback discount to Stripe | **Done** (winbackJob creates coupons + promotion codes; checkout.ts applies them) |
 | 5 | Increase annual discount and add contextual upsell triggers | Not yet done |
 
 ## Remaining Low-Priority Items
 
-- Winback campaign Stripe coupon creation could be fully automated.
+- ~~Winback campaign Stripe coupon creation could be fully automated.~~ **[REMEDIATED]** — `winbackJob.ts` creates Stripe coupons, promotion codes, stores in `winbackCampaigns` table, and `checkout.ts` applies them at checkout automatically.
 - Annual discount (17%) is below industry standard (20-40%).
 - No contextual upsell triggers when users hit limits.
 - Referral rewards don't sync to Stripe billing cycles.

@@ -157,7 +157,7 @@
 
 ## Remaining Low-Priority Items
 
-- Wrap import replace mode in a transaction for atomicity.
+- ~~Wrap import replace mode in a transaction for atomicity.~~ **[REMEDIATED]** — Replace mode IS wrapped in `db.transaction(async (tx) => {...})` at `syncBackupService.ts:403`.
 - Add timestamp comparison for merge-mode imports.
 - Add import size limits to prevent memory exhaustion.
 - Add object storage to disaster recovery plan.

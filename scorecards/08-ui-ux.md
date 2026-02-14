@@ -177,6 +177,6 @@ The application demonstrates professional-grade UI/UX across visual design, acce
 
 ## Remaining Low-Priority Items
 
-- SwipeableItemCard swipe gesture lacks haptic signal at threshold crossing.
+- ~~SwipeableItemCard swipe gesture lacks haptic signal at threshold crossing.~~ **[REMEDIATED]** — `Haptics.impactAsync(Medium)` fires in `onEnd` when `translationX` exceeds `SWIPE_THRESHOLD` for both swipe directions (lines 143-146).
 - Some hardcoded colors in CustomTabBar and FloatingChatButton bypass the theme system.
 - No visual preview or teaser of locked premium features.

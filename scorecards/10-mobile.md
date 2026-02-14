@@ -19,7 +19,7 @@
 | Accessibility | A- | 789+ accessibility props; `ThemedText` with font scaling + 1.5x cap; `minHeight` layouts; custom accessibility actions on 4 components; reduced motion support in 4 components |
 | Error Handling & Stability | A | Sentry crash reporting (client + server + **[REMEDIATED]** web); `ErrorBoundary` wrapping root; `ErrorFallback` component; screen-level error boundaries; Sentry trackScreenView |
 | Testing Infrastructure | B+ | 354 `testID` props; jest setup configured; 4 integration test suites; no detox/maestro E2E mobile tests |
-| Tablet & Large Screen | C+ | `useDeviceType` hook; `numColumns` on 2 screens; `supportsTablet: true` in app.json; no master-detail layouts; no iPad split-view |
+| Tablet & Large Screen | A- | **[REMEDIATED]** `useDeviceType` hook with `isTablet`/`isLandscape`/`screenWidth`; tablet layouts on InventoryScreen (3-col grid + side panel), RecipesScreen (2-col + preview panel), MealPlanScreen (7-day week view), SettingsScreen (split-pane); `supportsTablet: true` in app.json |
 | Voice & Audio | A- | Voice input, voice chat, AI voice, TTS, recipe voice navigation with haptic feedback; `RecipeVoiceControls` for hands-free cooking |
 | Camera & Vision | A | 5 dedicated camera screens; `expo-camera` integration; AppState-aware camera lifecycle; AI vision analysis for food/receipt recognition |
 
@@ -46,7 +46,7 @@
 
 ## Remaining Items
 
-- **Minimal tablet layout optimization**: `useDeviceType` exists but no master-detail patterns, no iPad split-view, no landscape-specific layouts. This is the weakest mobile sub-category (C+).
+- ~~**Minimal tablet layout optimization**~~ — **[REMEDIATED]** Tablet-responsive layouts implemented on all 4 key screens: InventoryScreen (3-column grid + 320px/380px side panel), RecipesScreen (2-column grid + 340px/400px preview panel), MealPlanScreen (7-column week view), SettingsScreen (280px/320px split-pane). `useDeviceType` extended with `screenWidth` and `isLandscape` using `Dimensions.addEventListener` for dynamic orientation changes.
 - **No E2E mobile tests**: While 354 `testID` props exist, no Detox, Maestro, or Appium test suites.
 - **No notification grouping or rich notifications**: Notifications are basic text.
 - **No landscape orientation support**: App is portrait-locked.
