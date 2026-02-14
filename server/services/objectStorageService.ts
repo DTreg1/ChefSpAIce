@@ -2,7 +2,23 @@ import { Client } from "@replit/object-storage";
 import { logger } from "../lib/logger";
 import { processImageFromBase64, processImage } from "./imageProcessingService";
 
-const storageClient = new Client();
+let storageClient: Client | null = null;
+
+async function getStorageClient(): Promise<Client> {
+  if (!storageClient) {
+    try {
+      storageClient = new Client();
+      logger.info("Object storage client initialized successfully");
+    } catch (error) {
+      logger.error("Failed to initialize object storage client, retrying...", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      storageClient = new Client();
+    }
+  }
+  return storageClient;
+}
 
 const PUBLIC_PREFIX = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split('/').slice(2).join('/') || 'public';
 
@@ -16,16 +32,17 @@ async function uploadProcessedImages(
   displayBuffer: Buffer,
   thumbnailBuffer: Buffer
 ): Promise<UploadedImageUrls> {
+  const client = await getStorageClient();
   const displayPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`;
   const thumbnailPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}-thumb.webp`;
 
-  const displayResult = await storageClient.uploadFromBytes(displayPath, displayBuffer);
+  const displayResult = await client.uploadFromBytes(displayPath, displayBuffer);
   if (!displayResult.ok) {
     logger.error("Display image upload failed", { error: displayResult.error.message });
     throw new Error(`Failed to upload display image: ${displayResult.error.message}`);
   }
 
-  const thumbnailResult = await storageClient.uploadFromBytes(thumbnailPath, thumbnailBuffer);
+  const thumbnailResult = await client.uploadFromBytes(thumbnailPath, thumbnailBuffer);
   let thumbnailUrl: string | null = null;
 
   if (!thumbnailResult.ok) {
@@ -61,6 +78,7 @@ export async function uploadRecipeImageFromBuffer(
 }
 
 export async function deleteRecipeImage(recipeId: string): Promise<void> {
+  const client = await getStorageClient();
   const paths = [
     `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`,
     `${PUBLIC_PREFIX}/recipe-images/${recipeId}-thumb.webp`,
@@ -69,9 +87,9 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
 
   for (const objectPath of paths) {
     try {
-      const existsResult = await storageClient.exists(objectPath);
+      const existsResult = await client.exists(objectPath);
       if (existsResult.ok && existsResult.value) {
-        const deleteResult = await storageClient.delete(objectPath);
+        const deleteResult = await client.delete(objectPath);
         if (deleteResult.ok) {
           logger.info("Deleted recipe image", { recipeId, objectPath });
         } else {
@@ -85,16 +103,17 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
 }
 
 export async function getRecipeImageUrl(recipeId: string): Promise<string | null> {
+  const client = await getStorageClient();
   const webpPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`;
   const jpgPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
 
   try {
-    const webpResult = await storageClient.exists(webpPath);
+    const webpResult = await client.exists(webpPath);
     if (webpResult.ok && webpResult.value) {
       return getPublicUrl(webpPath);
     }
 
-    const jpgResult = await storageClient.exists(jpgPath);
+    const jpgResult = await client.exists(jpgPath);
     if (jpgResult.ok && jpgResult.value) {
       return getPublicUrl(jpgPath);
     }
@@ -106,15 +125,16 @@ export async function getRecipeImageUrl(recipeId: string): Promise<string | null
 }
 
 export async function getRecipeImageUrls(recipeId: string): Promise<UploadedImageUrls | null> {
+  const client = await getStorageClient();
   const webpDisplayPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`;
   const thumbnailPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}-thumb.webp`;
   const jpgPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
 
   try {
-    const webpResult = await storageClient.exists(webpDisplayPath);
+    const webpResult = await client.exists(webpDisplayPath);
     if (webpResult.ok && webpResult.value) {
       let thumbnailUrl: string | null = null;
-      const thumbResult = await storageClient.exists(thumbnailPath);
+      const thumbResult = await client.exists(thumbnailPath);
       if (thumbResult.ok && thumbResult.value) {
         thumbnailUrl = getPublicUrl(thumbnailPath);
       }
@@ -124,7 +144,7 @@ export async function getRecipeImageUrls(recipeId: string): Promise<UploadedImag
       };
     }
 
-    const jpgResult = await storageClient.exists(jpgPath);
+    const jpgResult = await client.exists(jpgPath);
     if (jpgResult.ok && jpgResult.value) {
       return {
         displayUrl: getPublicUrl(jpgPath),
