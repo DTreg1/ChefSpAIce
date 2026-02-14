@@ -31,24 +31,30 @@ import {
   type AnalysisResult,
 } from "../lib/image-analysis-utils";
 
+const testColors = {
+  confidenceHigh: "#22c55e",
+  confidenceMedium: "#eab308",
+  confidenceLow: "#f97316",
+};
+
 describe("ImageAnalysisResult - Confidence Helpers", () => {
   describe("getConfidenceColor", () => {
     it("should return green color for high confidence (>= 0.8)", () => {
-      expect(getConfidenceColor(0.8)).toContain("22c55e");
-      expect(getConfidenceColor(0.9)).toContain("22c55e");
-      expect(getConfidenceColor(1.0)).toContain("22c55e");
+      expect(getConfidenceColor(0.8, testColors)).toContain("22c55e");
+      expect(getConfidenceColor(0.9, testColors)).toContain("22c55e");
+      expect(getConfidenceColor(1.0, testColors)).toContain("22c55e");
     });
 
     it("should return amber color for medium confidence (0.5 - 0.79)", () => {
-      expect(getConfidenceColor(0.5)).toContain("eab308");
-      expect(getConfidenceColor(0.65)).toContain("eab308");
-      expect(getConfidenceColor(0.79)).toContain("eab308");
+      expect(getConfidenceColor(0.5, testColors)).toContain("eab308");
+      expect(getConfidenceColor(0.65, testColors)).toContain("eab308");
+      expect(getConfidenceColor(0.79, testColors)).toContain("eab308");
     });
 
     it("should return orange color for low confidence (< 0.5)", () => {
-      expect(getConfidenceColor(0.49)).toContain("f97316");
-      expect(getConfidenceColor(0.3)).toContain("f97316");
-      expect(getConfidenceColor(0.1)).toContain("f97316");
+      expect(getConfidenceColor(0.49, testColors)).toContain("f97316");
+      expect(getConfidenceColor(0.3, testColors)).toContain("f97316");
+      expect(getConfidenceColor(0.1, testColors)).toContain("f97316");
     });
   });
 
