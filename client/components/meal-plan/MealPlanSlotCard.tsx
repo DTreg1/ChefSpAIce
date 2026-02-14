@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Platform, AccessibilityRole } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { format } from "date-fns";
 
@@ -40,7 +40,7 @@ export function MealPlanSlotCard({
   const { theme } = useTheme();
 
   return (
-    <View style={styles.mealSlot} {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})} accessibilityLabel={`${slot.name}${recipe ? `, ${recipe.title}` : ', empty'}`}>
+    <View style={styles.mealSlot} {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})} accessibilityLabel={`${slot.name}${recipe ? `, ${recipe.title}` : ', empty'}`}>
       <View style={styles.mealHeader}>
         <Feather
           name={slot.icon}

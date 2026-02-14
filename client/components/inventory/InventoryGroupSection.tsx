@@ -1,6 +1,9 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import type { ComponentProps } from "react";
+import { View, StyleSheet, Pressable, Platform, AccessibilityRole } from "react-native";
 import { Feather } from "@expo/vector-icons";
+
+type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -42,7 +45,7 @@ export function InventoryGroupSection({
     <GlassCard
       style={styles.groupCard}
       contentStyle={styles.groupCardContent}
-      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})}
       accessibilityLabel={`${section.title} group, ${section.itemCount} items`}
     >
       <Pressable
@@ -55,7 +58,7 @@ export function InventoryGroupSection({
       >
         <View style={styles.sectionHeaderLeft}>
           <Feather
-            name={section.icon as any}
+            name={section.icon as FeatherIconName}
             size={18}
             color={AppColors.primary}
           />

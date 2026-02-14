@@ -6,6 +6,7 @@ import {
   Alert,
   Platform,
   Pressable,
+  ViewStyle,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         scrollbarWidth: "none",
-      } as any,
+      } as unknown as ViewStyle,
     }),
   },
   listContent: {

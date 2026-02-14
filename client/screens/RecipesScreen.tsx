@@ -44,6 +44,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  AccessibilityRole,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { FlashList } from "@shopify/flash-list";
@@ -356,7 +357,7 @@ export default function RecipesScreen() {
         entering={FadeIn.delay(index * 50)}
         style={styles.cardWrapper}
         data-testid={`card-recipe-${recipe.id}`}
-        {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+        {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})}
         accessibilityLabel={`${recipe.title}, ${getMatchPercentage(recipe)}% ingredient match`}
       >
         <GlassCard

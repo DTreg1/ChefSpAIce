@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import type { ComponentProps } from "react";
 import {
   View,
   StyleSheet,
@@ -11,6 +12,8 @@ import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
+
+type FeatherIconName = ComponentProps<typeof Feather>["name"];
 import * as Haptics from "expo-haptics";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -192,7 +195,7 @@ export default function StorageLocationsScreen() {
                   ]}
                 >
                   <Feather
-                    name={location.icon as any}
+                    name={location.icon as FeatherIconName}
                     size={20}
                     color={AppColors.primary}
                   />
@@ -244,7 +247,7 @@ export default function StorageLocationsScreen() {
                     ]}
                   >
                     <Feather
-                      name={location.icon as any}
+                      name={location.icon as FeatherIconName}
                       size={20}
                       color={AppColors.accent}
                     />
@@ -328,7 +331,7 @@ export default function StorageLocationsScreen() {
                     accessibilityLabel={`Select icon ${icon}`}
                   >
                     <Feather
-                      name={icon as any}
+                      name={icon as FeatherIconName}
                       size={20}
                       color={selectedIcon === icon ? "#FFFFFF" : theme.text}
                     />

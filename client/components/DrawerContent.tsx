@@ -10,7 +10,7 @@ import {
   DrawerContentScrollView,
   DrawerContentComponentProps,
 } from "@react-navigation/drawer";
-import { DrawerActions } from "@react-navigation/native";
+import { DrawerActions, NavigationState } from "@react-navigation/native";
 import type { DrawerNavigation } from "@/lib/types";
 import {
   GlassView,
@@ -132,7 +132,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   } => {
     const tabsRoute = state.routes.find((r) => r.name === "Tabs");
     if (tabsRoute?.state) {
-      const tabState = tabsRoute.state as any;
+      const tabState = tabsRoute.state as NavigationState;
       const tabIndex = tabState.index ?? 0;
       const activeTab =
         tabState.routeNames?.[tabIndex] ||
@@ -140,7 +140,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         "";
       const activeTabRoute = tabState.routes?.[tabIndex];
       if (activeTabRoute?.state) {
-        const stackState = activeTabRoute.state as any;
+        const stackState = activeTabRoute.state as NavigationState;
         const screenIndex = stackState.index ?? 0;
         const activeScreen = stackState.routes?.[screenIndex]?.name || "";
         return { activeTab, activeScreen };

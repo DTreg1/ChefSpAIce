@@ -199,7 +199,7 @@ export default function ScanHubScreen() {
       return;
     }
 
-    navigation.replace(option.screen as any, option.params);
+    navigation.replace(option.screen as never, option.params as never);
   };
 
   return (

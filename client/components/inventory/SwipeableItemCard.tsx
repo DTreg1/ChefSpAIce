@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform, ActionSheetIOS, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Platform, ActionSheetIOS, Alert, AccessibilityRole } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, {
@@ -197,7 +197,7 @@ export function SwipeableItemCard({
       entering={FadeIn}
       exiting={FadeOut}
       style={styles.swipeContainer}
-      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})}
       accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}, expires ${formatDate(item.expirationDate)}`}
     >
       <Pressable

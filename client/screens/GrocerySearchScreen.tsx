@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput,
   Platform,
+  ImageSourcePropType,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,7 +25,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem, generateId } from "@/lib/storage";
 
-const productImages: Record<string, any> = {
+const productImages: Record<string, ImageSourcePropType> = {
   whole_milk_bottle_icon: require("@/assets/food-images/whole_milk_bottle_icon.png"),
   water_bottle_icon: require("@/assets/food-images/water_bottle_icon.png"),
   fresh_strawberries_icon: require("@/assets/food-images/fresh_strawberries_icon.png"),
