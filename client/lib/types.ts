@@ -177,7 +177,7 @@ export interface AuthResponseData {
     email: string;
     displayName?: string;
     avatarUrl?: string;
-    provider?: string;
+    provider?: "password" | "apple" | "google";
     isNewUser?: boolean;
     createdAt: string;
   };
@@ -190,7 +190,7 @@ export interface RestoreSessionData {
     email: string;
     displayName?: string;
     avatarUrl?: string;
-    provider?: string;
+    provider?: "password" | "apple" | "google";
     createdAt: string;
   };
 }

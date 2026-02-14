@@ -61,7 +61,7 @@ export function useAppleWebAuth() {
     {
       clientId: APPLE_CLIENT_ID,
       scopes: ['name', 'email'],
-      responseType: 'code' as AuthSession.ResponseType,
+      responseType: 'code',
       redirectUri,
     },
     appleDiscovery
@@ -173,12 +173,12 @@ export async function appleSignInApi(
         email: string;
         displayName?: string;
         avatarUrl?: string;
-        provider?: string;
+        provider?: "password" | "apple" | "google";
         isNewUser?: boolean;
         createdAt: string;
       };
       token?: string;
-    };
+    } | undefined;
 
     if (isIOS && AppleAuthentication) {
       const credential = await AppleAuthentication.signInAsync({
@@ -211,7 +211,10 @@ export async function appleSignInApi(
         clearTimeout(timeoutId);
 
         const _body: ApiResponseBody<AuthResponseData> = await response.json();
-        data = response.ok ? _body.data : _body;
+        if (response.ok && !_body.data) {
+          return { success: false, error: "Invalid server response. Please try again." };
+        }
+        data = response.ok ? _body.data! : _body;
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
         const fetchErr = fetchError as { name?: string; message?: string };
@@ -264,7 +267,10 @@ export async function appleSignInApi(
         clearTimeout(timeoutId);
 
         const _body: ApiResponseBody<AuthResponseData> = await response.json();
-        data = response.ok ? _body.data : _body;
+        if (response.ok && !_body.data) {
+          return { success: false, error: "Invalid server response. Please try again." };
+        }
+        data = response.ok ? _body.data! : _body;
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
         const fetchErr = fetchError as { name?: string; message?: string };
@@ -403,7 +409,11 @@ export async function googleSignInApi(
       };
     }
 
-    const data = body.data as AuthResponseData;
+    if (!body.data) {
+      return { success: false, error: "Invalid server response. Please try again." };
+    }
+
+    const data = body.data;
 
     if (!data.user || !data.user.id || !data.token) {
       logger.error(

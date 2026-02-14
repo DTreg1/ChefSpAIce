@@ -31,7 +31,6 @@ import {
   type AuthUser,
   type StoredAuthData,
   saveAuthData,
-  loadAuthData,
   clearAuthData,
 } from "@/lib/auth-storage";
 import {

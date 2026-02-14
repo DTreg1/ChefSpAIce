@@ -11,7 +11,7 @@ interface NetworkStatusContextType {
 
 const NetworkStatusContext = createContext<NetworkStatusContextType | undefined>(undefined);
 
-export function NetworkStatusProvider({ children }: { children: React.ReactNode }) {
+export function NetworkStatusProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [isConnected, setIsConnected] = useState(true);
   const [isInternetReachable, setIsInternetReachable] = useState<boolean | null>(null);
   const prevConnectedRef = useRef(true);
