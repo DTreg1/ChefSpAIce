@@ -9,7 +9,6 @@ import {
   type WasteReductionCacheEntry,
 } from "../../lib/waste-reduction-utils";
 import { logger } from "../../lib/logger";
-import { AppError } from "../../middleware/errorHandler";
 import { successResponse } from "../../lib/apiResponse";
 import { withCircuitBreaker } from "../../lib/circuit-breaker";
 import { validateBody } from "../../middleware/validateBody";
