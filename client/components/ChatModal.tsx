@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   useWindowDimensions,
+  BackHandler,
 } from "react-native";
 import { Image } from "expo-image";
 import { GlassView } from "@/components/GlassViewWithContext";
@@ -118,6 +119,20 @@ export function ChatModal() {
       animationProgress.value = isChatOpen ? 1 : 0;
     }
   }, [isChatOpen]);
+
+  useEffect(() => {
+    if (!isChatOpen) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        closeChat();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [isChatOpen, closeChat]);
 
   const handleClearChatWithVoice = useCallback(async () => {
     await handleClearChat();

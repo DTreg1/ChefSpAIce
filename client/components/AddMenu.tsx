@@ -14,6 +14,7 @@ import {
   Platform,
   Modal,
   Alert,
+  BackHandler,
 } from "react-native";
 import {
   GlassView,
@@ -270,6 +271,20 @@ export const AddMenu = memo(function AddMenu({
       });
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onClose();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [isOpen, onClose]);
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
     opacity: overlayOpacity.value,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Modal, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Modal, Pressable, StyleSheet, ScrollView, BackHandler } from "react-native";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 
@@ -130,6 +130,20 @@ export function RecipeSettingsModal({
       setIngredientCountMax(prefs.ingredientCountMax || 6);
     }
   };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onClose();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [visible, onClose]);
 
   const handleGenerate = async () => {
     setSaving(true);

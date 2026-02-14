@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  BackHandler,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
@@ -97,6 +98,20 @@ export function CancellationFlowModal({
     resetState();
     onClose();
   };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        handleClose();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [visible, handleClose]);
 
   const handleContinueToStep2 = () => {
     if (!selectedReason) return;

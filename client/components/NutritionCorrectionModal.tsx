@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
   Linking,
+  BackHandler,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -165,6 +166,20 @@ export function NutritionCorrectionModal({
     setCameraPermissionDenied(false);
     onClose();
   };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        handleClose();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [visible, handleClose]);
 
   const handleRemoveImage = () => {
     setImageUri(null);

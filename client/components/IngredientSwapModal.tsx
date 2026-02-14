@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Modal,
   Platform,
+  BackHandler,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import {
@@ -62,6 +63,20 @@ export function IngredientSwapModal({
         : [...prev, filter],
     );
   };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onClose();
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [visible, onClose]);
 
   const isInInventory = (alternativeName: string): boolean => {
     const normalizedAlt = alternativeName.toLowerCase().trim();
