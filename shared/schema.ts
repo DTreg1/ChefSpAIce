@@ -1486,6 +1486,31 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
 // =============================================================================
+// USER PUSH TOKENS TABLE
+// =============================================================================
+
+export const userPushTokens = pgTable("user_push_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  token: text("token").notNull(),
+  platform: varchar("platform", { length: 20 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_user_push_tokens_user").on(table.userId),
+  uniqueIndex("idx_user_push_tokens_token").on(table.token),
+]);
+
+export const insertUserPushTokenSchema = createInsertSchema(userPushTokens).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserPushToken = z.infer<typeof insertUserPushTokenSchema>;
+export type UserPushToken = typeof userPushTokens.$inferSelect;
+
+// =============================================================================
 // ERROR REPORTS
 // =============================================================================
 

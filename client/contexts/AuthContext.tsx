@@ -293,6 +293,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await storage.syncFromCloud();
 
+      import("@/lib/notifications").then(({ registerForPushNotifications }) => {
+        registerForPushNotifications().catch((err) =>
+          logger.warn("[Auth] Failed to register push notifications after sign in:", err),
+        );
+      });
+
       return { success: true };
     } catch (error) {
       logger.error("Sign in error:", error);
@@ -337,6 +343,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: data.user,
           token: data.token,
           isLoading: false,
+        });
+
+        import("@/lib/notifications").then(({ registerForPushNotifications }) => {
+          registerForPushNotifications().catch((err) =>
+            logger.warn("[Auth] Failed to register push notifications after sign up:", err),
+          );
         });
 
         return { success: true };
@@ -433,6 +445,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await storage.syncFromCloud();
       }
 
+      import("@/lib/notifications").then(({ registerForPushNotifications }) => {
+        registerForPushNotifications().catch((err) =>
+          logger.warn("[Auth] Failed to register push notifications after Apple sign in:", err),
+        );
+      });
+
       return { success: true };
     },
     [promptAppleWebAsync],
@@ -490,6 +508,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         await storage.syncFromCloud();
       }
+
+      import("@/lib/notifications").then(({ registerForPushNotifications }) => {
+        registerForPushNotifications().catch((err) =>
+          logger.warn("[Auth] Failed to register push notifications after Google sign in:", err),
+        );
+      });
 
       return { success: true };
     },

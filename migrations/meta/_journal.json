@@ -43,6 +43,13 @@
       "when": 1770998400000,
       "tag": "0005_check_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771099200000,
+      "tag": "0006_user_push_tokens",
+      "breakpoints": true
     }
   ]
 }

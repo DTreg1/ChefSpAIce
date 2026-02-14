@@ -4,19 +4,12 @@ import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { storage } from "./storage";
 import { logger } from "@/lib/logger";
 
-// Check if running in Expo Go (notifications have limited functionality in SDK 53+)
-// Android: Remote push notifications completely removed
-// iOS: Some functionality still works but with warnings
 const isExpoGo = Constants.appOwnership === "expo";
 
-// Check if we should skip importing the module entirely to avoid warnings
 function shouldSkipNotificationsImport(): boolean {
-  // Skip on Android Expo Go (completely unsupported)
-  // On iOS Expo Go, local notifications still work, so we allow import
   return Platform.OS === "android" && isExpoGo;
 }
 
-// Lazy load notifications module only when supported
 let Notifications: typeof import("expo-notifications") | null = null;
 
 async function getNotificationsModule() {
@@ -203,7 +196,7 @@ export async function scheduleExpirationNotifications(): Promise<number> {
   return scheduledCount;
 }
 
-export async function registerPushToken(): Promise<string | null> {
+export async function registerForPushNotifications(): Promise<string | null> {
   const notif = await getNotificationsModule();
   if (!notif) return null;
 
@@ -223,7 +216,10 @@ export async function registerPushToken(): Promise<string | null> {
     if (!authToken) return token;
 
     const { apiClient } = await import("@/lib/api-client");
-    await apiClient.post<void>("/api/user/push-token", { token });
+    await apiClient.post<void>("/api/notifications/register-device", {
+      token,
+      platform: Platform.OS,
+    });
 
     logger.info("Push token registered with server");
     return token;
@@ -233,12 +229,16 @@ export async function registerPushToken(): Promise<string | null> {
   }
 }
 
+export async function registerPushToken(): Promise<string | null> {
+  return registerForPushNotifications();
+}
+
 export async function refreshPushToken(): Promise<void> {
   try {
     const authToken = await storage.getAuthToken();
     if (!authToken) return;
 
-    await registerPushToken();
+    await registerForPushNotifications();
   } catch (error) {
     logger.error("Failed to refresh push token:", error);
   }
