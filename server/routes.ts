@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/pre-register", validateBody(preRegisterSchema), asyncHandler(async (req: Request, res: Response) => {
-      const { email, privacyConsent } = req.body;
+      const { email } = req.body;
 
       const normalizedEmail = email.toLowerCase().trim();
 

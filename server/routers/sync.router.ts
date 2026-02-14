@@ -2,7 +2,6 @@ import { Router, Request, Response, NextFunction } from "express";
 import { AppError } from "../middleware/errorHandler";
 import { validateBody } from "../middleware/validateBody";
 import { successResponse } from "../lib/apiResponse";
-import { getAuthToken, getSessionFromToken } from "./sync/sync-helpers";
 import { getSyncStatus, exportBackup, importBackup, importRequestSchema } from "../services/syncBackupService";
 import inventoryRouter from "./sync/inventory-sync";
 import recipesRouter from "./sync/recipes-sync";
@@ -20,17 +19,12 @@ router.use("/cookware", cookwareRouter);
 
 router.get("/status", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = getAuthToken(req);
-    if (!token) {
-      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
+    const userId = req.userId;
+    if (!userId) {
+      throw AppError.unauthorized("Authentication required", "UNAUTHORIZED");
     }
 
-    const session = await getSessionFromToken(token);
-    if (!session) {
-      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
-    }
-
-    const result = await getSyncStatus(session.userId);
+    const result = await getSyncStatus(userId);
     res.json(successResponse(result));
   } catch (error) {
     next(error);
@@ -39,17 +33,12 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
 
 router.post("/export", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = getAuthToken(req);
-    if (!token) {
-      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
+    const userId = req.userId;
+    if (!userId) {
+      throw AppError.unauthorized("Authentication required", "UNAUTHORIZED");
     }
 
-    const session = await getSessionFromToken(token);
-    if (!session) {
-      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
-    }
-
-    const backup = await exportBackup(session.userId);
+    const backup = await exportBackup(userId);
 
     const date = new Date().toISOString().split("T")[0];
     res.setHeader("Content-Disposition", `attachment; filename="chefspaice-backup-${date}.json"`);
@@ -62,18 +51,13 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
 
 router.post("/import", validateBody(importRequestSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = getAuthToken(req);
-    if (!token) {
-      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
-    }
-
-    const session = await getSessionFromToken(token);
-    if (!session) {
-      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
+    const userId = req.userId;
+    if (!userId) {
+      throw AppError.unauthorized("Authentication required", "UNAUTHORIZED");
     }
 
     const { backup, mode } = req.body;
-    const result = await importBackup(session.userId, backup, mode);
+    const result = await importBackup(userId, backup, mode);
     res.json(successResponse(result));
   } catch (error) {
     next(error);
