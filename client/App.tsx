@@ -91,6 +91,7 @@ import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { initOfflineProcessor } from "@/lib/offline-processor";
 import { navigationRef } from "@/lib/navigationRef";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
+import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 
 /**
  * Screens where the floating chat button should NOT appear even after auth/onboarding.
@@ -145,6 +146,7 @@ function MobileAppContent() {
   } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
   const { updateAvailable, isDownloading, forceUpdate, applyUpdate } = useAppUpdate();
+  useAppLifecycle();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
   );
