@@ -495,6 +495,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(marketingPath);
   }));
 
+  app.get("/api/schema", asyncHandler(async (_req: Request, res: Response) => {
+    const { getSchemaData } = await import("./schema-introspector");
+    const data = getSchemaData();
+    res.json(data);
+  }));
+
+  app.get("/schema-diagram", asyncHandler(async (_req: Request, res: Response) => {
+    const { getSchemaData } = await import("./schema-introspector");
+    const data = getSchemaData();
+    const fs = require("fs");
+    const diagramPath = require("path").resolve(
+      process.cwd(),
+      "server",
+      "templates",
+      "schema-diagram.html"
+    );
+    let html = fs.readFileSync(diagramPath, "utf-8");
+    const nonce = res.locals.cspNonce || "";
+    html = html.replace(
+      "/*__SCHEMA_DATA__*/",
+      "window.__SCHEMA_DATA__ = " + JSON.stringify(data) + ";"
+    );
+    html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
+    res.type("html").send(html);
+  }));
+
   // Serve feature graphic template for Google Play
   app.get("/feature-graphic", asyncHandler(async (_req: Request, res: Response) => {
     const featurePath = require("path").resolve(
