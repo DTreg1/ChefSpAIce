@@ -1,20 +1,27 @@
-import { Client } from "@replit/object-storage";
 import { logger } from "../lib/logger";
 import { processImageFromBase64, processImage } from "./imageProcessingService";
 
-let storageClient: Client | null = null;
+const isReplitEnv = !!(process.env.REPL_ID || process.env.REPLIT_DEV_DOMAIN);
 
-async function getStorageClient(): Promise<Client> {
+let storageClient: any = null;
+let storageAvailable = isReplitEnv;
+
+async function getStorageClient(): Promise<any | null> {
+  if (!storageAvailable) {
+    return null;
+  }
+
   if (!storageClient) {
     try {
+      const { Client } = await import("@replit/object-storage");
       storageClient = new Client();
       logger.info("Object storage client initialized successfully");
     } catch (error) {
-      logger.error("Failed to initialize object storage client, retrying...", {
+      storageAvailable = false;
+      logger.warn("Object storage is not available (running outside Replit?). Image features will be disabled.", {
         error: error instanceof Error ? error.message : String(error),
       });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      storageClient = new Client();
+      return null;
     }
   }
   return storageClient;
@@ -33,6 +40,11 @@ async function uploadProcessedImages(
   thumbnailBuffer: Buffer
 ): Promise<UploadedImageUrls> {
   const client = await getStorageClient();
+  if (!client) {
+    logger.warn("Object storage unavailable, skipping image upload", { recipeId });
+    return { displayUrl: "", thumbnailUrl: null };
+  }
+
   const displayPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`;
   const thumbnailPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}-thumb.webp`;
 
@@ -79,6 +91,10 @@ export async function uploadRecipeImageFromBuffer(
 
 export async function deleteRecipeImage(recipeId: string): Promise<void> {
   const client = await getStorageClient();
+  if (!client) {
+    return;
+  }
+
   const paths = [
     `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`,
     `${PUBLIC_PREFIX}/recipe-images/${recipeId}-thumb.webp`,
@@ -104,6 +120,10 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
 
 export async function getRecipeImageUrl(recipeId: string): Promise<string | null> {
   const client = await getStorageClient();
+  if (!client) {
+    return null;
+  }
+
   const webpPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`;
   const jpgPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
 
@@ -126,6 +146,10 @@ export async function getRecipeImageUrl(recipeId: string): Promise<string | null
 
 export async function getRecipeImageUrls(recipeId: string): Promise<UploadedImageUrls | null> {
   const client = await getStorageClient();
+  if (!client) {
+    return null;
+  }
+
   const webpDisplayPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.webp`;
   const thumbnailPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}-thumb.webp`;
   const jpgPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
