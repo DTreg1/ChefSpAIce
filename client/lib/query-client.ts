@@ -59,20 +59,15 @@ export function getApiUrl(): string {
     host = "chefspaice.com";
   }
 
-  // Determine if this is a development environment (localhost or local IP)
   const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-  
-  // For production domains, strip the port (API runs on standard HTTPS port 443)
-  // For development, preserve the port for local testing
+
   let finalHost = host;
   if (!isLocalDev && host.includes(":")) {
-    // Strip port from production domains (e.g., "chefspaice.com:5000" -> "chefspaice.com")
     finalHost = host.split(":")[0];
   }
 
-  // Use http for localhost development, https for all other environments
   const protocol = isLocalDev ? "http" : "https";
-  let url = new URL(`${protocol}://${finalHost}`);
+  const url = new URL(`${protocol}://${finalHost}`);
 
   // Remove trailing slash to prevent double-slashes when concatenating paths
   return url.href.replace(/\/$/, "");
@@ -207,7 +202,11 @@ function getQueryFn<T>(options: {
 }): QueryFunction<T> {
   return async ({ queryKey }) => {
     const baseUrl = getApiUrl();
-    const url = new URL(queryKey.join("/") as string, baseUrl);
+    const path = queryKey
+      .filter((k): k is string => typeof k === "string" && k.length > 0)
+      .join("/")
+      .replace(/\/{2,}/g, "/");
+    const url = new URL(path, baseUrl);
 
     const token = await getStoredAuthToken();
     const headers: Record<string, string> = {};

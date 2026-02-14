@@ -5,12 +5,15 @@ import { logger } from "@/lib/logger";
 import { captureError } from "@/lib/crash-reporter";
 
 interface ErrorReportPayload {
-  error: Error;
+  error: Error | unknown;
   componentStack?: string;
   screenName?: string;
 }
 
-export async function reportError({ error, componentStack, screenName }: ErrorReportPayload): Promise<void> {
+export async function reportError({ error: rawError, componentStack, screenName }: ErrorReportPayload): Promise<void> {
+  const error = rawError instanceof Error
+    ? rawError
+    : new Error(typeof rawError === "string" ? rawError : JSON.stringify(rawError) || "Unknown error");
   try {
     const body = {
       errorMessage: error.message || String(error),
