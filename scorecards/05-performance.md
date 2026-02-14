@@ -4,7 +4,7 @@
 
 ### Strengths
 - **Memoization discipline**: 42+ `useMemo`/`useCallback` calls across the 6 main screens alone (InventoryScreen: 6, RecipesScreen: 7, CookwareScreen: 13, RecipeDetailScreen: 9, MealPlanScreen: 4, ShoppingListScreen: 3). Context providers also memoize heavily (AuthContext: 9, SearchContext: 9, FloatingChatContext: 6, OnboardingContext: 6).
-- **[REMEDIATED] FlashList on major list screens**: `@shopify/flash-list` adopted for the 5 heaviest list screens — InventoryScreen, RecipesScreen (previously 886 LOC with FlatList), ShoppingListScreen, CookwareScreen (previously 985 LOC), SelectRecipeScreen, and CookingTermsScreen. FlashList provides 5-10x better scroll performance through cell recycling with `estimatedItemSize` configured per screen.
+- **[REMEDIATED] FlashList on major list screens**: `@shopify/flash-list` adopted for the 6 heaviest list screens — InventoryScreen, RecipesScreen (previously 886 LOC with FlatList), ShoppingListScreen, CookwareScreen (previously 985 LOC), SelectRecipeScreen, and CookingTermsScreen. FlashList provides 5-10x better scroll performance through cell recycling with `estimatedItemSize` configured per screen.
 - **`getItemLayout` on fixed-height lists**: ShoppingListScreen and CookingTermsScreen provide `getItemLayout` for O(1) scroll-to-index, bypassing layout measurement.
 - **Reanimated over legacy Animated**: 15+ components use `react-native-reanimated` for native-thread animations (GlassCard, GlassButton, CustomTabBar, FloatingChatButton, SkeletonBox, OfflineIndicator, AddMenu, SyncStatusIndicator, etc.). Only 2 files use legacy `Animated` with `useNativeDriver: true` (RecipeVoiceControls, AddItemScreen).
 - **Debounced inputs**: `useDebounce` hook is applied to shelf-life suggestion lookups (`useShelfLifeSuggestion`) to avoid rapid API calls on each keystroke. Sync queue uses a 2-second debounce before flushing.
@@ -17,7 +17,7 @@
 ## 2. Code Splitting & Bundle Size
 
 ### Strengths
-- **Comprehensive lazy loading**: 30+ screens are lazy-loaded via `React.lazy()` + `withSuspense()` wrapper in `client/lib/lazy-screen.tsx`. Every stack navigator (Root, Profile, Recipes, Inventory, MealPlan, Cookware) uses lazy imports. Web routes also lazy-load (Landing, About, Privacy, Terms, Support).
+- **Comprehensive lazy loading**: 19 native screens + 5 web routes lazy-loaded via `React.lazy()` + `withSuspense()` wrapper in `client/lib/lazy-screen.tsx`. Every stack navigator (Root, Profile, Recipes, Inventory, MealPlan, Cookware) uses lazy imports. Web routes also lazy-load (Landing, About, Privacy, Terms, Support).
 - **Suspense fallback**: A lightweight `ActivityIndicator` fallback avoids blank screens during chunk loads.
 - **[REMEDIATED] Bundle analysis script**: `"analyze:bundle": "npx react-native-bundle-visualizer"` added to `package.json` scripts, providing visibility into dependency size and tree-shaking opportunities.
 
@@ -117,7 +117,7 @@
 
 | # | Remediation | Status |
 |---|-------------|--------|
-| 1 | Replace FlatList with FlashList on main list screens | **Done** (5+ screens) |
+| 1 | Replace FlatList with FlashList on main list screens | **Done** (6 screens) |
 | 2 | Add MemoryCache eviction to prevent unbounded growth | **Done** (maxSize + sweep) |
 | 3 | Adopt expo-image for client-side image caching | **Done** (10+ screens) |
 | 4 | Add statement timeout to connection pool | **Done** (30s) |
