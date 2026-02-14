@@ -14,6 +14,7 @@ import { apiClient } from "@/lib/api-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAppReview } from "@/hooks/useAppReview";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import type { ApplianceItem, GeneratedRecipe, ImageGenerationResponse } from "@/lib/types";
 
@@ -68,6 +69,7 @@ export function useQuickRecipeGeneration() {
     entitlements,
     refetch: refetchSubscription,
   } = useSubscription();
+  const { checkAfterRecipeGeneration } = useAppReview();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressStage, setProgressStage] =
@@ -259,6 +261,8 @@ export function useQuickRecipeGeneration() {
       setProgressStage("done");
       setIsGenerating(false);
 
+      checkAfterRecipeGeneration();
+
       navigation.dispatch(
         CommonActions.reset({
           index: 1,
@@ -316,6 +320,8 @@ export function useQuickRecipeGeneration() {
         setProgressStage("done");
         setIsGenerating(false);
 
+        checkAfterRecipeGeneration();
+
         navigation.dispatch(
           CommonActions.reset({
             index: 1,
@@ -342,7 +348,7 @@ export function useQuickRecipeGeneration() {
         );
       }
     }
-  }, [checkLimit, navigation, refetchSubscription]);
+  }, [checkLimit, navigation, refetchSubscription, checkAfterRecipeGeneration]);
 
   return {
     generateQuickRecipe,

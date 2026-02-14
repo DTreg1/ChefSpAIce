@@ -40,6 +40,7 @@ import {
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { RootNavigation } from "@/lib/types";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
+import { useAppReview } from "@/hooks/useAppReview";
 
 const SWIPE_THRESHOLD = -80;
 
@@ -269,6 +270,7 @@ export default function AddFoodBatchScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "AddFoodBatch">>();
   const { checkLimit, entitlements } = useSubscription();
+  const { checkAfterInventoryAdd } = useAppReview();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
@@ -406,6 +408,8 @@ export default function AddFoodBatchScreen() {
           Haptics.NotificationFeedbackType.Success,
         );
       }
+
+      checkAfterInventoryAdd();
 
       Alert.alert(
         "Items Added",
