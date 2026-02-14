@@ -109,11 +109,7 @@ export default function GenerateRecipeScreen() {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const autoGenerateTriggered = useRef(false);
 
-  const { focusTargetRef: progressFocusRef, containerRef: progressContainerRef, onAccessibilityEscape: onProgressEscape } = useFocusTrap({
-    visible: showProgressModal,
-    onDismiss: () => setShowProgressModal(false),
-  });
-  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+  const { onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
     visible: showUpgradePrompt,
     onDismiss: () => setShowUpgradePrompt(false),
   });
@@ -340,6 +336,10 @@ export default function GenerateRecipeScreen() {
         }
       }
 
+      if (!generatedRecipe) {
+        throw new Error("No recipe was generated");
+      }
+
       const usedExpiringItems = generatedRecipe.usedExpiringItems || [];
       const expiringItemsUsed = usedExpiringItems.length;
 
@@ -559,7 +559,8 @@ export default function GenerateRecipeScreen() {
               </View>
             ) : (
               <UsageBadge
-                current={usage.aiRecipesUsedThisMonth}
+                label="used"
+                used={usage.aiRecipesUsedThisMonth}
                 max={
                   typeof entitlements.maxAiRecipes === "number"
                     ? entitlements.maxAiRecipes
@@ -710,8 +711,8 @@ export default function GenerateRecipeScreen() {
         accessibilityViewIsModal={true}
       >
         <View style={styles.modalOverlay}>
-          <GlassCard ref={progressContainerRef} style={styles.progressModal} accessibilityRole="alert" accessibilityLabel="Generating recipe, please wait" onAccessibilityEscape={onProgressEscape}>
-            <ActivityIndicator ref={progressFocusRef} size="large" data-testid="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
+          <GlassCard style={styles.progressModal} accessibilityRole="alert" accessibilityLabel="Generating recipe, please wait">
+            <ActivityIndicator size="large" data-testid="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
             <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}</ThemedText>
             {streamingText.length > 0 ? (
               <ScrollView
@@ -783,9 +784,8 @@ export default function GenerateRecipeScreen() {
           statusBarTranslucent
           accessibilityViewIsModal={true}
         >
-          <View ref={upgradeContainerRef} style={styles.modalOverlay} onAccessibilityEscape={onUpgradeEscape}>
+          <View style={styles.modalOverlay} onAccessibilityEscape={onUpgradeEscape}>
             <UpgradePrompt
-              ref={upgradeFocusRef}
               type="limit"
               limitName="AI Recipes"
               remaining={Math.max(
