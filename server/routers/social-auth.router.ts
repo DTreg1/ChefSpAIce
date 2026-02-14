@@ -1,11 +1,13 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
+import { z } from "zod";
 import { setAuthCookie } from "../lib/session-utils";
 import { db } from "../db";
 import { users, authProviders, userSyncData } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler";
+import { validateBody } from "../middleware/validateBody";
 import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
 import { createSession } from "../domain/services";
@@ -50,10 +52,20 @@ interface GoogleTokenPayload {
   selectedPlan?: 'monthly' | 'annual';
 }
 
-router.post("/apple", async (req: Request, res: Response, next: NextFunction) => {
+const appleAuthSchema = z.object({
+  identityToken: z.string().optional(),
+  authorizationCode: z.string().optional(),
+  user: z.object({ email: z.string().optional() }).optional(),
+  isWebAuth: z.boolean().optional(),
+  redirectUri: z.string().optional(),
+  selectedPlan: z.enum(["monthly", "annual"]).optional(),
+  selectedTier: z.enum(["basic", "pro"]).optional(),
+});
+
+router.post("/apple", validateBody(appleAuthSchema), async (req, res, next) => {
   logger.info("Apple sign-in request received");
   try {
-    const { identityToken, authorizationCode, user, isWebAuth, redirectUri } = req.body as AppleTokenPayload;
+    const { identityToken, authorizationCode, user, isWebAuth, redirectUri } = req.body;
 
     logger.info("Apple auth payload received", { hasIdentityToken: !!identityToken, hasAuthCode: !!authorizationCode, isWebAuth });
 
@@ -215,14 +227,16 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-router.post("/google", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { idToken, accessToken: rawAccessToken } = req.body as GoogleTokenPayload;
-    const accessToken = encryptTokenOrNull(rawAccessToken);
+const googleAuthSchema = z.object({
+  idToken: z.string().min(1, "ID token is required"),
+  accessToken: z.string().optional(),
+  selectedPlan: z.enum(["monthly", "annual"]).optional(),
+});
 
-    if (!idToken) {
-      throw AppError.badRequest("ID token is required", "MISSING_ID_TOKEN");
-    }
+router.post("/google", validateBody(googleAuthSchema), async (req, res, next) => {
+  try {
+    const { idToken, accessToken: rawAccessToken } = req.body;
+    const accessToken = encryptTokenOrNull(rawAccessToken);
     
     const googleClient = new OAuth2Client();
     let payload;

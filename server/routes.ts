@@ -81,10 +81,12 @@ import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
+import { validateBody } from "./middleware/validateBody";
 import { successResponse, asyncHandler } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
 import { hashToken, anonymizeIpAddress } from "./lib/auth-utils";
 import { invalidateSubscriptionCache } from "./lib/subscription-cache";
+import { z } from "zod";
 
 
 /**
@@ -183,22 +185,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Allows users to sign up from the landing page with just their email.
   // Creates a user account that they can activate later.
   // =========================================================================
-  app.post("/api/pre-register", asyncHandler(async (req: Request, res: Response) => {
+  const preRegisterSchema = z.object({
+    email: z.string().min(1, "Email is required").email("Invalid email format"),
+    privacyConsent: z.literal(true, { errorMap: () => ({ message: "You must agree to the privacy policy" }) }),
+  });
+
+  app.post("/api/pre-register", validateBody(preRegisterSchema), asyncHandler(async (req: Request, res: Response) => {
       const { email, privacyConsent } = req.body;
 
-      if (!email || typeof email !== "string") {
-        throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
-      }
-
-      if (privacyConsent !== true) {
-        throw AppError.badRequest("You must agree to the privacy policy before signing up", "PRIVACY_CONSENT_REQUIRED");
-      }
-
       const normalizedEmail = email.toLowerCase().trim();
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(normalizedEmail)) {
-        throw AppError.badRequest("Please enter a valid email address", "INVALID_EMAIL");
-      }
 
       // Check if user already exists
       const [existingUser] = await db

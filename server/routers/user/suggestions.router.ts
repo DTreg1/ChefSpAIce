@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import OpenAI from "openai";
+import { z } from "zod";
 import {
   generateItemsHash,
   parseTips,
@@ -11,6 +12,7 @@ import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { successResponse } from "../../lib/apiResponse";
 import { withCircuitBreaker } from "../../lib/circuit-breaker";
+import { validateBody } from "../../middleware/validateBody";
 
 const router = Router();
 
@@ -55,13 +57,15 @@ const shelfLifeCache = new Map<
   }
 >();
 
-router.post("/shelf-life", async (req: Request, res: Response, next: NextFunction) => {
+const shelfLifeSchema = z.object({
+  foodName: z.string().min(1, "Food name is required"),
+  category: z.string().optional(),
+  storageLocation: z.string().min(1, "Storage location is required"),
+});
+
+router.post("/shelf-life", validateBody(shelfLifeSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { foodName, category, storageLocation } = req.body;
-
-    if (!foodName || !storageLocation) {
-      throw AppError.badRequest("foodName and storageLocation are required", "MISSING_REQUIRED_FIELDS");
-    }
 
     const cacheKey = `${foodName.toLowerCase()}:${category?.toLowerCase() || ""}:${storageLocation.toLowerCase()}`;
     const cached = shelfLifeCache.get(cacheKey);
@@ -133,12 +137,21 @@ Return JSON:
   }
 });
 
-router.post("/waste-reduction", async (req: Request, res: Response, next: NextFunction) => {
+const wasteReductionSchema = z.object({
+  expiringItems: z.array(z.object({
+    id: z.number().optional(),
+    name: z.string().optional(),
+    daysUntilExpiry: z.number().optional(),
+    quantity: z.number().optional(),
+  })).optional().default([]),
+});
+
+router.post("/waste-reduction", validateBody(wasteReductionSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const forceRefresh = req.query.refresh === "true";
-    const clientItems = req.body.expiringItems || [];
+    const clientItems = req.body.expiringItems;
 
-    if (!Array.isArray(clientItems) || clientItems.length === 0) {
+    if (clientItems.length === 0) {
       return res.json(successResponse({
         suggestions: [],
         expiringItems: [],
@@ -276,11 +289,22 @@ const funFactCache = new Map<
 
 const FUN_FACT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-router.post("/fun-fact", async (req: Request, res: Response, next: NextFunction) => {
+const funFactSchema = z.object({
+  items: z.array(z.object({ name: z.string() }).passthrough()).optional().default([]),
+  nutritionTotals: z.object({
+    calories: z.number().optional(),
+    protein: z.number().optional(),
+    carbs: z.number().optional(),
+    fat: z.number().optional(),
+    itemsWithNutrition: z.number().optional(),
+  }).optional(),
+});
+
+router.post("/fun-fact", validateBody(funFactSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { items, nutritionTotals } = req.body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (items.length === 0) {
       return res.json(successResponse({
         fact: "Add some items to your inventory to discover fun facts about your food!",
       }));

@@ -168,32 +168,20 @@ router.post("/transcribe", async (req: Request, res: Response, next: NextFunctio
 });
 
 const speakSchema = z.object({
-  text: z.string().min(1, "Text is required").max(4096, "Text must be under 4096 characters"),
+  text: z.string(),
   voice: z.enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]).optional().default("alloy"),
 });
 
-router.post("/speak", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/speak", validateBody(speakSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const parseResult = speakSchema.safeParse(req.body);
+    const { text, voice } = req.body;
 
-    if (!parseResult.success) {
-      const errors = parseResult.error.errors;
-      const isEmptyText = errors.some(e => e.path.includes("text") && e.code === "too_small");
-      const isTooLong = errors.some(e => e.path.includes("text") && e.code === "too_big");
-
-      if (isEmptyText) {
-        throw AppError.badRequest("Text is required and cannot be empty", "EMPTY_TEXT");
-      }
-
-      if (isTooLong) {
-        throw AppError.badRequest("Text must be under 4096 characters", "TEXT_TOO_LONG");
-      }
-
-      const errorMessages = errors.map((e) => e.message).join(", ");
-      throw AppError.badRequest(errorMessages, "INVALID_INPUT");
+    if (!text || text.trim().length === 0) {
+      throw AppError.badRequest("Text is required for speech generation", "EMPTY_TEXT");
     }
-
-    const { text, voice } = parseResult.data;
+    if (text.length > 4096) {
+      throw AppError.badRequest("Text must be under 4096 characters", "TEXT_TOO_LONG");
+    }
 
     const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini-audio-preview",
