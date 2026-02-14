@@ -36,7 +36,7 @@ import {
 } from "@/lib/storage";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import type { ApplianceItem, GeneratedRecipe, ImageGenerationResponse, RootNavigation, RecipesNavigation } from "@/lib/types";
-import { apiRequestJson, getApiUrl, getStoredAuthToken } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { logger } from "@/lib/logger";
@@ -165,20 +165,15 @@ export default function GenerateRecipeScreen() {
         const cookwareIds = await storage.getCookware();
         if (cookwareIds.length > 0) {
           try {
-            const baseUrl = getApiUrl();
-            const url = new URL("/api/appliances", baseUrl);
-            const response = await fetch(url, { credentials: "include" });
-            if (response.ok) {
-              const allAppliances = (await response.json()).data;
-              const userCookware = allAppliances
-                .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
-                .map((a: ApplianceItem) => ({
-                  id: a.id,
-                  name: a.name,
-                  alternatives: a.alternatives || [],
-                }));
-              setCookware(userCookware);
-            }
+            const allAppliances = await apiClient.get<ApplianceItem[]>("/api/appliances");
+            const userCookware = allAppliances
+              .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+              .map((a: ApplianceItem) => ({
+                id: a.id,
+                name: a.name,
+                alternatives: a.alternatives || [],
+              }));
+            setCookware(userCookware);
           } catch (err) {
             logger.error("Error loading cookware:", err);
           }
@@ -282,21 +277,9 @@ export default function GenerateRecipeScreen() {
 
       let generatedRecipe: GeneratedRecipe | undefined;
 
-      const baseUrl = getApiUrl();
-      const streamUrl = new URL("/api/recipes/generate-stream", baseUrl);
-      const token = await getStoredAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const streamRes = await fetch(streamUrl, {
-        method: "POST",
-        headers,
+      const streamRes = await apiClient.raw("POST", "/api/recipes/generate-stream", {
         body: JSON.stringify(requestBody),
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!streamRes.ok) {
@@ -407,8 +390,7 @@ export default function GenerateRecipeScreen() {
       // Generate image before saving (so recipe loads complete)
       setProgressStage("image");
       try {
-        const imageData = await apiRequestJson<ImageGenerationResponse>(
-          "POST",
+        const imageData = await apiClient.post<ImageGenerationResponse>(
           "/api/recipes/generate-image",
           {
             title: recipeTitle,

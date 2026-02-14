@@ -16,7 +16,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Linking, Alert } from "react-native";
-import { apiRequestJson, getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import { storage } from "@/lib/storage";
 
@@ -55,17 +55,8 @@ export function useInstacart() {
   const checkStatus = useCallback(async () => {
     try {
       setIsCheckingStatus(true);
-      const baseUrl = getApiUrl();
-      const response = await fetch(`${baseUrl}/api/instacart/status`, {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data: InstacartStatus = (await response.json()).data;
-        setIsConfigured(data.configured);
-      } else {
-        setIsConfigured(false);
-      }
+      const data = await apiClient.get<InstacartStatus>("/api/instacart/status");
+      setIsConfigured(data.configured);
     } catch (error) {
       logger.error("[Instacart] Status check failed:", error);
       setIsConfigured(false);
@@ -108,8 +99,7 @@ export function useInstacart() {
           body.retailer_key = prefs.preferredRetailerKey;
         }
 
-        const data: InstacartLinkResponse = await apiRequestJson(
-          "POST",
+        const data = await apiClient.post<InstacartLinkResponse>(
           "/api/instacart/products-link",
           body,
         );
@@ -163,8 +153,7 @@ export function useInstacart() {
           body.retailer_key = prefs.preferredRetailerKey;
         }
 
-        const data: InstacartLinkResponse = await apiRequestJson(
-          "POST",
+        const data = await apiClient.post<InstacartLinkResponse>(
           "/api/instacart/recipe",
           body,
         );

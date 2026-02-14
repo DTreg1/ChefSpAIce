@@ -44,7 +44,7 @@ import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useInstacart } from "@/hooks/useInstacart";
 import { getRecipeDeepLink } from "@/lib/deep-linking";
 
-import { getApiUrl, apiRequestJson } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import type { ApplianceItem, ImageGenerationResponse, RecipesNavigation } from "@/lib/types";
 import { logger } from "@/lib/logger";
@@ -135,16 +135,11 @@ export default function RecipeDetailScreen() {
 
     if (cookwareIds.length > 0) {
       try {
-        const baseUrl = getApiUrl();
-        const url = new URL("/api/appliances", baseUrl);
-        const response = await fetch(url, { credentials: "include" });
-        if (response.ok) {
-          const allAppliances = (await response.json()).data;
-          const cookwareNames = allAppliances
-            .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
-            .map((a: ApplianceItem) => a.name.toLowerCase());
-          setUserCookware(cookwareNames);
-        }
+        const allAppliances = await apiClient.get<ApplianceItem[]>("/api/appliances");
+        const cookwareNames = allAppliances
+          .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+          .map((a: ApplianceItem) => a.name.toLowerCase());
+        setUserCookware(cookwareNames);
       } catch (err) {
         logger.error("Error loading cookware:", err);
       }
@@ -222,8 +217,7 @@ export default function RecipeDetailScreen() {
 
       try {
         logger.log("[RecipeDetail] Generating image for AI recipe:", recipe.id);
-        const imageData = await apiRequestJson<ImageGenerationResponse>(
-          "POST",
+        const imageData = await apiClient.post<ImageGenerationResponse>(
           "/api/recipes/generate-image",
           {
             title: recipe.title,

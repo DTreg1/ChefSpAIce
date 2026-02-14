@@ -1,20 +1,8 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import { captureError } from "@/lib/crash-reporter";
-
-const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
-
-async function getToken(): Promise<string | null> {
-  try {
-    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-    return token ? JSON.parse(token) : null;
-  } catch {
-    return null;
-  }
-}
 
 interface ErrorReportPayload {
   error: Error;
@@ -24,16 +12,6 @@ interface ErrorReportPayload {
 
 export async function reportError({ error, componentStack, screenName }: ErrorReportPayload): Promise<void> {
   try {
-    const baseUrl = getApiUrl();
-    const token = await getToken();
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const body = {
       errorMessage: error.message || String(error),
       stackTrace: error.stack ?? undefined,
@@ -55,11 +33,7 @@ export async function reportError({ error, componentStack, screenName }: ErrorRe
       appVersion: Constants.expoConfig?.version ?? undefined,
     });
 
-    await fetch(`${baseUrl}/api/error-report`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
+    await apiClient.post<void>("/api/error-report", body);
   } catch (reportErr) {
     logger.warn("Failed to send error report", reportErr);
   }

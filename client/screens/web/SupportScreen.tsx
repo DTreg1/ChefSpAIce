@@ -13,6 +13,7 @@ import { GradientBackground } from "@/components/GradientBackground.web";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
 import { webClickable } from "@/lib/types";
+import { apiClient } from "@/lib/api-client";
 
 const isWeb = Platform.OS === "web";
 
@@ -49,27 +50,12 @@ export default function SupportScreen() {
     setError(null);
 
     try {
-      const isDev =
-        window.location.port === "" || window.location.port === "80";
-      const apiBase = isDev
-        ? `${window.location.protocol}//${window.location.hostname}:5000`
-        : "";
-
-      const response = await fetch(
-        `${apiBase}/api/donations/create-checkout-session`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount,
-            anonymous: true,
-            successUrl: window.location.origin + "/support?donation=success",
-            cancelUrl: window.location.origin + "/support?donation=cancelled",
-          }),
-        },
-      );
-
-      const data = (await response.json()).data as { url?: string };
+      const data = await apiClient.post<{ url?: string }>("/api/donations/create-checkout-session", {
+        amount,
+        anonymous: true,
+        successUrl: window.location.origin + "/support?donation=success",
+        cancelUrl: window.location.origin + "/support?donation=cancelled",
+      }, { skipAuth: true });
 
       if (data.url) {
         window.location.href = data.url;

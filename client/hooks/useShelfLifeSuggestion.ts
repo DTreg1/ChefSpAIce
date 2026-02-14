@@ -8,7 +8,7 @@ import {
   getShelfLifeEntry,
   getShelfLifeForFood,
 } from "@/lib/shelf-life-data";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
@@ -162,25 +162,11 @@ async function fetchAIShelfLife(
   category: string,
   storage: string,
 ): Promise<AIShelfLifeResponse> {
-  const baseUrl = getApiUrl();
-  const url = new URL("/api/suggestions/shelf-life", baseUrl);
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
-      foodName,
-      category,
-      storageLocation: storage,
-    }),
+  return apiClient.post<AIShelfLifeResponse>("/api/suggestions/shelf-life", {
+    foodName,
+    category,
+    storageLocation: storage,
   });
-
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  return (await response.json()).data as AIShelfLifeResponse;
 }
 
 interface LocalSuggestionResult {

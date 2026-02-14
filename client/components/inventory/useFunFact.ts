@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { storage, FoodItem } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
@@ -54,40 +54,22 @@ export function useFunFact(items: FoodItem[], nutritionTotals: NutritionTotals) 
 
     setFunFactLoading(true);
     try {
-      const token = await storage.getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/suggestions/fun-fact", baseUrl);
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          items: items.slice(0, 20).map((i) => ({
-            name: i.name,
-            category: i.category,
-            quantity: i.quantity,
-          })),
-          nutritionTotals,
-          forceRefresh,
-        }),
+      const data = await apiClient.post<{ fact: string }>("/api/suggestions/fun-fact", {
+        items: items.slice(0, 20).map((i) => ({
+          name: i.name,
+          category: i.category,
+          quantity: i.quantity,
+        })),
+        nutritionTotals,
+        forceRefresh,
       });
-
-      if (response.ok) {
-        const data = (await response.json()).data as { fact: string };
-        const timestamp = Date.now();
-        setFunFact(data.fact);
-        setFunFactTimestamp(timestamp);
-        await AsyncStorage.setItem(
-          "funFact",
-          JSON.stringify({ fact: data.fact, timestamp }),
-        );
-      }
+      const timestamp = Date.now();
+      setFunFact(data.fact);
+      setFunFactTimestamp(timestamp);
+      await AsyncStorage.setItem(
+        "funFact",
+        JSON.stringify({ fact: data.fact, timestamp }),
+      );
     } catch (error) {
       logger.error("Error fetching fun fact:", error);
     } finally {

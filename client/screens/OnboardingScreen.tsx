@@ -15,7 +15,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, AppColors } from "@/constants/theme";
 import { storage, FoodItem, generateId } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { logger } from "@/lib/logger";
 
@@ -119,21 +119,15 @@ export default function OnboardingScreen() {
   const loadAppliances = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/api/appliances`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-      if (response.ok) {
-        const data = (await response.json()).data as Appliance[];
-        const commonItems = data.filter((a: Appliance) => a.isCommon);
-        setAppliances(data);
-        const itemsToSelect = commonItems.slice(0, cookwareLimit);
-        const commonIds = new Set<number>(
-          itemsToSelect.map((a: Appliance) => a.id),
-        );
-        setSelectedEquipmentIds(commonIds);
-        setAppliancesLoaded(true);
-      }
+      const data = await apiClient.get<Appliance[]>("/api/appliances");
+      const commonItems = data.filter((a: Appliance) => a.isCommon);
+      setAppliances(data);
+      const itemsToSelect = commonItems.slice(0, cookwareLimit);
+      const commonIds = new Set<number>(
+        itemsToSelect.map((a: Appliance) => a.id),
+      );
+      setSelectedEquipmentIds(commonIds);
+      setAppliancesLoaded(true);
     } catch (err) {
       logger.error("Error loading appliances:", err);
     } finally {

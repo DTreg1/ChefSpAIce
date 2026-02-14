@@ -70,7 +70,7 @@ import {
   DEFAULT_MACRO_TARGETS,
   MacroTargets,
 } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import {
   clearPreferences,
@@ -175,20 +175,12 @@ export default function SettingsScreen() {
     if (!isAuthenticated) return;
     setIsLoadingReferral(true);
     try {
-      const authToken = await storage.getAuthToken();
-      if (!authToken) return;
-      const baseUrl = getApiUrl();
-      const response = await fetch(`${baseUrl}/api/referral/code`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (response.ok) {
-        const data = (await response.json()).data as {
-          referralCode: string;
-          shareLink: string;
-          stats: { totalReferrals: number; completedSignups: number };
-        };
-        setReferralData(data);
-      }
+      const data = await apiClient.get<{
+        referralCode: string;
+        shareLink: string;
+        stats: { totalReferrals: number; completedSignups: number };
+      }>("/api/referral/code");
+      setReferralData(data);
     } catch (error) {
       logger.error("Failed to fetch referral data:", error);
     } finally {
@@ -531,20 +523,7 @@ export default function SettingsScreen() {
     try {
       const authToken = await storage.getAuthToken();
       if (authToken && user?.email) {
-        const baseUrl = getApiUrl();
-        const response = await fetch(`${baseUrl}/api/auth/account`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: user.email }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to delete account");
-        }
+        await apiClient.delete<void>("/api/auth/account", { email: user.email });
       }
 
       await storage.deleteAccount();
@@ -622,31 +601,7 @@ export default function SettingsScreen() {
     }
     setIsExporting(true);
     try {
-      const baseUrl = getApiUrl();
-      const token = await (async () => {
-        const AsyncStorage = (
-          await import("@react-native-async-storage/async-storage")
-        ).default;
-        const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
-        return stored ? JSON.parse(stored) : null;
-      })();
-
-      if (!token) {
-        window.alert("You must be signed in to export data.");
-        return;
-      }
-
-      const res = await fetch(`${baseUrl}/api/sync/export`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Export failed");
-      }
-
-      const backupData = (await res.json()).data as Record<string, unknown>;
+      const backupData = await apiClient.post<Record<string, unknown>>("/api/sync/export");
       const jsonString = JSON.stringify(backupData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -677,31 +632,7 @@ export default function SettingsScreen() {
     }
     setIsDownloadingData(true);
     try {
-      const baseUrl = getApiUrl();
-      const token = await (async () => {
-        const AsyncStorage = (
-          await import("@react-native-async-storage/async-storage")
-        ).default;
-        const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
-        return stored ? JSON.parse(stored) : null;
-      })();
-
-      if (!token) {
-        window.alert("You must be signed in to download your data.");
-        return;
-      }
-
-      const res = await fetch(`${baseUrl}/api/user/export-data`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Download failed");
-      }
-
-      const responseData = (await res.json()).data as Record<string, unknown>;
+      const responseData = await apiClient.get<Record<string, unknown>>("/api/user/export-data");
       const jsonString = JSON.stringify(responseData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -770,36 +701,10 @@ export default function SettingsScreen() {
     setShowImportDialog(false);
     setIsImporting(true);
     try {
-      const baseUrl = getApiUrl();
-      const token = await (async () => {
-        const AsyncStorage = (
-          await import("@react-native-async-storage/async-storage")
-        ).default;
-        const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
-        return stored ? JSON.parse(stored) : null;
-      })();
-
-      if (!token) {
-        Alert.alert("Error", "You must be signed in to import data.");
-        return;
-      }
-
-      const res = await fetch(`${baseUrl}/api/sync/import`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ backup: pendingImportFile, mode }),
+      const result = await apiClient.post<{ warnings?: string[] }>("/api/sync/import", {
+        backup: pendingImportFile,
+        mode,
       });
-
-      const body = await res.json();
-
-      if (!res.ok) {
-        throw new Error(body.error || "Import failed");
-      }
-
-      const result = body.data as { warnings?: string[] };
 
       let message = "Your data has been imported successfully.";
       if (result.warnings && result.warnings.length > 0) {

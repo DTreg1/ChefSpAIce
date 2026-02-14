@@ -12,7 +12,7 @@ import { logger } from "@/lib/logger";
 import { storage } from "@/lib/storage";
 import { syncManager } from "@/lib/sync-manager";
 import { queryClient } from "@/lib/query-client";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 
 interface ScreenIdentifierOverlayProps {
   screenName: string | undefined;
@@ -47,29 +47,11 @@ export function ScreenIdentifierOverlay({
     const confirmReset = async () => {
       setResetting(true);
       try {
-        const baseUrl = getApiUrl();
-
-        // 1. Delete account from server (removes all user data)
         const authToken = await storage.getAuthToken();
         if (authToken) {
           try {
-            const deleteResponse = await fetch(
-              `${baseUrl}/api/auth/account`,
-              {
-                method: "DELETE",
-                headers: {
-                  Authorization: `Bearer ${authToken}`,
-                  "Content-Type": "application/json",
-                },
-              },
-            );
-            if (deleteResponse.ok) {
-              logger.log("[Reset] Account deleted from server");
-            } else {
-              logger.log(
-                "[Reset] Could not delete from server, continuing with local reset",
-              );
-            }
+            await apiClient.delete<void>("/api/auth/account");
+            logger.log("[Reset] Account deleted from server");
           } catch (err) {
             logger.log(
               "[Reset] Server delete failed, continuing with local reset",
@@ -77,12 +59,7 @@ export function ScreenIdentifierOverlay({
           }
         }
 
-        // 2. Call logout API to clear server-side session cookie
-        const logoutUrl = new URL("/api/auth/logout", baseUrl);
-        await fetch(logoutUrl.toString(), {
-          method: "POST",
-          credentials: "include",
-        }).catch((err) => {
+        await apiClient.post<void>("/api/auth/logout").catch((err) => {
           logger.warn("Logout API call failed during reset", { error: err instanceof Error ? err.message : String(err) });
         });
 

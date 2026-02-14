@@ -37,7 +37,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { syncManager } from "@/lib/sync-manager";
 import { logger } from "@/lib/logger";
 import { trackInventoryAction } from "@/lib/crash-reporter";
@@ -657,22 +657,13 @@ export const storage = {
         return;
       }
 
-      const { getApiUrl } = await import("@/lib/query-client");
-      const baseUrl = getApiUrl();
-      const response = await fetch(
-        new URL("/api/recipe-images/upload", baseUrl).toString(),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            recipeId,
-            base64Data,
-          }),
-        },
-      );
+      const response = await apiClient.raw("POST", "/api/recipe-images/upload", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipeId,
+          base64Data,
+        }),
+      });
 
       if (response.ok) {
         const result = (await response.json()).data;
@@ -937,15 +928,7 @@ export const storage = {
     const token = await this.getAuthToken();
     if (token) {
       try {
-        const baseUrl = getApiUrl();
-        await fetch(new URL("/api/user/appliances/bulk", baseUrl).toString(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ applianceIds }),
-        });
+        await apiClient.post("/api/user/appliances/bulk", { applianceIds });
       } catch (error) {
         logger.error("[storage.setCookware] Failed to sync to server:", error);
       }
@@ -961,15 +944,7 @@ export const storage = {
       const token = await this.getAuthToken();
       if (token) {
         try {
-          const baseUrl = getApiUrl();
-          await fetch(new URL("/api/user/appliances", baseUrl).toString(), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ applianceId }),
-          });
+          await apiClient.post("/api/user/appliances", { applianceId });
         } catch (error) {
           logger.error(
             "[storage.addCookware] Failed to sync to server:",
@@ -988,16 +963,7 @@ export const storage = {
     const token = await this.getAuthToken();
     if (token) {
       try {
-        const baseUrl = getApiUrl();
-        await fetch(
-          new URL(`/api/user/appliances/${applianceId}`, baseUrl).toString(),
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        await apiClient.delete(`/api/user/appliances/${applianceId}`);
       } catch (error) {
         logger.error(
           "[storage.removeCookware] Failed to sync to server:",
@@ -1307,15 +1273,8 @@ export const storage = {
         },
       };
 
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/sync", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      const response = await apiClient.raw("POST", "/api/auth/sync", {
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(syncData),
       });
 
@@ -1340,15 +1299,8 @@ export const storage = {
         return { success: false, error: "Not authenticated" };
       }
 
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/sync", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      const response = await apiClient.raw("GET", "/api/auth/sync", {
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!response.ok) {

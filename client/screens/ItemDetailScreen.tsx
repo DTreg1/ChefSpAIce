@@ -10,7 +10,6 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
@@ -27,7 +26,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, formatDate } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 
 type StorageLocation = "fridge" | "freezer" | "pantry" | "counter";
@@ -150,19 +149,11 @@ export default function ItemDetailScreen() {
     if (!item) return;
     setNutritionLoading(true);
     try {
-      const token = await AsyncStorage.getItem("@chefspaice/auth_token");
       const params = new URLSearchParams({ name: item.name });
       if (item.brand) params.append("brand", item.brand);
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/nutrition/lookup?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.data?.found && data.data.nutrition) {
-        const n = data.data.nutrition;
+      const data = await apiClient.get<{ found: boolean; nutrition?: Record<string, number | string> }>(`/api/nutrition/lookup?${params}`);
+      if (data?.found && data.nutrition) {
+        const n = data.nutrition;
         const mapped = {
           calories: n.calories || 0,
           protein: n.protein || 0,

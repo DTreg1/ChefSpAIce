@@ -34,7 +34,7 @@ import { useAIVoice } from "@/hooks/useAIVoice";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { storage, FoodItem, generateId } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
@@ -149,40 +149,12 @@ export function VoiceQuickAction() {
   }, [voiceState, voiceInput, resetState]);
 
   const parseVoiceCommand = async (transcript: string): Promise<ParsedIntent> => {
-    const baseUrl = getApiUrl();
-    const url = new URL("/api/voice/parse", baseUrl);
-
-    const response = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ transcript }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to parse command");
-    }
-
-    return (await response.json()).data as ParsedIntent;
+    return apiClient.post<ParsedIntent>("/api/voice/parse", { transcript });
   };
 
   const synthesizeSpeech = async (text: string): Promise<string> => {
-    const baseUrl = getApiUrl();
-    const url = new URL("/api/voice/synthesize", baseUrl);
-
-    const response = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ text }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to synthesize speech");
-    }
-
-    const { audioUrl } = (await response.json()).data as { audioUrl: string };
-    return audioUrl;
+    const data = await apiClient.post<{ audioUrl: string }>("/api/voice/synthesize", { text });
+    return data.audioUrl;
   };
 
   const speakResponse = async (text: string) => {

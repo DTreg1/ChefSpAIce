@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import {
   MONTHLY_PRICE,
@@ -267,12 +267,7 @@ export default function SubscriptionScreen() {
       }
 
       if (Platform.OS === "web") {
-        const baseUrl = getApiUrl();
-
-        const pricesResponse = await fetch(
-          `${baseUrl}/api/subscriptions/prices`,
-        );
-        const prices = (await pricesResponse.json()).data as Record<string, { id: string }>;
+        const prices = await apiClient.get<Record<string, { id: string }>>("/api/subscriptions/prices", { skipAuth: true });
 
         const priceKey = plan === "monthly" ? "standardMonthly" : "standardAnnual";
         const fallbackKey = plan === "monthly" ? "monthly" : "annual";
@@ -294,26 +289,10 @@ export default function SubscriptionScreen() {
         if (isExistingPaidSubscriber) {
           setIsPreviewingProration(true);
           try {
-            const previewResponse = await fetch(
-              `${baseUrl}/api/subscriptions/preview-proration`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                credentials: "include",
-                body: JSON.stringify({ newPriceId: selectedPriceId }),
-              },
+            const preview = await apiClient.post<{ immediatePayment: number; currency: string }>(
+              "/api/subscriptions/preview-proration",
+              { newPriceId: selectedPriceId },
             );
-
-            if (!previewResponse.ok) {
-              const errorData = await previewResponse.json();
-              Alert.alert("Error", errorData.error || "Failed to preview proration.");
-              return;
-            }
-
-            const preview = (await previewResponse.json()).data as { immediatePayment: number; currency: string };
             setProrationPreview(preview);
 
             const formattedAmount = (preview.immediatePayment / 100).toFixed(2);
@@ -329,35 +308,22 @@ export default function SubscriptionScreen() {
                   onPress: async () => {
                     try {
                       setIsCheckingOut(true);
-                      const upgradeResponse = await fetch(
-                        `${baseUrl}/api/subscriptions/upgrade`,
+                      const upgradeData = await apiClient.post<{ upgraded: boolean }>(
+                        "/api/subscriptions/upgrade",
                         {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                          },
-                          credentials: "include",
-                          body: JSON.stringify({
-                            priceId: selectedPriceId,
-                            billingPeriod: plan,
-                          }),
+                          priceId: selectedPriceId,
+                          billingPeriod: plan,
                         },
                       );
 
-                      if (upgradeResponse.ok) {
-                        const upgradeData = (await upgradeResponse.json()).data as { upgraded: boolean };
-                        if (upgradeData.upgraded) {
-                          await refetch();
-                          Alert.alert("Success", `Your plan has been upgraded to ${tierName}!`);
-                        }
-                      } else {
-                        const errorData = await upgradeResponse.json();
-                        Alert.alert("Error", errorData.error || "Failed to upgrade. Please try again.");
+                      if (upgradeData.upgraded) {
+                        await refetch();
+                        Alert.alert("Success", `Your plan has been upgraded to ${tierName}!`);
                       }
                     } catch (err) {
                       logger.error("Error upgrading subscription:", err);
-                      Alert.alert("Error", "Something went wrong during upgrade.");
+                      const errorMsg = err instanceof ApiClientError ? err.message : "Something went wrong during upgrade.";
+                      Alert.alert("Error", errorMsg);
                     } finally {
                       setIsCheckingOut(false);
                     }
@@ -367,42 +333,31 @@ export default function SubscriptionScreen() {
             );
           } catch (err) {
             logger.error("Error previewing proration:", err);
-            Alert.alert("Error", "Failed to preview plan change. Please try again.");
+            const errorMsg = err instanceof ApiClientError ? err.message : "Failed to preview plan change. Please try again.";
+            Alert.alert("Error", errorMsg);
           } finally {
             setIsPreviewingProration(false);
           }
           return;
         }
 
-        const response = await fetch(
-          `${baseUrl}/api/subscriptions/create-checkout-session`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            credentials: "include",
-            body: JSON.stringify({
+        try {
+          const data = await apiClient.post<{ url?: string }>(
+            "/api/subscriptions/create-checkout-session",
+            {
               priceId: selectedPriceId,
               tier,
               successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
               cancelUrl: `${window.location.origin}/subscription-canceled`,
-            }),
-          },
-        );
+            },
+          );
 
-        if (response.ok) {
-          const data = (await response.json()).data as { url?: string };
           if (data.url) {
             window.location.href = data.url;
           }
-        } else {
-          const errorData = await response.json();
-          Alert.alert(
-            "Error",
-            errorData.error || "Failed to start checkout. Please try again.",
-          );
+        } catch (err) {
+          const errorMsg = err instanceof ApiClientError ? err.message : "Failed to start checkout. Please try again.";
+          Alert.alert("Error", errorMsg);
         }
       }
     } catch (error) {

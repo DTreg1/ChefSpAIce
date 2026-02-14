@@ -10,7 +10,7 @@ import {
   generateId,
   DEFAULT_MACRO_TARGETS,
 } from "@/lib/storage";
-import { apiRequestJson, getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -117,19 +117,14 @@ export function useQuickRecipeGeneration() {
       }> = [];
       if (cookwareIds.length > 0) {
         try {
-          const baseUrl = getApiUrl();
-          const url = new URL("/api/appliances", baseUrl);
-          const response = await fetch(url, { credentials: "include" });
-          if (response.ok) {
-            const allAppliances = (await response.json()).data;
-            cookware = allAppliances
-              .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
-              .map((a: ApplianceItem) => ({
-                id: a.id,
-                name: a.name,
-                alternatives: a.alternatives || [],
-              }));
-          }
+          const allAppliances = await apiClient.get<ApplianceItem[]>("/api/appliances");
+          cookware = allAppliances
+            .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+            .map((a: ApplianceItem) => ({
+              id: a.id,
+              name: a.name,
+              alternatives: a.alternatives || [],
+            }));
         } catch (err) {
           logger.error("Error loading cookware:", err);
         }
@@ -164,7 +159,7 @@ export function useQuickRecipeGeneration() {
           item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS,
       );
 
-      const generatedRecipe = await apiRequestJson<GeneratedRecipe>("POST", "/api/recipes/generate", {
+      const generatedRecipe = await apiClient.post<GeneratedRecipe>("/api/recipes/generate", {
         prioritizeExpiring: true,
         quickRecipe: true,
         inventory: inventoryPayload,
@@ -223,8 +218,7 @@ export function useQuickRecipeGeneration() {
 
       setProgressStage("image");
       try {
-        const imageData = await apiRequestJson<ImageGenerationResponse>(
-          "POST",
+        const imageData = await apiClient.post<ImageGenerationResponse>(
           "/api/recipes/generate-image",
           {
             title: recipeTitle,

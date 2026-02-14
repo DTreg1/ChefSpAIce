@@ -33,7 +33,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { storage, generateId, type FoodItem } from "@/lib/storage";
 
 interface ScannedIngredient {
@@ -147,26 +147,9 @@ export default function IngredientScannerScreen() {
         },
       );
 
-      const response = await fetch(
-        new URL("/api/ingredients/scan", getApiUrl()).toString(),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            image: manipResult.base64,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error (${response.status})`);
-      }
-
-      const result: ScanResult = (await response.json()).data;
+      const result = await apiClient.post<ScanResult>("/api/ingredients/scan", {
+        image: manipResult.base64,
+      });
 
       if (result.error) {
         Alert.alert("Scan Failed", result.error, [

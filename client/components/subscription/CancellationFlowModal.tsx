@@ -17,13 +17,13 @@ import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 
 interface CancellationFlowModalProps {
   visible: boolean;
   onClose: () => void;
   onCanceled: () => void;
-  token: string | null;
+  token?: string | null;
 }
 
 const REASONS = [
@@ -69,7 +69,6 @@ export function CancellationFlowModal({
   visible,
   onClose,
   onCanceled,
-  token,
 }: CancellationFlowModalProps) {
   const { theme, isDark } = useTheme();
   const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
@@ -99,16 +98,6 @@ export function CancellationFlowModal({
     onClose();
   };
 
-  const getHeaders = () => {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    return headers;
-  };
-
   const handleContinueToStep2 = () => {
     if (!selectedReason) return;
     let offer: string | null = null;
@@ -125,17 +114,11 @@ export function CancellationFlowModal({
 
   const logCancellationFlow = async (accepted: boolean) => {
     try {
-      const baseUrl = getApiUrl();
-      await fetch(`${baseUrl}/api/subscriptions/log-cancellation-flow`, {
-        method: "POST",
-        headers: getHeaders(),
-        credentials: "include",
-        body: JSON.stringify({
-          reason: selectedReason,
-          details: details || featureFeedback || null,
-          offerShown,
-          offerAccepted: accepted,
-        }),
+      await apiClient.post("/api/subscriptions/log-cancellation-flow", {
+        reason: selectedReason,
+        details: details || featureFeedback || null,
+        offerShown,
+        offerAccepted: accepted,
       });
     } catch {}
   };
@@ -143,16 +126,7 @@ export function CancellationFlowModal({
   const handleAcceptDiscount = async () => {
     setIsSubmitting(true);
     try {
-      const baseUrl = getApiUrl();
-      const response = await fetch(`${baseUrl}/api/subscriptions/apply-retention-offer`, {
-        method: "POST",
-        headers: getHeaders(),
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Failed to apply offer");
-      }
+      await apiClient.post("/api/subscriptions/apply-retention-offer");
       await logCancellationFlow(true);
       Alert.alert("Offer Applied!", "Your 50% discount has been applied for the next 3 months.");
       onCanceled();
@@ -167,17 +141,7 @@ export function CancellationFlowModal({
   const handlePauseSubscription = async () => {
     setIsSubmitting(true);
     try {
-      const baseUrl = getApiUrl();
-      const response = await fetch(`${baseUrl}/api/subscriptions/pause`, {
-        method: "POST",
-        headers: getHeaders(),
-        credentials: "include",
-        body: JSON.stringify({ durationMonths: pauseDuration }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Failed to pause subscription");
-      }
+      await apiClient.post("/api/subscriptions/pause", { durationMonths: pauseDuration });
       await logCancellationFlow(true);
       Alert.alert("Subscription Paused", `Your subscription has been paused for ${pauseDuration} month${pauseDuration > 1 ? "s" : ""}.`);
       onCanceled();
@@ -192,22 +156,12 @@ export function CancellationFlowModal({
   const handleConfirmCancel = async () => {
     setIsSubmitting(true);
     try {
-      const baseUrl = getApiUrl();
-      const response = await fetch(`${baseUrl}/api/subscriptions/cancel`, {
-        method: "POST",
-        headers: getHeaders(),
-        credentials: "include",
-        body: JSON.stringify({
-          reason: selectedReason,
-          details,
-          offerShown,
-          offerAccepted: false,
-        }),
+      await apiClient.post("/api/subscriptions/cancel", {
+        reason: selectedReason,
+        details,
+        offerShown,
+        offerAccepted: false,
       });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Failed to cancel subscription");
-      }
       Alert.alert("Subscription Canceled", "Your subscription will remain active until the end of your current billing period.");
       onCanceled();
       handleClose();

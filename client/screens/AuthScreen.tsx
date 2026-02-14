@@ -22,7 +22,7 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { syncManager } from "@/lib/sync-manager";
@@ -89,12 +89,7 @@ export default function AuthScreen() {
           async (inputEmail: string) => {
             if (!inputEmail?.trim()) return;
             try {
-              const baseUrl = getApiUrl();
-              await fetch(`${baseUrl}/api/auth/forgot-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: inputEmail.trim() }),
-              });
+              await apiClient.post<void>("/api/auth/forgot-password", { email: inputEmail.trim() }, { skipAuth: true });
               Alert.alert("Check Your Email", "If an account exists with that email, we've sent password reset instructions.");
             } catch {
               Alert.alert("Error", "Failed to send reset email. Please try again.");
@@ -116,12 +111,7 @@ export default function AuthScreen() {
                   return;
                 }
                 try {
-                  const baseUrl = getApiUrl();
-                  await fetch(`${baseUrl}/api/auth/forgot-password`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: email.trim() }),
-                  });
+                  await apiClient.post<void>("/api/auth/forgot-password", { email: email.trim() }, { skipAuth: true });
                   Alert.alert("Check Your Email", "If an account exists with that email, we've sent password reset instructions.");
                 } catch {
                   Alert.alert("Error", "Failed to send reset email. Please try again.");
@@ -196,14 +186,7 @@ export default function AuthScreen() {
       return;
     }
 
-    const baseUrl = getApiUrl();
-    const subscriptionResponse = await fetch(
-      `${baseUrl}/api/subscriptions/me`,
-      {
-        credentials: "include",
-      },
-    );
-    const subscriptionData = (await subscriptionResponse.json()).data as { status?: string } | null;
+    const subscriptionData = await apiClient.get<{ status?: string } | null>("/api/subscriptions/me");
     const isSubscriptionActive =
       subscriptionData?.status === "active";
 

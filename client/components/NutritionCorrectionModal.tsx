@@ -24,7 +24,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { useTheme } from "@/hooks/useTheme";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import type { NutritionFacts } from "@shared/schema";
 
 interface NutritionCorrectionModalProps {
@@ -122,9 +122,6 @@ export function NutritionCorrectionModal({
     setErrorMessage(null);
     setSubmitting(true);
     try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/nutrition/corrections", baseUrl);
-
       let imageUrlToStore: string | undefined;
 
       if (imageUri && Platform.OS !== "web") {
@@ -136,27 +133,18 @@ export function NutritionCorrectionModal({
         imageUrlToStore = imageUri;
       }
 
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          productName,
-          barcode,
-          brand,
-          originalSource,
-          originalSourceId,
-          originalNutrition: originalNutrition
-            ? JSON.stringify(originalNutrition)
-            : undefined,
-          imageUrl: imageUrlToStore,
-          notes: notes.trim() || undefined,
-        }),
+      await apiClient.post<void>("/api/nutrition/corrections", {
+        productName,
+        barcode,
+        brand,
+        originalSource,
+        originalSourceId,
+        originalNutrition: originalNutrition
+          ? JSON.stringify(originalNutrition)
+          : undefined,
+        imageUrl: imageUrlToStore,
+        notes: notes.trim() || undefined,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit correction");
-      }
 
       setSubmitted(true);
       setTimeout(() => {

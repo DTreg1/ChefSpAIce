@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, AppStateStatus } from "react-native";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import {
   MAX_SYNC_QUEUE_SIZE,
@@ -292,7 +292,7 @@ class SyncManager {
       }
 
       try {
-        await this.syncItem(item, token);
+        await this.syncItem(item);
         processedIds.add(item.id);
         const successKey = `${item.dataType}:${(item.data as { id?: string })?.id || "unknown"}`;
         this.consecutiveItemFailures.delete(successKey);
@@ -396,10 +396,8 @@ class SyncManager {
     }
   }
 
-  private async syncItem(item: SyncQueueItem, token: string): Promise<void> {
-    const baseUrl = getApiUrl();
+  private async syncItem(item: SyncQueueItem): Promise<void> {
     const endpoint = `/api/sync/${item.dataType}`;
-    const url = new URL(endpoint, baseUrl);
 
     const method =
       item.operation === "delete"
@@ -410,12 +408,8 @@ class SyncManager {
 
     let response: Response;
     try {
-      response = await fetch(url.toString(), {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      response = await apiClient.raw(method, endpoint, {
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           operation: item.operation,
           data: item.data,
@@ -484,22 +478,16 @@ class SyncManager {
     try {
       await this.processSyncQueue();
 
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/sync", baseUrl);
-
       const lastServerTimestamp = await AsyncStorage.getItem(SYNC_KEYS.SERVER_TIMESTAMP);
+      let syncPath = "/api/auth/sync";
       if (lastServerTimestamp) {
-        url.searchParams.set("lastSyncedAt", lastServerTimestamp);
+        syncPath += `?lastSyncedAt=${encodeURIComponent(lastServerTimestamp)}`;
       }
 
       let response: Response;
       try {
-        response = await fetch(url.toString(), {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        response = await apiClient.raw("GET", syncPath, {
+          headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
         this.markRequestFailure();
@@ -604,15 +592,8 @@ class SyncManager {
     }
 
     try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/sync", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      const response = await apiClient.raw("POST", "/api/auth/sync", {
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: { preferences } }),
       });
 
@@ -670,15 +651,8 @@ class SyncManager {
     }
 
     try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/sync", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      const response = await apiClient.raw("POST", "/api/auth/sync", {
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: { userProfile } }),
       });
 

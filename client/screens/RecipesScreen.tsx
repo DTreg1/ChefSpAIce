@@ -72,7 +72,7 @@ import {
   GlassEffect,
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import type { ApplianceItem, RecipesNavigation } from "@/lib/types";
 import { useSearch } from "@/contexts/SearchContext";
@@ -215,16 +215,11 @@ export default function RecipesScreen() {
 
       if (cookwareIds.length > 0) {
         try {
-          const baseUrl = getApiUrl();
-          const url = new URL("/api/appliances", baseUrl);
-          const response = await fetch(url, { credentials: "include" });
-          if (response.ok) {
-            const allAppliances: ApplianceItem[] = (await response.json()).data;
-            const cookwareNames = allAppliances
-              .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
-              .map((a: ApplianceItem) => a.name.toLowerCase());
-            setUserCookware(cookwareNames);
-          }
+          const allAppliances = await apiClient.get<ApplianceItem[]>("/api/appliances");
+          const cookwareNames = allAppliances
+            .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+            .map((a: ApplianceItem) => a.name.toLowerCase());
+          setUserCookware(cookwareNames);
         } catch (err) {
           logger.error("Error loading cookware:", err);
         }

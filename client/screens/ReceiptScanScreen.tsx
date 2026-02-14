@@ -36,7 +36,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
 import { logger } from "@/lib/logger";
@@ -431,7 +431,6 @@ export default function ReceiptScanScreen() {
 
   const analyzeReceiptMutation = useMutation({
     mutationFn: async (imageUri: string) => {
-      const baseUrl = getApiUrl();
       const formData = new FormData();
 
       if (Platform.OS === "web") {
@@ -453,18 +452,7 @@ export default function ReceiptScanScreen() {
         formData.append("image", blob, "receipt.jpg");
       }
 
-      const response = await fetch(`${baseUrl}/api/receipt/analyze-receipt`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || "Failed to analyze receipt");
-      }
-
-      return (await response.json()).data as ReceiptAnalysisResult;
+      return apiClient.postFormData<ReceiptAnalysisResult>("/api/receipt/analyze-receipt", formData);
     },
     onSuccess: (data) => {
       setAnalysisResult(data);

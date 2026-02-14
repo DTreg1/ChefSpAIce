@@ -42,7 +42,7 @@ import {
 } from "@/components/ImageAnalysisResult";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { storage, FoodItem, generateId } from "@/lib/storage";
 
@@ -189,9 +189,6 @@ export default function FoodCameraScreen() {
 
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageUri: string): Promise<AnalysisResult> => {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/ai/analyze-food", baseUrl);
-
       const formData = new FormData();
 
       if (Platform.OS === "web") {
@@ -211,18 +208,7 @@ export default function FoodCameraScreen() {
         } as unknown as Blob);
       }
 
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to analyze image");
-      }
-
-      return (await response.json()).data;
+      return apiClient.postFormData<AnalysisResult>("/api/ai/analyze-food", formData);
     },
     onSuccess: (data) => {
       setScreenState("results");

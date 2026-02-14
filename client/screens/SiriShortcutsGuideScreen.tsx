@@ -33,6 +33,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 import { storage } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
@@ -122,16 +123,7 @@ export default function SiriShortcutsGuideScreen() {
 
     setIsGeneratingKey(true);
     try {
-      const authToken = await storage.getAuthToken();
-      const response = await fetch(`${apiUrl}/api/external/generate-key`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = (await response.json()).data as { success?: boolean; apiKey?: string; message?: string };
+      const data = await apiClient.post<{ success?: boolean; apiKey?: string; message?: string }>("/api/external/generate-key");
       if (data.success && data.apiKey) {
         setApiKey(data.apiKey);
         Alert.alert(
@@ -143,7 +135,8 @@ export default function SiriShortcutsGuideScreen() {
       }
     } catch (error) {
       logger.error("Generate API key error:", error);
-      Alert.alert("Error", "Failed to generate API key. Please try again.");
+      const msg = error instanceof ApiClientError ? error.message : "Failed to generate API key. Please try again.";
+      Alert.alert("Error", msg);
     } finally {
       setIsGeneratingKey(false);
     }

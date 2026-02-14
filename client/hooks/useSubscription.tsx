@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Platform, Alert, AppState, AppStateStatus, Linking } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import { trackSubscriptionChange } from "@/lib/crash-reporter";
 import { SubscriptionTier, TIER_CONFIG } from "@shared/subscription";
@@ -179,17 +179,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
     setIsLoading(true);
     try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/me", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = (await response.json()).data as Record<string, unknown>;
+      const data = await apiClient.get<Record<string, unknown>>("/api/subscriptions/me");
+      if (data) {
 
         const tierConfig =
           TIER_CONFIG[data.tier as SubscriptionTier] ||
@@ -248,11 +239,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             status: sub.status,
             planType: sub.planType,
           });
-        }
-      } else {
-        setSubscriptionData(null);
-        if (typeof window !== "undefined") {
-          window.__subscriptionCache = null;
         }
       }
     } catch (error) {
@@ -371,21 +357,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         return;
       }
       try {
-        const baseUrl = getApiUrl();
-        const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
-        const response = await fetch(url.toString(), {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
-        });
-        if (response.ok) {
-          const data = (await response.json()).data as { url?: string };
-          if (data.url) {
-            (window as Window).location.href = data.url;
-          }
+        const data = await apiClient.post<{ url?: string }>("/api/subscriptions/create-portal-session", {});
+        if (data.url) {
+          (window as Window).location.href = data.url;
         }
       } catch (error) {
         logger.error("Error opening subscription portal:", error);

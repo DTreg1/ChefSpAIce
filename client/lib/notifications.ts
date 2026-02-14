@@ -222,17 +222,8 @@ export async function registerPushToken(): Promise<string | null> {
     const authToken = await storage.getAuthToken();
     if (!authToken) return token;
 
-    const { getApiUrl } = await import("@/lib/query-client");
-    const baseUrl = getApiUrl();
-
-    await fetch(new URL("/api/user/push-token", baseUrl).toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ token }),
-    });
+    const { apiClient } = await import("@/lib/api-client");
+    await apiClient.post<void>("/api/user/push-token", { token });
 
     logger.info("Push token registered with server");
     return token;

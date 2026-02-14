@@ -7,6 +7,7 @@ import { GlassCard } from "./GlassCard";
 import { donationAmounts } from "@/data/landing-data";
 import { sharedStyles } from "./shared-styles";
 import { logger } from "@/lib/logger";
+import { apiClient } from "@/lib/api-client";
 
 const isWeb = Platform.OS === "web";
 
@@ -22,40 +23,15 @@ export function DonationSection({ isWide }: DonationSectionProps) {
     setIsDonating(true);
 
     try {
-      const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
-      const apiBaseUrl = expoDomain
-        ? `https://${expoDomain}`
-        : isWeb
-          ? window.location.origin
-          : "https://chefspaice.com";
-
       const redirectBaseUrl = isWeb
         ? window.location.origin
         : "https://chefspaice.com";
 
-      const response = await fetch(
-        `${apiBaseUrl}/api/donations/create-checkout-session`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount,
-            successUrl: `${redirectBaseUrl}/?donation=success`,
-            cancelUrl: `${redirectBaseUrl}/?donation=cancelled`,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        logger.error(
-          "Donation API error:",
-          response.status,
-          response.statusText,
-        );
-        return;
-      }
-
-      const data = (await response.json()).data as { url?: string; error?: string };
+      const data = await apiClient.post<{ url?: string; error?: string }>("/api/donations/create-checkout-session", {
+        amount,
+        successUrl: `${redirectBaseUrl}/?donation=success`,
+        cancelUrl: `${redirectBaseUrl}/?donation=cancelled`,
+      }, { skipAuth: true });
 
       if (data.url) {
         if (isWeb) {

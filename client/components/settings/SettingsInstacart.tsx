@@ -13,7 +13,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { storage, UserPreferences } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import type { ThemeColors } from "@/lib/types";
 
 interface Retailer {
@@ -52,17 +52,9 @@ export function SettingsInstacart({
     setHasSearched(true);
 
     try {
-      const baseUrl = getApiUrl();
-      const response = await fetch(
-        `${baseUrl}/api/instacart/retailers?postal_code=${encodeURIComponent(postalCode.trim())}&country_code=${countryCode}`,
+      const data = await apiClient.get<{ retailers: Retailer[] }>(
+        `/api/instacart/retailers?postal_code=${encodeURIComponent(postalCode.trim())}&country_code=${countryCode}`,
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch nearby retailers");
-      }
-
-      const result = await response.json();
-      const data = result.data || result;
       setRetailers(data.retailers || []);
 
       const newPrefs = {

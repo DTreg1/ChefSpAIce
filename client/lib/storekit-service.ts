@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import Purchases, {
   LOG_LEVEL,
   PurchasesOffering,
@@ -67,33 +67,20 @@ class StoreKitService {
         customerInfo.entitlements.active[ENTITLEMENTS.STANDARD];
       const expirationDate = activeEntitlement?.expirationDate || null;
 
-      const baseUrl = getApiUrl();
-      const response = await fetch(
-        `${baseUrl}/api/subscriptions/sync-revenuecat`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.authToken}`,
-          },
-          body: JSON.stringify({
-            tier,
-            status,
-            productId: activeEntitlement?.productIdentifier || null,
-            expirationDate,
-          }),
-        },
-      );
-
-      if (response.ok) {
+      try {
+        await apiClient.post<void>("/api/subscriptions/sync-revenuecat", {
+          tier,
+          status,
+          productId: activeEntitlement?.productIdentifier || null,
+          expirationDate,
+        });
         logger.log("StoreKit: Purchase synced with server successfully");
-        // Clear any pending purchase since we've synced
         await storage.clearPendingPurchase();
         return true;
-      } else {
+      } catch (syncError) {
         logger.error(
           "StoreKit: Failed to sync purchase with server",
-          await response.text(),
+          syncError,
         );
         return false;
       }

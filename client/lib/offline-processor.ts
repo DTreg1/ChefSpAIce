@@ -1,61 +1,43 @@
 import { Alert } from "react-native";
 import { syncManager } from "@/lib/sync-manager";
 import { offlineMutationQueue, MutationQueueItem } from "@/lib/offline-queue";
-import { getApiUrl } from "@/lib/query-client";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 
-const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
 const MAX_RETRIES = 10;
-
-async function getStoredAuthToken(): Promise<string | null> {
-  try {
-    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-    return token ? JSON.parse(token) : null;
-  } catch {
-    return null;
-  }
-}
 
 type ReplayResult = "success" | "auth_expired" | "retriable" | "permanent_fail";
 
 async function replayMutation(item: MutationQueueItem): Promise<ReplayResult> {
-  const baseUrl = getApiUrl();
-  const url = new URL(item.endpoint, baseUrl);
-  const token = await getStoredAuthToken();
-
-  const headers: Record<string, string> = {};
-  if (item.body) {
-    headers["Content-Type"] = "application/json";
+  try {
+    if (item.method === "POST") {
+      await apiClient.post<void>(item.endpoint, item.body ?? undefined);
+    } else if (item.method === "PUT") {
+      await apiClient.put<void>(item.endpoint, item.body ?? undefined);
+    } else if (item.method === "PATCH") {
+      await apiClient.patch<void>(item.endpoint, item.body ?? undefined);
+    } else if (item.method === "DELETE") {
+      await apiClient.delete<void>(item.endpoint, item.body ?? undefined);
+    } else {
+      await apiClient.get<void>(item.endpoint);
+    }
+    syncManager.markRequestSuccess();
+    return "success";
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      if (error.status === 401 || error.status === 403) {
+        logger.warn("[OfflineProcessor] Auth expired for queued mutation", { endpoint: item.endpoint });
+        return "auth_expired";
+      }
+      if (error.status >= 500 || error.status === 408 || error.status === 429) {
+        logger.warn("[OfflineProcessor] Retriable server error", { endpoint: item.endpoint, status: error.status });
+        return "retriable";
+      }
+      logger.warn("[OfflineProcessor] Permanent client error", { endpoint: item.endpoint, status: error.status });
+      return "permanent_fail";
+    }
+    throw error;
   }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url.toString(), {
-    method: item.method,
-    headers,
-    body: item.body ? JSON.stringify(item.body) : undefined,
-    credentials: "include",
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    logger.warn("[OfflineProcessor] Auth expired for queued mutation", { endpoint: item.endpoint });
-    return "auth_expired";
-  }
-
-  if (res.status >= 500 || res.status === 408 || res.status === 429) {
-    logger.warn("[OfflineProcessor] Retriable server error", { endpoint: item.endpoint, status: res.status });
-    return "retriable";
-  }
-
-  if (!res.ok) {
-    logger.warn("[OfflineProcessor] Permanent client error", { endpoint: item.endpoint, status: res.status });
-    return "permanent_fail";
-  }
-
-  syncManager.markRequestSuccess();
-  return "success";
 }
 
 let isProcessing = false;

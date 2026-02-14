@@ -6,7 +6,7 @@ import {
   setAudioModeAsync,
 } from "expo-audio";
 import { Platform } from "react-native";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 
 interface VoiceInputOptions {
   onTranscript?: (text: string) => void;
@@ -74,9 +74,6 @@ function isWebSpeechAvailable(): boolean {
 }
 
 async function transcribeAudio(uri: string): Promise<string> {
-  const baseUrl = getApiUrl();
-  const url = new URL("/api/voice/transcribe", baseUrl);
-
   const formData = new FormData();
   formData.append("file", {
     uri,
@@ -84,19 +81,8 @@ async function transcribeAudio(uri: string): Promise<string> {
     name: "recording.m4a",
   } as unknown as Blob);
 
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Transcription failed");
-  }
-
-  const { transcript } = (await response.json()).data as { transcript: string };
-  return transcript;
+  const data = await apiClient.postFormData<{ transcript: string }>("/api/voice/transcribe", formData);
+  return data.transcript;
 }
 
 export function useVoiceInput(options: VoiceInputOptions = {}) {

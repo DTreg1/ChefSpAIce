@@ -12,7 +12,7 @@ import {
   getDaysUntilExpiration,
   UserPreferences,
 } from "@/lib/storage";
-import { getApiUrl, apiRequestJson } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { useAIVoice } from "@/hooks/useAIVoice";
 import type { WasteTip } from "@/components/chat/TipBanner";
 
@@ -68,8 +68,7 @@ export function useChatMessages() {
 
       setTipLoading(true);
       try {
-        const data = await apiRequestJson<{ suggestions: string[] }>(
-          "POST",
+        const data = await apiClient.post<{ suggestions: string[] }>(
           "/api/suggestions/waste-reduction",
           { expiringItems },
         );
@@ -171,48 +170,33 @@ export function useChatMessages() {
           ? `Available ingredients: ${inventory.map((i) => `${i.quantity} ${i.unit} ${i.name}`).join(", ")}`
           : "No ingredients in inventory";
 
-      const baseUrl = getApiUrl();
-
       const authToken = await storage.getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
 
-      const response = await fetch(new URL("/api/chat", baseUrl).href, {
-        method: "POST",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({
-          message: userMessage.content,
-          context: inventoryContext,
-          inventory: inventory.map((i) => ({
-            id: i.id,
-            name: i.name,
-            quantity: i.quantity,
-            unit: i.unit,
-            expirationDate: i.expirationDate,
-            storageLocation: i.storageLocation,
-            category: i.category,
-          })),
-          preferences: preferences
-            ? {
-                dietaryRestrictions: preferences.dietaryRestrictions,
-                cuisinePreferences: preferences.cuisinePreferences,
-                macroTargets: preferences.macroTargets,
-              }
-            : null,
-          equipment: equipment,
-          history: updatedMessages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
+      const data = await apiClient.post<{ reply?: string; refreshData?: boolean; navigateTo?: any }>("/api/chat", {
+        message: userMessage.content,
+        context: inventoryContext,
+        inventory: inventory.map((i) => ({
+          id: i.id,
+          name: i.name,
+          quantity: i.quantity,
+          unit: i.unit,
+          expirationDate: i.expirationDate,
+          storageLocation: i.storageLocation,
+          category: i.category,
+        })),
+        preferences: preferences
+          ? {
+              dietaryRestrictions: preferences.dietaryRestrictions,
+              cuisinePreferences: preferences.cuisinePreferences,
+              macroTargets: preferences.macroTargets,
+            }
+          : null,
+        equipment: equipment,
+        history: updatedMessages.slice(-10).map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
       });
-
-      const data = (await response.json()).data as { reply?: string; refreshData?: boolean; navigateTo?: any };
 
       const assistantMessage: ChatMessage = {
         id: generateId(),
@@ -284,28 +268,11 @@ export function useChatMessages() {
     if (isReplayLoading || replayVoice.isSpeaking) return;
 
     setIsReplayLoading(messageId);
-    const baseUrl = getApiUrl();
-    const authToken = await storage.getAuthToken();
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
 
     try {
-      const response = await fetch(new URL("/api/voice/speak", baseUrl).href, {
-        method: "POST",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({ text: content }),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()).data as { audioUrl?: string };
-        if (data.audioUrl) {
-          await replayVoice.play(data.audioUrl);
-        }
+      const data = await apiClient.post<{ audioUrl?: string }>("/api/voice/speak", { text: content });
+      if (data.audioUrl) {
+        await replayVoice.play(data.audioUrl);
       }
     } catch (error) {
       logger.error("Failed to replay message:", error);

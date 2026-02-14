@@ -9,11 +9,11 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  getApiUrl,
   queryClient,
   setAuthErrorCallback,
   clearAuthErrorCallback,
 } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { storage } from "@/lib/storage";
 import { storeKitService } from "@/lib/storekit-service";
 import { logger } from "@/lib/logger";
@@ -199,15 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isWeb) {
           try {
-            const baseUrl = getApiUrl();
-            const url = new URL("/api/auth/restore-session", baseUrl);
-            const response = await fetch(url.toString(), {
-              method: "GET",
-              credentials: "include",
-            });
-
-            if (response.ok) {
-              const data = (await response.json()).data as RestoreSessionData;
+            const data = await apiClient.get<RestoreSessionData>("/api/auth/restore-session", { skipAuth: true });
+            if (data) {
               const authData: StoredAuthData = {
                 user: data.user,
                 token: null,
@@ -357,14 +350,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      const baseUrl = getApiUrl();
-      const logoutUrl = new URL("/api/auth/logout", baseUrl);
       const token = state.token;
 
-      await fetch(logoutUrl.toString(), {
-        method: "POST",
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      await apiClient.post<void>("/api/auth/logout", undefined, {
+        skipAuth: !token,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       }).catch((err) => logger.warn("Logout API call failed", { error: err instanceof Error ? err.message : String(err) }));
 
       await clearAuthData();

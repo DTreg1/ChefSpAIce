@@ -7,7 +7,7 @@ import {
 } from "expo-audio";
 import { useVoiceInput } from "./useVoiceInput";
 import { useAIVoice } from "./useAIVoice";
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 
 export interface VoiceChatMessage {
   role: "user" | "assistant";
@@ -115,9 +115,6 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
 
       abortControllerRef.current = new AbortController();
 
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/voice/chat", baseUrl);
-
       const formData = new FormData();
       formData.append("file", {
         uri,
@@ -125,19 +122,11 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
         name: "recording.m4a",
       } as unknown as Blob);
 
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Voice chat request failed");
-      }
-
-      const data = (await response.json()).data as { userTranscript: string; assistantMessage: string; audioUrl?: string };
+      const data = await apiClient.postFormData<{ userTranscript: string; assistantMessage: string; audioUrl?: string }>(
+        "/api/ai/voice-chat",
+        formData,
+        { signal: abortControllerRef.current.signal },
+      );
       const { userTranscript, assistantMessage, audioUrl } = data;
 
       const userMessage: VoiceChatMessage = {

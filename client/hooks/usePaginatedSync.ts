@@ -1,17 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiUrl } from "@/lib/query-client";
-
-const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
-
-async function getStoredAuthToken(): Promise<string | null> {
-  try {
-    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-    return token ? JSON.parse(token) : null;
-  } catch {
-    return null;
-  }
-}
+import { apiClient } from "@/lib/api-client";
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -23,30 +11,12 @@ async function fetchPaginated<T>(
   limit: number,
   cursor?: string,
 ): Promise<PaginatedResponse<T>> {
-  const baseUrl = getApiUrl();
-  const url = new URL(endpoint, baseUrl);
-  url.searchParams.set("limit", String(limit));
+  const params = new URLSearchParams({ limit: String(limit) });
   if (cursor) {
-    url.searchParams.set("cursor", cursor);
+    params.set("cursor", cursor);
   }
 
-  const token = await getStoredAuthToken();
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url.toString(), {
-    headers,
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    throw new Error(`${res.status}: ${res.statusText}`);
-  }
-
-  const body = await res.json();
-  const data = body.data ?? body;
+  const data = await apiClient.get<{ items: T[]; nextCursor?: string }>(`${endpoint}?${params}`);
   return {
     items: data.items ?? [],
     nextCursor: data.nextCursor,

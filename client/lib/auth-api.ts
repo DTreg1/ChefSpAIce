@@ -1,4 +1,4 @@
-import { getApiUrl } from "@/lib/query-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import { isWeb, isIOS, isAndroid } from "@/lib/auth-storage";
 import type { AuthResponseData, ApiResponseBody } from "@/lib/types";
@@ -72,11 +72,8 @@ export async function loginApi(
   email: string,
   password: string,
 ): Promise<AuthResult> {
-  const baseUrl = getApiUrl();
-  const url = new URL("/api/auth/login", baseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: "POST",
+  const response = await apiClient.raw("POST", "/api/auth/login", {
+    skipAuth: true,
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ email, password }),
@@ -111,13 +108,9 @@ export async function registerApi(
     email,
     selectedTier,
   });
-  const baseUrl = getApiUrl();
-  logger.log("[SignUp] API URL:", baseUrl);
-  const url = new URL("/api/auth/register", baseUrl);
-  logger.log("[SignUp] Full URL:", url.toString());
 
-  const response = await fetch(url.toString(), {
-    method: "POST",
+  const response = await apiClient.raw("POST", "/api/auth/register", {
+    skipAuth: true,
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({
@@ -204,15 +197,12 @@ export async function appleSignInApi(
         },
       };
 
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/social/apple", baseUrl);
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
-        response = await fetch(url.toString(), {
-          method: "POST",
+        response = await apiClient.raw("POST", "/api/auth/social/apple", {
+          skipAuth: true,
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(authPayload),
@@ -253,16 +243,14 @@ export async function appleSignInApi(
         return { success: false, error: "No authorization code received from Apple" };
       }
 
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/social/apple", baseUrl);
       const redirectUri = AuthSession?.makeRedirectUri({ scheme: 'com.chefspaice.chefspaice' }) || '';
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
-        response = await fetch(url.toString(), {
-          method: "POST",
+        response = await apiClient.raw("POST", "/api/auth/social/apple", {
+          skipAuth: true,
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
@@ -395,11 +383,8 @@ export async function googleSignInApi(
       return { success: false, error: "No ID token received from Google" };
     }
 
-    const baseUrl = getApiUrl();
-    const url = new URL("/api/auth/social/google", baseUrl);
-
-    const response = await fetch(url.toString(), {
-      method: "POST",
+    const response = await apiClient.raw("POST", "/api/auth/social/google", {
+      skipAuth: true,
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({
