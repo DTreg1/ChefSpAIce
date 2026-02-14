@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import OpenAI from "openai";
+import { eq, and } from "drizzle-orm";
 import {
   checkAiRecipeLimit,
   incrementAiRecipeCount,
@@ -10,6 +11,8 @@ import { AppError } from "../../middleware/errorHandler";
 import { validateBody } from "../../middleware/validateBody";
 import { successResponse, errorResponse } from "../../lib/apiResponse";
 import { withCircuitBreaker } from "../../lib/circuit-breaker";
+import { db } from "../../db";
+import { userSavedRecipes } from "@shared/schema";
 import {
   generateRecipeSchema,
   generateImageSchema,
@@ -318,11 +321,32 @@ router.post("/generate-stream", validateBody(generateRecipeSchema), async (req: 
 
 router.post("/generate-image", validateBody(generateImageSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, cuisine } = req.body;
+    const { recipeId, title, description, cuisine } = req.body;
+    const userId = req.userId!;
 
     const result = await generateRecipeImage(title, description, cuisine);
 
-    return res.json(successResponse(result));
+    const imageBuffer = Buffer.from(result.imageBase64, "base64");
+    const thumbnailBuffer = Buffer.from(result.thumbnailBase64, "base64");
+
+    await db
+      .update(userSavedRecipes)
+      .set({
+        imageData: imageBuffer,
+        thumbnailData: thumbnailBuffer,
+      })
+      .where(
+        and(
+          eq(userSavedRecipes.userId, userId),
+          eq(userSavedRecipes.itemId, recipeId),
+        ),
+      );
+
+    return res.json(successResponse({
+      imageBase64: result.imageBase64,
+      thumbnailBase64: result.thumbnailBase64,
+      format: result.format,
+    }));
   } catch (error) {
     next(error);
   }
@@ -375,6 +399,66 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
       servings: result.servings,
       notes: result.notes,
     }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/image/:recipeId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.userId) {
+      throw AppError.unauthorized("Authentication required");
+    }
+
+    const { recipeId } = req.params;
+
+    const rows = await db
+      .select({ imageData: userSavedRecipes.imageData })
+      .from(userSavedRecipes)
+      .where(
+        and(
+          eq(userSavedRecipes.userId, req.userId),
+          eq(userSavedRecipes.itemId, recipeId)
+        )
+      );
+
+    if (rows.length === 0 || !rows[0].imageData) {
+      return res.status(404).json(errorResponse("Image not found", "NOT_FOUND"));
+    }
+
+    res.setHeader("Content-Type", "image/webp");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    return res.send(rows[0].imageData);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/image/:recipeId/thumbnail", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.userId) {
+      throw AppError.unauthorized("Authentication required");
+    }
+
+    const { recipeId } = req.params;
+
+    const rows = await db
+      .select({ thumbnailData: userSavedRecipes.thumbnailData })
+      .from(userSavedRecipes)
+      .where(
+        and(
+          eq(userSavedRecipes.userId, req.userId),
+          eq(userSavedRecipes.itemId, recipeId)
+        )
+      );
+
+    if (rows.length === 0 || !rows[0].thumbnailData) {
+      return res.status(404).json(errorResponse("Thumbnail not found", "NOT_FOUND"));
+    }
+
+    res.setHeader("Content-Type", "image/webp");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    return res.send(rows[0].thumbnailData);
   } catch (error) {
     next(error);
   }

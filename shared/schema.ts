@@ -36,7 +36,14 @@ import {
   jsonb,
   doublePrecision,
   serial,
+  customType,
 } from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer; dpiData: string }>({
+  dataType() {
+    return "bytea";
+  },
+});
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -358,6 +365,8 @@ export const userSavedRecipes = pgTable(
     servings: integer("servings"),
     imageUri: text("image_uri"),
     cloudImageUri: text("cloud_image_uri"),
+    imageData: bytea("image_data"),
+    thumbnailData: bytea("thumbnail_data"),
     nutrition: jsonb("nutrition"),
     isFavorite: boolean("is_favorite").default(false),
     extraData: jsonb("extra_data"),
@@ -668,6 +677,8 @@ export const syncRecipeSchema = z.object({
     carbs: z.number(),
     fat: z.number(),
   }).optional().nullable(),
+  imageData: z.string().optional().nullable(),
+  thumbnailData: z.string().optional().nullable(),
   isFavorite: z.boolean().optional().nullable(),
   updatedAt: z.string().optional(),
 }).passthrough();
