@@ -142,7 +142,7 @@ function AuthGuardedNavigator() {
   } = useAuth();
   const { isActive, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(true);
   const hasInitialized = useRef(false);
   const prevAuthState = useRef({ isAuthenticated });
   const prevSubscriptionState = useRef({ isActive, subscriptionLoading });
