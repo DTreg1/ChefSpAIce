@@ -75,7 +75,7 @@ import nutritionLookupRouter from "./routers/nutrition-lookup.router";
 import errorReportRouter from "./routers/error-report.router";
 import { db, checkPoolHealth } from "./db";
 import { getRedisClient } from "./lib/cache";
-import { users, userSessions } from "../shared/schema";
+import { users, userSessions } from "@shared/schema";
 import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(users.id, userId));
 
         // Also update subscriptions table if exists
-        const { subscriptions } = await import("../shared/schema");
+        const { subscriptions } = await import("@shared/schema");
         await db
           .update(subscriptions)
           .set({
@@ -421,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(users.id, user.id));
 
         // Also update subscriptions table if exists
-        const { subscriptions } = await import("../shared/schema");
+        const { subscriptions } = await import("@shared/schema");
         await db
           .update(subscriptions)
           .set({

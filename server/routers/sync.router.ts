@@ -9,7 +9,7 @@ import {
   syncWasteLogEntrySchema, syncConsumedLogEntrySchema,
   syncPreferencesSchema, syncAnalyticsSchema, syncOnboardingSchema,
   syncCustomLocationsSchema, syncUserProfileSchema,
-} from "../../shared/schema";
+} from "@shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
 import { validateBody } from "../middleware/validateBody";

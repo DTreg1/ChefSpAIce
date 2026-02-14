@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { AppError } from "../middleware/errorHandler";
 import { db } from "../db";
-import { feedback, feedbackBuckets, userSessions, users } from "../../shared/schema";
+import { feedback, feedbackBuckets, userSessions, users } from "@shared/schema";
 import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";

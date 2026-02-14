@@ -1,7 +1,7 @@
 import { eq, and, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db";
-import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userSyncKV } from "../../shared/schema";
+import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userSyncKV } from "@shared/schema";
 import OpenAI from "openai";
 import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
 import { logger } from "./logger";

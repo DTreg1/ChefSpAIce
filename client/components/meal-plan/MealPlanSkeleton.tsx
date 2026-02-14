@@ -1,6 +1,6 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { SkeletonBox } from "@/components/SkeletonBox";
-import { useAppTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import { Spacing, GlassEffect } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -31,7 +31,7 @@ function DaySelectorSkeleton() {
 }
 
 function MealSlotSkeleton() {
-  const { theme } = useAppTheme();
+  const { theme } = useTheme();
 
   return (
     <View style={styles.mealSlot}>
@@ -73,7 +73,7 @@ function HintRowSkeleton() {
 }
 
 function SelectedDayCardSkeleton() {
-  const { theme } = useAppTheme();
+  const { theme } = useTheme();
 
   return (
     <View
@@ -94,7 +94,7 @@ function SelectedDayCardSkeleton() {
 }
 
 function StatsCardSkeleton() {
-  const { theme } = useAppTheme();
+  const { theme } = useTheme();
 
   return (
     <View

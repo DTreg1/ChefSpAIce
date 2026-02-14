@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../../db";
-import { subscriptions, users } from "../../../shared/schema";
+import { subscriptions, users } from "@shared/schema";
 import { eq, sql, and, count } from "drizzle-orm";
 import { requireAdmin } from "../../middleware/requireAdmin";
 import { AppError } from "../../middleware/errorHandler";

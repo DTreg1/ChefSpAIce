@@ -1,13 +1,13 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { SkeletonBox } from "@/components/SkeletonBox";
-import { useAppTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import { Spacing, GlassEffect } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 function ShoppingItemSkeleton() {
-  const { theme } = useAppTheme();
+  const { theme } = useTheme();
 
   return (
     <View

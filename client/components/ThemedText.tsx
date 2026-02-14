@@ -1,6 +1,6 @@
 import { Text, type TextProps } from "react-native";
 
-import { useAppTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import { Typography } from "@/constants/theme";
 import { useGlassContext } from "@/contexts/GlassContext";
 
@@ -26,7 +26,7 @@ export function ThemedText({
   type = "body",
   ...rest
 }: ThemedTextProps) {
-  const { theme, isDark } = useAppTheme();
+  const { theme, isDark } = useTheme();
   const { isOnGlass } = useGlassContext();
 
   const getColor = () => {

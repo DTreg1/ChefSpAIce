@@ -12,5 +12,3 @@ export function useTheme() {
     setTheme: context.setThemePreference,
   };
 }
-
-export const useAppTheme = useTheme;

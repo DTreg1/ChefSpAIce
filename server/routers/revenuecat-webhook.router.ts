@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
-import { users } from '../../shared/schema';
+import { users } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { logger } from '../lib/logger';
 import { AppError } from '../middleware/errorHandler';
