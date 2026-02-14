@@ -72,7 +72,7 @@ import {
   DEFAULT_MACRO_TARGETS,
   MacroTargets,
 } from "@/lib/storage";
-import { apiClient, ApiClientError } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import {
   clearPreferences,
@@ -174,7 +174,7 @@ export default function SettingsScreen() {
   const [referralData, setReferralData] = useState<{
     referralCode: string;
     shareLink: string;
-    stats: { totalReferrals: number; completedSignups: number };
+    stats: { successfulReferrals: number; rewardsEarned: number; creditsRemaining: number; creditsNeededForReward: number };
   } | null>(null);
   const [isLoadingReferral, setIsLoadingReferral] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
   const [showAddStorageModal, setShowAddStorageModal] = useState(false);
   const [newStorageAreaName, setNewStorageAreaName] = useState("");
 
-  const { focusTargetRef: storageFocusRef, containerRef: storageContainerRef, onAccessibilityEscape: onStorageEscape } = useFocusTrap({
+  const { onAccessibilityEscape: onStorageEscape } = useFocusTrap({
     visible: showAddStorageModal,
     onDismiss: () => setShowAddStorageModal(false),
   });
@@ -209,7 +209,7 @@ export default function SettingsScreen() {
       const data = await apiClient.get<{
         referralCode: string;
         shareLink: string;
-        stats: { totalReferrals: number; completedSignups: number };
+        stats: { successfulReferrals: number; rewardsEarned: number; creditsRemaining: number; creditsNeededForReward: number };
       }>("/api/referral/code");
       setReferralData(data);
     } catch (error) {
@@ -817,7 +817,7 @@ export default function SettingsScreen() {
     ...customStorageLocations.map((l) => ({
       value: l.key,
       label: l.label,
-      icon: l.icon,
+      icon: l.icon as React.ComponentProps<typeof Feather>["name"],
     })),
   ];
 
@@ -837,7 +837,7 @@ export default function SettingsScreen() {
         return (
           <>
             <SettingsCloudSync user={user} theme={theme} />
-            <SettingsBiometric biometric={biometric} theme={theme} />
+            <SettingsBiometric biometric={{...biometric, setEnabled: async (v: boolean) => { await biometric.setEnabled(v); }}} theme={theme} />
             <SettingsActiveSessions theme={theme} />
           </>
         );
@@ -927,7 +927,7 @@ export default function SettingsScreen() {
       case "integrations":
         return (
           <>
-            <SettingsIntegrations navigation={navigation} theme={theme} />
+            <SettingsIntegrations navigation={navigation as any} theme={theme} />
             <SettingsInstacart
               preferences={preferences}
               onPreferencesChange={handleInstacartPreferencesChange}
@@ -979,7 +979,7 @@ export default function SettingsScreen() {
         return (
           <>
             <SettingsAbout />
-            <SettingsLegalSupport navigation={navigation} theme={theme} />
+            <SettingsLegalSupport navigation={navigation as any} theme={theme} />
             <SettingsFooter />
           </>
         );
@@ -1098,7 +1098,6 @@ export default function SettingsScreen() {
             accessibilityLabel="Close add storage modal"
           >
             <Pressable
-              ref={storageContainerRef}
               style={[
                 addStorageStyles.modal,
                 { backgroundColor: theme.backgroundDefault },
@@ -1108,7 +1107,7 @@ export default function SettingsScreen() {
               accessibilityLabel="Add storage modal content"
               onAccessibilityEscape={onStorageEscape}
             >
-              <ThemedText ref={storageFocusRef} type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
+              <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
                 Add Storage Area
               </ThemedText>
               <ThemedText
@@ -1204,7 +1203,7 @@ export default function SettingsScreen() {
         ) : null}
 
         {isAuthenticated ? (
-          <SettingsBiometric biometric={biometric} theme={theme} />
+          <SettingsBiometric biometric={{...biometric, setEnabled: async (v: boolean) => { await biometric.setEnabled(v); }}} theme={theme} />
         ) : null}
 
         {isAuthenticated ? <SettingsActiveSessions theme={theme} /> : null}
@@ -1286,7 +1285,7 @@ export default function SettingsScreen() {
 
         <SettingsAbout />
 
-        <SettingsIntegrations navigation={navigation} theme={theme} />
+        <SettingsIntegrations navigation={navigation as any} theme={theme} />
 
         <SettingsInstacart
           preferences={preferences}
@@ -1294,7 +1293,7 @@ export default function SettingsScreen() {
           theme={theme}
         />
 
-        <SettingsLegalSupport navigation={navigation} theme={theme} />
+        <SettingsLegalSupport navigation={navigation as any} theme={theme} />
 
         <SettingsStoragePrefs
           learnedPrefsCount={learnedPrefsCount}
@@ -1369,7 +1368,6 @@ export default function SettingsScreen() {
           accessibilityLabel="Close add storage modal"
         >
           <Pressable
-            ref={storageContainerRef}
             style={[
               addStorageStyles.modal,
               { backgroundColor: theme.backgroundDefault },
@@ -1379,7 +1377,7 @@ export default function SettingsScreen() {
             accessibilityLabel="Add storage modal content"
             onAccessibilityEscape={onStorageEscape}
           >
-            <ThemedText ref={storageFocusRef} type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
+            <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
               Add Storage Area
             </ThemedText>
             <ThemedText
