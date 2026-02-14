@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
 import { z } from "zod";
@@ -32,24 +32,6 @@ function getGoogleClientIds(): string[] {
   if (process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID) clientIds.push(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID);
   if (process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID) clientIds.push(process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID);
   return clientIds.filter((id, index, self) => id && self.indexOf(id) === index);
-}
-
-interface AppleTokenPayload {
-  identityToken?: string;
-  authorizationCode?: string;
-  selectedPlan?: 'monthly' | 'annual';
-  selectedTier?: 'basic' | 'pro';
-  isWebAuth?: boolean;
-  redirectUri?: string; // For web auth: the redirect URI used in the auth request
-  user?: {
-    email?: string;
-  };
-}
-
-interface GoogleTokenPayload {
-  idToken: string;
-  accessToken?: string;
-  selectedPlan?: 'monthly' | 'annual';
 }
 
 const appleAuthSchema = z.object({
