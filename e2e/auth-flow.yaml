@@ -1,0 +1,84 @@
+appId: ${APP_ID}
+name: Authentication Flow
+---
+
+- launchApp
+
+- assertVisible:
+    id: "button-switch-auth-mode"
+
+- tapOn:
+    id: "button-switch-auth-mode"
+    label: "Switch to Sign Up mode if needed"
+
+- assertVisible:
+    text: "Create Account"
+
+- tapOn:
+    id: "input-email"
+- inputText: "testuser+${maestro.copiedText}@chefspaice.test"
+
+- runScript:
+    file: helpers/generate-email.js
+    env:
+      TIMESTAMP: ${maestro.timestamp}
+    outputVariable: TEST_EMAIL
+
+- clearText
+- tapOn:
+    id: "input-email"
+- inputText: "${output.TEST_EMAIL}"
+
+- tapOn:
+    id: "input-password"
+- inputText: "TestP@ssw0rd123!"
+
+- tapOn:
+    id: "input-confirm-password"
+- inputText: "TestP@ssw0rd123!"
+
+- tapOn:
+    id: "button-auth-submit"
+
+- extendedWaitUntil:
+    visible:
+      text: "Welcome"
+    timeout: 15000
+
+- assertVisible:
+    text: "Welcome"
+
+- tapOn:
+    text: "Next"
+    optional: true
+
+- tapOn:
+    text: "Continue"
+    optional: true
+
+- tapOn:
+    text: "Next"
+    optional: true
+
+- tapOn:
+    text: "Continue"
+    optional: true
+
+- tapOn:
+    text: "Get Started"
+    optional: true
+
+- tapOn:
+    text: "Skip"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "tab-kitchen"
+    timeout: 15000
+
+- assertVisible:
+    id: "tab-kitchen"
+
+- assertVisible:
+    id: "tab-recipes"

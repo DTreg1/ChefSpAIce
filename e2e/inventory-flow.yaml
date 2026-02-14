@@ -1,0 +1,81 @@
+appId: ${APP_ID}
+name: Inventory Flow
+---
+
+- runFlow: auth-flow.yaml
+
+- tapOn:
+    id: "tab-kitchen"
+
+- extendedWaitUntil:
+    visible:
+      id: "screen-inventory"
+    timeout: 10000
+
+- assertVisible:
+    id: "screen-inventory"
+
+- tapOn:
+    id: "add-button"
+
+- tapOn:
+    id: "menu-manual"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "input-item-name"
+    timeout: 10000
+
+- tapOn:
+    id: "input-item-name"
+- inputText: "Test Apple"
+
+- tapOn:
+    id: "input-item-quantity"
+- clearText
+- inputText: "3"
+
+- tapOn:
+    id: "chip-category-fruits"
+    optional: true
+
+- scrollUntilVisible:
+    element:
+      id: "chip-category-fruits"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    id: "chip-category-fruits"
+    optional: true
+
+- tapOn:
+    id: "button-save-item"
+
+- extendedWaitUntil:
+    visible:
+      text: "Test Apple"
+    timeout: 10000
+
+- assertVisible:
+    text: "Test Apple"
+
+- swipe:
+    direction: LEFT
+    from:
+      text: "Test Apple"
+
+- tapOn:
+    text: "Delete"
+    optional: true
+
+- tapOn:
+    id: "button-wasted-.*"
+    optional: true
+
+- extendedWaitUntil:
+    notVisible:
+      text: "Test Apple"
+    timeout: 10000

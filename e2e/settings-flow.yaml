@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+name: Settings Flow
+---
+
+- runFlow: auth-flow.yaml
+
+- tapOn:
+    id: "button-header-menu"
+    optional: true
+
+- tapOn:
+    text: "Profile"
+    optional: true
+
+- tapOn:
+    text: "Settings"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Theme"
+    timeout: 10000
+
+- assertVisible:
+    text: "Theme"
+
+- assertVisible:
+    text: "Member since"
+    optional: true
+
+- tapOn:
+    id: "button-theme-dark"
+    optional: true
+
+- tapOn:
+    id: "button-theme-light"
+    optional: true
+
+- assertVisible:
+    text: "Theme"

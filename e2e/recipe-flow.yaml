@@ -1,0 +1,47 @@
+appId: ${APP_ID}
+name: Recipe Flow
+---
+
+- runFlow: auth-flow.yaml
+
+- tapOn:
+    id: "tab-recipes"
+
+- extendedWaitUntil:
+    visible:
+      id: "input-recipe-search"
+    timeout: 10000
+
+- assertVisible:
+    id: "input-recipe-search"
+
+- tapOn:
+    id: "button-generate-recipe"
+    optional: true
+
+- tapOn:
+    text: "Generate"
+    optional: true
+
+- runFlow:
+    when:
+      visible:
+        id: "upgrade-prompt-card"
+    commands:
+      - assertVisible:
+          id: "upgrade-prompt-card"
+      - assertVisible:
+          id: "button-subscribe-now"
+
+- runFlow:
+    when:
+      visible:
+        id: "spinner-recipe-generating"
+    commands:
+      - assertVisible:
+          id: "spinner-recipe-generating"
+      - extendedWaitUntil:
+          visible:
+            id: "text-streaming-preview"
+          timeout: 30000
+          optional: true
