@@ -77,7 +77,10 @@ export function useChatMessages() {
           const randomIndex = Math.floor(
             Math.random() * data.suggestions.length,
           );
-          setCurrentTip(data.suggestions[randomIndex]);
+          setCurrentTip({
+            text: data.suggestions[randomIndex],
+            category: "general",
+          });
         }
       } catch (error) {
         logger.error("Failed to load tip:", error);
@@ -230,17 +233,29 @@ export function useChatMessages() {
         closeChat();
         setTimeout(() => {
           if (data.navigateTo.screen === "RecipeDetail") {
-            navigation.navigate("RecipesTab", {
-              screen: "RecipeDetail",
-              params: data.navigateTo.params,
+            (navigation as any).navigate("Main", {
+              screen: "Tabs",
+              params: {
+                screen: "RecipesTab",
+                params: {
+                  screen: "RecipeDetail",
+                  params: data.navigateTo.params,
+                },
+              },
             });
           } else if (data.navigateTo.screen === "GenerateRecipe") {
-            navigation.navigate("RecipesTab", {
-              screen: "GenerateRecipe",
-              params: data.navigateTo.params || {},
+            (navigation as any).navigate("Main", {
+              screen: "Tabs",
+              params: {
+                screen: "RecipesTab",
+                params: {
+                  screen: "GenerateRecipe",
+                  params: data.navigateTo.params || {},
+                },
+              },
             });
           } else {
-            navigation.navigate(data.navigateTo.screen, data.navigateTo.params);
+            (navigation as any).navigate(data.navigateTo.screen, data.navigateTo.params);
           }
         }, 300);
       }
