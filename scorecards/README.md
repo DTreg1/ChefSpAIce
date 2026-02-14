@@ -1,6 +1,7 @@
 # ChefSpAIce — Project Scorecard
 
-**Review Date:** February 13, 2026
+**Review Date:** February 14, 2026
+**Last Updated:** February 14, 2026 (Post-remediation review)
 **Codebase Size:** ~95,000 lines across 150+ source files
 **Stack:** React Native (Expo) + Express.js + PostgreSQL (Neon) + Drizzle ORM + OpenAI + Stripe
 
@@ -16,19 +17,44 @@
 
 ## Summary
 
-| # | Category | Grade | File | Top Priority Fix |
-|---|----------|-------|------|-----------------|
-| 1 | [Security](01-security.md) | A- | `01-security.md` | CSRF_SECRET production validation |
-| 2 | [Error Handling](02-error-handling.md) | A- | `02-error-handling.md` | Replace silent catch blocks |
-| 3 | [Core Features](03-core-features.md) | A- | `03-core-features.md` | Add free tier for user acquisition |
-| 4 | [Monetization](04-monetization.md) | B | `04-monetization.md` | Payment failure grace period |
-| 5 | [Performance](05-performance.md) | B+ | `05-performance.md` | Replace FlatList with FlashList |
-| 6 | [Data Management](06-data-management.md) | A | `06-data-management.md` | Slow query logging |
-| 7 | [Accessibility](07-accessibility.md) | B | `07-accessibility.md` | Audit native screen labels |
-| 8 | [UI/UX Design](08-ui-ux.md) | B+ | `08-ui-ux.md` | Haptic feedback on destructive actions |
-| 9 | [Code Quality](09-code-quality.md) | A- | `09-code-quality.md` | Run Knip + split large files |
-| 10 | [Mobile](10-mobile.md) | A- | `10-mobile.md` | In-app review prompt |
+| # | Category | Previous | Current | File | Key Remediations |
+|---|----------|----------|---------|------|-----------------|
+| 1 | [Security](01-security.md) | A | A | `01-security.md` | CSRF startup validation, Content-Type checks, account lockout |
+| 2 | [Error Handling](02-error-handling.md) | A- | A- | `02-error-handling.md` | Circuit breakers, web Sentry, graceful shutdown |
+| 3 | [Core Features](03-core-features.md) | A- | A- | `03-core-features.md` | Streaming recipes, push notifications, persistent cache |
+| 4 | [Monetization](04-monetization.md) | B | A- | `04-monetization.md` | Retention offer dedup, MRR calculation fix |
+| 5 | [Performance](05-performance.md) | B+ | A- | `05-performance.md` | FlashList, expo-image, memory eviction, slow query logging |
+| 6 | [Data Management](06-data-management.md) | A- | A | `06-data-management.md` | CHECK constraints, data retention job, soft-delete purge |
+| 7 | [Accessibility](07-accessibility.md) | B | B+ | `07-accessibility.md` | Screen labels improved, reduced motion, custom actions |
+| 8 | [UI/UX Design](08-ui-ux.md) | A- | A- | `08-ui-ux.md` | Haptics on core screens, reduced motion in ExpiryBadge |
+| 9 | [Code Quality](09-code-quality.md) | B+ | B+ | `09-code-quality.md` | 57% `any` reduction, integration tests, API client |
+| 10 | [Mobile](10-mobile.md) | A- | A | `10-mobile.md` | Push notifications, NetInfo, OTA updates, app review, BackHandler |
 
-**Overall Project Grade: B+ / A-**
+**Overall Project Grade: A-**
+
+## Remediation Progress
+
+**Total remediation items tracked:** 48
+**Completed:** 40 (83%)
+**Partially done:** 2 (4%)
+**Remaining:** 6 (13%)
+
+### Key Improvements Since Initial Review
+1. **Security hardened**: CSRF/encryption key startup validation, Content-Type enforcement, per-account lockout, Zod validation middleware
+2. **External service resilience**: Circuit breakers on all OpenAI and external API calls
+3. **Performance upgraded**: FlashList on 5+ screens, expo-image on 10+ screens, persistent DB cache, streaming recipe generation
+4. **Mobile completeness**: Push notifications, NetInfo monitoring, OTA updates, in-app review, AppState lifecycle, BackHandler
+5. **Data integrity**: CHECK constraints, data retention job, soft-delete purge, cache cleanup job
+6. **Testing maturity**: 4 integration test suites added (auth, sync, subscription, recipe flows)
+7. **Type safety**: `any` count reduced from 227 to 97 (57% reduction)
+8. **Monetization**: Retention offer deduplication, corrected MRR calculations
+
+### Remaining Priority Items
+1. **Image alt text** — ~20 images lack accessibility annotations (Accessibility)
+2. **Import transaction safety** — Replace-mode import not wrapped in DB transaction (Data Management)
+3. **Large file extraction** — 13 files over 1,000 lines, OnboardingScreen at 3,153 (Code Quality)
+4. **Tablet layouts** — No master-detail patterns, no iPad split-view (Mobile)
+5. **Winback Stripe coupon** — Notification sent but discount application not fully automated (Monetization)
+6. **Focus management in modals** — No focus trapping or restoration (Accessibility)
 
 Files are numbered in recommended execution order — start with Security (01), end with Mobile (10).

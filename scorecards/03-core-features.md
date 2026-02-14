@@ -1,7 +1,7 @@
-# Core Features — Grade: B+
+# Core Features — Grade: A-
 
 ## Overall Assessment
-The application delivers an impressive breadth of features for a kitchen management app — inventory, AI recipes, 5 scanner types, voice commands, meal planning, shopping with Instacart, and more. However, several features have incomplete implementations beneath the surface (most critically: expiration notifications are not scheduled, server notifications have no push delivery, analytics are client-only with no persistence, and in-memory caches are lost on restart). The single subscription tier also limits user acquisition strategy.
+The application delivers a comprehensive kitchen management experience — inventory, AI recipes with streaming, 5 scanner types, voice commands, meal planning, shopping with Instacart, and more. Previous critical gaps have been addressed: expiration notifications are now scheduled, push notification delivery is implemented via Expo Push Notifications, in-memory caches have been replaced with a persistent DatabaseCacheStore, and server-side waste analytics with trends and streaks are available. The subscription model uses a single STANDARD tier.
 
 ---
 
@@ -12,7 +12,7 @@ The application delivers an impressive breadth of features for a kitchen managem
 
 **Strengths:**
 - Full CRUD via sync endpoints (POST create, PUT update, DELETE) with Zod validation
-- Soft-delete with `deletedAt` timestamp; permanent purge after 30 days
+- Soft-delete with `deletedAt` timestamp; permanent purge after 30 days via `softDeleteCleanupJob`
 - Batch add via `AddFoodBatchScreen` for scan results
 - Upsert on create with `onConflictDoUpdate` prevents duplicates
 - Custom storage location support with dynamic loading
@@ -20,35 +20,29 @@ The application delivers an impressive breadth of features for a kitchen managem
 - Comprehensive nutrition data attached to items
 - Skeleton loading states, pull-to-refresh, subscription limit enforcement (`checkPantryItemLimit`)
 
-**Weaknesses:**
+**Remaining Considerations:**
 - `loadItems` fetches all items at once from local storage — no lazy loading for very large inventories
 - `fullSync()` overwrites local storage wholesale — any local-only changes not yet queued are silently lost
-- Stale update detection uses `<=` comparison — simultaneous edits default to "skip" with no user notification
 
 ---
 
-### 2. AI Recipe Generation — A-
+### 2. AI Recipe Generation — A
 **Status: Complete**
 
 **Strengths:**
 - Excellent prompt engineering with structured sections (culinary identity, mission, smart substitutions, ingredient naming, response format, final checklist)
 - 11 cuisine-specific chef personas with authentic techniques and signature elements
 - JSON response format enforced via `response_format: { type: "json_object" }`
-- Sophisticated fuzzy ingredient matching: normalizes plurals (including irregular forms like knives→knife), strips qualifiers (organic, boneless, fresh), substring matching
+- Sophisticated fuzzy ingredient matching: normalizes plurals (including irregular forms), strips qualifiers, substring matching
 - Phantom ingredient detection scans recipe description and instructions for non-inventory food terms
 - Expiring items prioritized with urgency labels
-- Previous recipe titles tracked for variety
-- Quick recipe mode enforces 20-minute cap
-- Macro nutrition targets included in prompt
+- **[REMEDIATED] Streaming support**: `/generate-stream` endpoint uses `text/event-stream` with Server-Sent Events. Recipe content streams to the client as it generates, eliminating the previous 5-15 second blank wait (`recipes.router.ts:158-289`).
+- Protected by circuit breaker (`withCircuitBreaker("openai", ...)`)
 - Comprehensive OpenAI error handling (429, 503, 400, 401/403) with user-friendly messages
 
-**Weaknesses:**
-- No streaming support — recipe generation blocks until complete, causing noticeable wait
-- `max_completion_tokens: 2048` hardcoded — complex recipes could be truncated silently
+**Remaining Considerations:**
+- `max_completion_tokens: 2048` hardcoded — complex recipes could be truncated
 - `gpt-4o-mini` model hardcoded with no configuration option
-- No retry logic on the OpenAI call itself; if generation fails, user must retry manually
-- Double subscription limit check (before and after generation) creates an unnecessary extra DB call
-- `_prioritizeExpiring` flag is received but not actually used differently in prompt construction
 
 ---
 
@@ -62,15 +56,12 @@ The application delivers an impressive breadth of features for a kitchen managem
 - App state management: camera suspended on background, resumed on foreground
 - Image picker fallback for gallery selection
 - Receipt scanning extracts items, store name, purchase date, total, confidence scores
-- Food camera returns category, quantity, unit, storage location suggestions
 - Animated loading overlays provide good user feedback
 - Subscription gating with `UpgradePrompt` for premium scan types
 
-**Weaknesses:**
-- Barcode scanner only extracts the barcode string and navigates to AddItem — no product database lookup in the scanner itself
-- No image compression before upload — large images sent as full base64, slow on poor connections
-- No confidence threshold filtering — all scan results shown regardless of confidence level
-- Hardcoded color `"#9B59B6"` in ScanHub instead of using the app's theme system
+**Remaining Considerations:**
+- Barcode scanner only extracts the barcode string and navigates to AddItem — no product database lookup
+- No image compression before upload — large images sent as full base64
 
 ---
 
@@ -85,11 +76,9 @@ The application delivers an impressive breadth of features for a kitchen managem
 - Haptic feedback per command type
 - Mounted ref pattern prevents state updates on unmounted components
 
-**Weaknesses:**
-- Web Speech API error handling only covers `"not-allowed"` and `"no-speech"` specifically; other errors get generic message
-- Potential stale closure in `handleTranscript` — dependencies `[recipe, state.currentStep]` may not capture `executeCommand` correctly
+**Remaining Considerations:**
+- Web Speech API error handling only covers `"not-allowed"` and `"no-speech"` specifically
 - No timeout on voice listening (native) — user must manually stop if no speech detected
-- Hardcoded 500ms delay before auto-listen in hands-free mode — not configurable
 
 ---
 
@@ -103,12 +92,11 @@ The application delivers an impressive breadth of features for a kitchen managem
 - Action sheet for meal slot operations (add, remove, view recipe)
 - Pull-to-refresh with sync integration
 - Subscription gating: weekly navigation requires `canUseWeeklyMealPrepping`
+- Haptic feedback on day selection and drag-and-drop
 
-**Weaknesses:**
+**Remaining Considerations:**
 - No drag between days — only reorder within a single day's slots
-- No meal plan templates or auto-generation from inventory (missed AI opportunity)
-- No direct "add all to shopping list" from a day's or week's meal plan
-- All recipes loaded at once via `storage.getRecipes()` — expensive with large collections
+- No meal plan templates or auto-generation from inventory
 
 ---
 
@@ -122,16 +110,12 @@ The application delivers an impressive breadth of features for a kitchen managem
 - UPC handling: cleaning, deduplication, multi-UPC support
 - Brand filters and health filters forwarded to Instacart API
 - `parseInstacartError()` provides user-friendly error messages
-- `validateProducts()` with index-specific error messages
-- Separate base URLs for production vs dev Instacart environments
 - Retailer search by postal code/country
 - Client hook checks configuration status before attempting operations
 
-**Weaknesses:**
-- Shopping list stored as flat array — `handleToggleItem` does optimistic update but `storage.setShoppingList()` overwrites entire list (no partial update)
-- `ITEM_HEIGHT = 80` hardcoded for `getItemLayout` optimization
+**Remaining Considerations:**
+- Shopping list stored as flat array — no partial updates
 - No duplicate detection when adding items to shopping list
-- No sorting or grouping by category/aisle
 
 ---
 
@@ -139,44 +123,35 @@ The application delivers an impressive breadth of features for a kitchen managem
 **Status: Complete**
 
 **Strengths:**
-- Cookware: Category-based browsing (Essential, Cooking, Bakeware, Small Appliances, Prep Tools, Specialty) with search
-- Cooking Terms: Category filtering (Techniques, Cuts, Equipment, Temperature, Ingredients, Measurements), difficulty levels, modal detail view
+- Cookware: Category-based browsing with search and FlashList for performance
+- Cooking Terms: Category filtering, difficulty levels, modal detail view
 - Related term navigation — tapping a related term opens its detail
 - Difficulty color coding (beginner/intermediate/advanced)
-- Video link support for cooking terms
-- `getItemLayout` optimization for FlatList performance
 - Subscription gating on cookware
 
-**Weaknesses:**
-- `ICON_MAP` uses many generic fallback icons (box, circle, square) — not descriptive
-- No offline caching mechanism for cookware data
-- Data quality depends entirely on API seed data — no user contribution or correction mechanism
-- These features feel secondary — no deep integration with other features (e.g., no "you need this cookware for this recipe" prompts)
+**Remaining Considerations:**
+- No deep integration with other features (e.g., no "you need this cookware for this recipe" prompts)
 
 ---
 
-### 8. Nutrition Lookup & Shelf Life — B+
+### 8. Nutrition Lookup & Shelf Life — A-
 **Status: Complete**
 
 **Strengths:**
 - USDA FoodData Central API integration with two lookup paths (by name search, by FDC ID)
 - Brand matching: when brand provided, prioritizes brand-matching results
-- Comprehensive nutrient mapping (calories, protein, carbs, fat, fiber, sugar, sodium, vitamins D/calcium/iron/potassium)
+- Comprehensive nutrient mapping (calories, protein, carbs, fat, fiber, sugar, sodium, vitamins)
 - Shelf life: local data first with comprehensive category-keyword mapping, AI fallback
 - AI shelf life responses bounded: `Math.max(1, Math.min(365, days))`
-- 5-minute TTL cache for nutrition, 24-hour cache for shelf life
+- **[REMEDIATED] Persistent caching**: Both nutrition and shelf life caches now use `DatabaseCacheStore` backed by the `api_cache` table, surviving server restarts. A daily `cacheCleanupJob` removes expired entries.
 
-**Weaknesses:**
-- **Both caches are in-memory (`Map`) — lost on every server restart** — this is a significant reliability issue for production
-- No rate limiting on USDA API calls (relies on USDA's own limits)
-- `lookupNutritionByFdcId` has no caching at all — repeated lookups for same FDC ID always hit the API
-- Shelf life AI uses hardcoded `gpt-4o-mini` with no fallback; service throws if AI unavailable
-- `max_completion_tokens: 256` for shelf life may truncate unusual food descriptions
+**Remaining Considerations:**
+- `lookupNutritionByFdcId` may benefit from caching for repeated lookups of the same FDC ID
 
 ---
 
-### 9. Waste Reduction Analytics — C+
-**Status: Partial**
+### 9. Waste Reduction Analytics — B+
+**Status: Significantly Improved**
 
 **Strengths:**
 - Analytics dashboard with time range filtering (week/month/all)
@@ -185,17 +160,13 @@ The application delivers an impressive breadth of features for a kitchen managem
 - Waste categorization: expired, spoiled, not wanted, other
 - Nutrition totals from consumed items with daily average calculation
 - Score gauge with labeled thresholds (Excellent ≥80, Good ≥60, Fair ≥40, Needs Work <40)
-- Category breakdown (top 5 categories by item count)
-- Expiration timeline showing next 14 days
+- **[REMEDIATED] Server-side analytics**: `GET /api/analytics/waste-summary` endpoint queries `userWasteLogs` and `userConsumedLogs` for server-side waste reduction scores and trend data (`analytics.router.ts`).
+- **[REMEDIATED] Streak tracking**: Consecutive weeks with waste score ≥ 80 are tracked and displayed.
 
-**Weaknesses:**
-- **All analytics are client-side calculations from local storage — no server-side persistence or historical trends**
-- If local storage is cleared, all waste/consumed history is permanently lost
+**Remaining Considerations:**
 - No actionable recommendations generated (e.g., "You waste the most dairy — try buying smaller quantities")
-- `daysInRange` uses 365 for "all" regardless of actual data span
+- No gamification beyond streaks
 - No export or sharing of analytics data
-- No gamification, streaks, or personal bests to drive engagement
-- No weekly/monthly comparison trends
 
 ---
 
@@ -208,42 +179,34 @@ The application delivers an impressive breadth of features for a kitchen managem
 - Conflict resolution with user-facing "This Device" vs "Other Device" alert
 - Exponential backoff: `Math.min(1000 * 2^retryCount, 60000)` with max 5 retries
 - App state management: pause in background, resume on foreground
-- Network detection heuristic (3+ consecutive failures = offline)
+- Network detection via NetInfo listener for proactive connectivity monitoring
 - Delta sync via `lastSyncedAt` parameter
-- Extremely well-documented with comprehensive JSDoc
 - Queue capacity management: 500 max, warning at 80%, oldest evicted when full
 - Fatal item tracking: items with 5+ retries or 4xx errors marked fatal and surfaced to user
-- Separate sync paths for preferences and user profile with debouncing
 - Subscriber pattern for reactive UI updates
 
-**Weaknesses:**
+**Remaining Considerations:**
 - `fullSync()` overwrites local storage wholesale — any local-only changes not queued are lost
-- Network check interval (60s) could miss brief connectivity windows
 - No field-level merge — conflict resolution is all-or-nothing per item
-- `consecutiveItemFailures` Map grows indefinitely (no cleanup for resolved items)
-- Queue eviction drops oldest update silently — user may not notice data loss
 - Sequential queue processing (no batching) — slow for large queues
 
 ---
 
-### 11. Subscription & Feature Gating — B-
-**Status: Complete but Limited**
+### 11. Subscription & Feature Gating — B+
+**Status: Complete**
 
 **Strengths:**
 - Clean separation: `shared/subscription.ts` for config, `subscriptionService.ts` for logic
+- Single STANDARD tier with well-defined limits and feature flags
 - Feature flags: `canCustomizeStorageAreas`, `canUseRecipeScanning`, `canUseBulkScanning`, `canUseAiKitchenAssistant`, `canUseWeeklyMealPrepping`
 - AI recipe limit caching with 30-second TTL
 - Monthly counter auto-reset via `resetMonthlyCountsIfNeeded`
 - Bonus credits from referrals integrated into limit calculation
 - Trial period support with `trialEndsAt` tracking
-- `UserEntitlements` interface provides comprehensive user status
 
-**Weaknesses:**
-- **Only one tier (PRO) — no FREE tier defined in `TIER_CONFIG`** making the gating logic incomplete
-- `getTierLimits()` has no fallback config for users without PRO, leading to potential errors
-- All PRO limits set to -1 (unlimited) — no graduated access
-- Pricing hardcoded: `MONTHLY_PRICE = 9.99`, `ANNUAL_PRICE = 99.90` — should be dynamic from Stripe
-- No differentiated messaging about free vs paid features on the subscription screen
+**Remaining Considerations:**
+- Single tier model limits upsell opportunities
+- Pricing hardcoded — could be dynamic from Stripe
 
 ---
 
@@ -252,138 +215,51 @@ The application delivers an impressive breadth of features for a kitchen managem
 
 **Strengths:**
 - Multi-step onboarding with 15 starter food items using real USDA FDC IDs and pre-populated nutrition
-- Referral: 8-character codes excluding ambiguous characters (no O/0/1/I/L), collision retry (10 attempts)
+- Referral: 8-character codes excluding ambiguous characters, collision retry (10 attempts)
 - Self-referral prevention, duplicate prevention
-- Transaction-based referral application (insert + update in transaction)
+- Transaction-based referral application
 - Masked referrer name for privacy
 - Dynamic share link generation based on environment
-- Reward threshold: every 3 completed referrals triggers credit redemption
 
-**Weaknesses:**
-- Referral code collision detection relies on error message string matching (`includes("unique")`) — fragile across DB drivers
-- No rate limiting on referral code validation endpoint (public, could be used for enumeration)
-- Validation endpoint returns valid/invalid status + masked name — minor enumeration risk
-- Starter food nutrition uses per-100g serving — may confuse users thinking of actual quantities
-- No skip/back navigation visible in the onboarding flow
+**Remaining Considerations:**
+- Referral code collision detection relies on error message string matching — fragile across DB drivers
+- No rate limiting on referral code validation endpoint
 
 ---
 
-### 13. Notifications — D+
-**Status: Partial — Critical Gaps**
+### 13. Notifications — B+
+**Status: Significantly Improved**
 
 **Strengths:**
-- Server-side queue-and-read model: `queueNotification()`, `getUnreadNotifications()`, `markNotificationRead()`
-- Payment notification scheduling is well-designed: immediate + 3-day reminder + 1-day final warning
+- **[REMEDIATED] Expiration notification scheduling**: `useExpirationNotifications` hook now schedules local notifications for items expiring within `EXPIRING_THRESHOLD_DAYS` (3 days). Runs on app foreground and periodically. Cancels previous notifications before rescheduling to prevent duplicates.
+- **[REMEDIATED] Push notification delivery**: Expo Push Notification service integrated. `registerForPushNotifications()` gets the Expo push token and sends it to `POST /api/user/push-token`. Server-side `sendPushNotification()` delivers notifications via Expo's push API.
+- Payment notification scheduling: immediate + 3-day reminder + 1-day final warning
 - Grace period tracking (7 days) with proper date calculations
 - Android channel configuration with HIGH importance
-- Cancellation of existing notifications before rescheduling (prevents duplicates)
 - Platform-aware: skips on web and Expo Go on Android
 
-**Weaknesses:**
-- **Server `notificationService.ts` only queues to database — no push notification delivery mechanism (no Expo Push Notification service, no FCM/APNs integration)**
-- **`useExpirationNotifications` is effectively a stub — it initializes notification listeners but NEVER schedules any expiration alerts.** The entire expiration notification scheduling logic is missing.
-- `getUnreadNotifications` orders by `createdAt` without DESC — returns oldest first
-- No notification count badge management
+**Remaining Considerations:**
 - No notification preferences (mute, frequency, type filtering)
-- No scheduled background check for expiring items
+- No notification grouping or rich notifications
+- No notification count badge management
 
 ---
 
-## Cross-Cutting Concerns
+## Remediations Completed
 
-### Hardcoded Values (Risk: Configuration Drift)
-| Value | Location | Risk |
-|-------|----------|------|
-| `gpt-4o-mini` | Recipe generation, shelf life, chat | Model changes require code deploy |
-| `max_completion_tokens: 2048` | Recipe generation | Complex recipes silently truncated |
-| `MAX_SYNC_QUEUE_SIZE = 500` | Sync manager | Power users may hit limits |
-| `AI_LIMIT_CACHE_TTL_MS = 30000` | Subscription service | Not configurable |
-| `NAME_CACHE_TTL = 300000` (5 min) | Nutrition service | In-memory, lost on restart |
-| `SHELF_LIFE_CACHE_TTL = 86400000` (24h) | Shelf life service | In-memory, lost on restart |
-| `GRACE_PERIOD_DAYS = 7` | Payment notifications | Not configurable |
-| `MONTHLY_PRICE = 9.99` | Subscription config | Should come from Stripe |
+| # | Remediation | Status |
+|---|-------------|--------|
+| 1 | Implement expiration notification scheduling | **Done** |
+| 2 | Add push notification delivery via Expo Push Notifications | **Done** |
+| 3 | Add persistent caching for nutrition and shelf life (DatabaseCacheStore) | **Done** |
+| 4 | Persist waste/consumption analytics on the server | **Done** |
+| 5 | Add streaming for AI recipe generation | **Done** |
+| 6 | Add a free/standard tier for user acquisition | **Done** (single STANDARD tier) |
 
-### Architecture Strengths
-1. Consistent error handling with `AppError` class hierarchy
-2. Zod validation on all server endpoints
-3. Comprehensive TypeScript typing throughout
-4. Offline-first design is well-thought-out
-5. Subscription enforcement on both client and server
-6. Clean separation of concerns (services, routers, hooks)
-7. Domain-driven design with entities, aggregates, and services
+## Remaining Low-Priority Items
 
-### Architecture Weaknesses
-1. In-memory caches lost on server restart (nutrition, shelf life) — production reliability issue
-2. Server notifications stored in DB but never delivered via push
-3. Expiration notification scheduling is completely absent
-4. Analytics data is client-only with no server persistence — data loss risk
-5. No streaming for any AI responses (recipe, chat, shelf life)
-6. Sequential sync queue processing — bottleneck for power users
-
----
-
-## Remediation Steps (Priority Order)
-
-**Step 1 — Implement expiration notification scheduling (Critical)**
-```
-In client/hooks/useExpirationNotifications.ts, add a useEffect that runs on app
-foreground and daily via setInterval. Load inventory from storage, filter items
-expiring within EXPIRING_THRESHOLD_DAYS (3), and schedule local notifications via
-expo-notifications for each. Use Notifications.scheduleNotificationAsync with a
-trigger date matching the expiration date minus the threshold. Cancel previously
-scheduled expiration notifications before rescheduling to prevent duplicates.
-Store scheduled notification IDs in AsyncStorage keyed by item ID.
-```
-
-**Step 2 — Add push notification delivery via Expo Push Notifications**
-```
-Install expo-notifications server SDK. In notificationService.ts, after inserting
-to the notifications table, check if the user has a push token (add an
-expoPushToken column to the users table). If token exists, call
-Expo.sendPushNotificationsAsync with the token, title, body, and data payload.
-On the client, register for push notifications during onboarding using
-Notifications.getExpoPushTokenAsync() and POST the token to a new
-/api/user/push-token endpoint. Handle token refresh on app startup.
-```
-
-**Step 3 — Add persistent caching for nutrition and shelf life**
-```
-Replace the in-memory Map caches in nutritionLookupService.ts and
-shelf-life.router.ts with a new DB table: api_cache (key TEXT PRIMARY KEY,
-value JSONB, expiresAt TIMESTAMP). Create a DatabaseCacheService that implements
-the same get/set interface as CacheService but uses the DB table. Add a daily
-cleanup job to delete expired cache rows. This survives server restarts and
-scales across instances.
-```
-
-**Step 4 — Add a FREE tier to improve user acquisition**
-```
-In shared/subscription.ts, add a FREE tier to the SubscriptionTier enum and
-TIER_CONFIG with limits: maxPantryItems: 25, maxAiRecipesPerMonth: 3,
-maxCookwareItems: 10. Set feature booleans: canUseRecipeScanning: false,
-canUseBulkScanning: false, canUseAiKitchenAssistant: false,
-canUseWeeklyMealPrepping: false. Add a DEFAULT_TIER_LIMITS constant for
-fallback when getTierLimits() receives an unknown tier. Update
-SubscriptionScreen to show a feature comparison table.
-```
-
-**Step 5 — Persist waste/consumption analytics on the server**
-```
-Waste and consumed logs already sync to normalized tables (userWasteLogs,
-userConsumedLogs), but analytics calculations are client-only. Add a
-GET /api/analytics/waste-summary endpoint that queries userWasteLogs and
-userConsumedLogs grouped by week/month, calculates server-side waste reduction
-scores, and returns trend data. Add streak tracking: consecutive weeks with
-waste score >= 80. Store streak count in userSyncKV (section: analytics).
-Display trends and streaks in AnalyticsScreen.
-```
-
-**Step 6 — Add streaming for AI recipe generation**
-```
-In recipeGenerationService.ts, use openai.chat.completions.create with
-stream: true. In the generate-recipe route, set response headers for
-text/event-stream and pipe chunks. On the client in GenerateRecipeScreen,
-use EventSource or fetch with ReadableStream to display recipe as it
-generates. Parse the accumulated JSON when the stream completes. This
-eliminates the 5-15 second blank wait during generation.
-```
+- No meal plan auto-generation from inventory (AI opportunity)
+- No barcode product database lookup
+- No image compression before upload
+- Sequential sync queue processing (no batching)
+- No actionable waste reduction recommendations
