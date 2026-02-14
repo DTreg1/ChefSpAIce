@@ -12,14 +12,17 @@ name: Authentication Flow
 
 - tapOn:
     id: "input-email"
+- waitForAnimationToEnd
 - inputText: "${output.TEST_EMAIL}"
 
 - tapOn:
     id: "input-password"
+- waitForAnimationToEnd
 - inputText: "TestP@ssw0rd123!"
 
 - tapOn:
     id: "input-confirm-password"
+- waitForAnimationToEnd
 - inputText: "TestP@ssw0rd123!"
 
 - tapOn:
