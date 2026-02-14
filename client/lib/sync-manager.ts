@@ -1,119 +1,20 @@
-/**
- * SyncManager — Local-First Cloud Sync Engine
- *
- * ## When Sync Occurs
- * - **App foreground**: When the app transitions from background/inactive to active,
- *   `resumeSync()` immediately processes any queued changes and flushes pending
- *   preferences/profile updates.
- * - **After mutations**: Every local write (add, update, delete an inventory item,
- *   recipe, meal plan, or shopping list item) calls `queueChange()`, which
- *   debounces and triggers `processSyncQueue()` after 2 seconds of inactivity.
- * - **Periodic timer**: A network-health check runs every 60 seconds. When the
- *   manager detects connectivity has been restored (after 3+ consecutive failures),
- *   it automatically drains the queue.
- * - **Manual full sync**: `fullSync()` can be called explicitly (e.g. after a chat
- *   action or pull-to-refresh). It first drains the outbound queue, then fetches
- *   the latest server state via GET /api/auth/sync.
- *
- * ## Conflict Resolution Strategy (User Choice)
- * Each item carries an `updatedAt` ISO timestamp set at mutation time on the client.
- *
- * **Client → Server (outbound)**:
- * On POST (create) the server upserts — if the item already exists, it overwrites.
- * On PUT (update) the server compares `data.updatedAt` against the existing row's
- * `updatedAt`. If the incoming timestamp is older or equal, the server responds
- * with `{ operation: "skipped", reason: "stale_update", serverVersion: {...} }`
- * including the full server row. The client detects this as a conflict and
- * presents an Alert with two choices:
- *   - "This Device": re-sends the local data with a fresh `updatedAt` to
- *     override the server version.
- *   - "Other Device": discards the local queue item and runs `fullSync()` to
- *     pull the server's version.
- *
- * **Server → Client (inbound / full sync)**:
- * `fullSync()` fetches the server's current state and overwrites local storage
- * wholesale (per data section). This means the server is the source of truth
- * after a full sync — any local-only changes that were not yet pushed will be
- * lost unless they are still in the sync queue (which is drained first).
- *
- * ## Offline Behavior
- * - Changes are persisted to the sync queue in AsyncStorage and survive app restarts.
- * - Network status is inferred heuristically: 3+ consecutive fetch failures → offline.
- *   A single successful request → online.
- * - While offline, `processSyncQueue()` is a no-op. When connectivity returns
- *   (detected by the 60-second health check or an unrelated successful API call),
- *   the queue is automatically drained.
- * - Failed items are retried with exponential back-off (1s, 2s, 4s, 8s…, max 60s).
- *   After 5 retries or a 4xx status, the item is marked `isFatal` and surfaced
- *   to the user via an alert.
- *
- * ## Queue Coalescing
- * When a new change is queued for an item that already has a pending entry
- * (matched by `dataType` + `data.id`):
- * - A "delete" always replaces the earlier entry.
- * - An "update" on top of a pending "create" keeps the operation as "create"
- *   (the server only needs the final state).
- * - Otherwise the newer entry replaces the older one.
- *
- * ## How Deletions Are Handled
- * - **Soft delete** (inventory): The client sets `deletedAt` on the item and
- *   syncs it as an "update" operation. The server persists `deleted_at` on the
- *   row. The GET sync endpoint filters out soft-deleted items with
- *   `isNull(deletedAt)`, so they do not come back on full sync.
- * - **Permanent purge** (inventory, after 30 days): The client sends a "delete"
- *   operation. The server physically removes the row.
- * - **Hard delete** (recipes, meal plans, shopping list, cookware): The client
- *   sends a "delete" operation and the server removes the row immediately.
- *
- * ## Known Edge Case
- * If the same item is edited on two devices while both are offline, the device
- * that syncs last triggers a conflict. The earlier device sees an Alert showing
- * both versions and can choose "This Device" (override with fresh timestamp) or
- * "Other Device" (discard local change and pull server version via fullSync).
- */
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert, AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
+import {
+  MAX_SYNC_QUEUE_SIZE,
+  SYNC_KEYS,
+  type SyncOperation,
+  type SyncDataType,
+  type SyncStatus,
+  type SyncQueueItem,
+  type SyncState,
+  type SyncListener,
+} from "@/lib/sync-types";
+import { showConflictAlert, resolveConflict, showQueueCapacityWarning, notifySyncFailure } from "@/lib/sync-conflicts";
 
-const MAX_SYNC_QUEUE_SIZE = 500;
-
-const SYNC_KEYS = {
-  SYNC_QUEUE: "@chefspaice/sync_queue",
-  LAST_SYNC: "@chefspaice/last_sync",
-  SYNC_STATUS: "@chefspaice/sync_status",
-  SERVER_TIMESTAMP: "@chefspaice/server_timestamp",
-} as const;
-
-type SyncOperation = "create" | "update" | "delete";
-type SyncDataType = "inventory" | "recipes" | "mealPlans" | "shoppingList";
-
-export type SyncStatus = "idle" | "syncing" | "offline" | "error";
-
-interface SyncQueueItem {
-  id: string;
-  dataType: SyncDataType;
-  operation: SyncOperation;
-  data: unknown;
-  timestamp: string;
-  retryCount: number;
-  errorMessage?: string;
-  isFatal?: boolean;
-}
-
-export interface SyncState {
-  status: SyncStatus;
-  lastSyncAt: string | null;
-  pendingChanges: number;
-  isOnline: boolean;
-  failedItems: number;
-  queueSize: number;
-  maxQueueSize: number;
-  queueUsagePercent: number;
-  isQueueNearCapacity: boolean;
-}
-
-type SyncListener = (state: SyncState) => void;
+export type { SyncStatus, SyncState } from "@/lib/sync-types";
 
 class SyncManager {
   private listeners: Set<SyncListener> = new Set();
@@ -152,10 +53,8 @@ class SyncManager {
         this.appState = nextAppState;
 
         if (nextAppState === "background" || nextAppState === "inactive") {
-          // App going to background - pause sync operations to save battery
           this.pauseSync();
         } else if (isNowActive && wasBackground) {
-          // App coming back to foreground - resume sync
           this.resumeSync();
         }
       },
@@ -164,96 +63,47 @@ class SyncManager {
 
   private pauseSync() {
     if (this.isPaused) return;
-
     this.isPaused = true;
     logger.log("[Sync] Pausing sync (app in background)");
-
-    // Clear any pending sync timers
-    if (this.syncTimer) {
-      clearTimeout(this.syncTimer);
-      this.syncTimer = null;
-    }
-
-    // Clear preferences sync timer
-    if (this.preferencesSyncTimer) {
-      clearTimeout(this.preferencesSyncTimer);
-      this.preferencesSyncTimer = null;
-    }
-
-    // Clear userProfile sync timer
-    if (this.userProfileSyncTimer) {
-      clearTimeout(this.userProfileSyncTimer);
-      this.userProfileSyncTimer = null;
-    }
-
-    // Pause network check interval
-    if (this.networkCheckInterval) {
-      clearInterval(this.networkCheckInterval);
-      this.networkCheckInterval = null;
-    }
+    if (this.syncTimer) { clearTimeout(this.syncTimer); this.syncTimer = null; }
+    if (this.preferencesSyncTimer) { clearTimeout(this.preferencesSyncTimer); this.preferencesSyncTimer = null; }
+    if (this.userProfileSyncTimer) { clearTimeout(this.userProfileSyncTimer); this.userProfileSyncTimer = null; }
+    if (this.networkCheckInterval) { clearInterval(this.networkCheckInterval); this.networkCheckInterval = null; }
   }
 
   private resumeSync() {
     if (!this.isPaused) return;
-
     this.isPaused = false;
     logger.log("[Sync] Resuming sync (app in foreground)");
-
-    // Clear any existing interval to avoid duplicates
-    if (this.networkCheckInterval) {
-      clearInterval(this.networkCheckInterval);
-      this.networkCheckInterval = null;
-    }
-
-    // Always reinstate network check interval on resume
+    if (this.networkCheckInterval) { clearInterval(this.networkCheckInterval); this.networkCheckInterval = null; }
     this.networkCheckInterval = setInterval(() => {
-      if (!this.isPaused) {
-        this.checkNetworkStatus();
-      }
-    }, 60000); // 60 seconds
-
-    // Immediately check network status on resume
+      if (!this.isPaused) { this.checkNetworkStatus(); }
+    }, 60000);
     this.checkNetworkStatus();
-
-    // Process any pending sync items
     this.processSyncQueue();
-
-    // Flush any pending preferences sync
-    if (this.pendingPreferences) {
-      this.flushPreferencesSync();
-    }
-
-    // Flush any pending userProfile sync
-    if (this.pendingUserProfile) {
-      this.flushUserProfileSync();
-    }
+    if (this.pendingPreferences) { this.flushPreferencesSync(); }
+    if (this.pendingUserProfile) { this.flushUserProfileSync(); }
   }
 
   private async initNetworkListener() {
-    // Assume online by default - expo-network is unreliable in Expo Go
     this.isOnline = true;
 
-    // Check periodically but with a longer interval since we track API success/failure
     this.networkCheckInterval = setInterval(() => {
       if (!this.isPaused) {
         this.checkNetworkStatus();
       }
-    }, 60000); // Check every 60 seconds (was 30) for better battery
+    }, 60000);
   }
 
   private checkNetworkStatus() {
-    // Simple heuristic: if we've had recent successful requests, we're online
-    // If we've had 3+ consecutive failures, we're offline
     const timeSinceLastSuccess = Date.now() - this.lastSuccessfulRequest;
     const wasOffline = !this.isOnline;
 
     if (this.consecutiveFailures >= 3) {
       this.isOnline = false;
     } else if (timeSinceLastSuccess < 60000) {
-      // Had success in the last minute - definitely online
       this.isOnline = true;
     }
-    // Otherwise keep current state
 
     if (wasOffline && this.isOnline) {
       logger.log("[Sync] Network restored, processing sync queue");
@@ -265,7 +115,6 @@ class SyncManager {
     this.notifyListeners();
   }
 
-  // Call this when any API request succeeds
   markRequestSuccess() {
     this.consecutiveFailures = 0;
     this.lastSuccessfulRequest = Date.now();
@@ -277,7 +126,6 @@ class SyncManager {
     }
   }
 
-  // Call this when any API request fails due to network error
   markRequestFailure() {
     this.consecutiveFailures++;
     if (this.consecutiveFailures >= 3 && this.isOnline) {
@@ -355,8 +203,6 @@ class SyncManager {
   ): Promise<void> {
     const queue = await this.getQueue();
 
-    // Queue coalescing: find an existing entry for the same item (by dataType + id)
-    // so we can merge operations instead of sending redundant requests.
     const existingIndex = queue.findIndex(
       (item) =>
         item.dataType === dataType &&
@@ -374,19 +220,14 @@ class SyncManager {
     };
 
     if (existingIndex !== -1) {
-      // Coalescing rules — collapse multiple operations on the same item:
       if (operation === "delete") {
-        // A delete always wins: replace whatever was queued before.
         queue[existingIndex] = newItem;
       } else if (
         queue[existingIndex].operation === "create" &&
         operation === "update"
       ) {
-        // Update-after-create: keep "create" operation but use the latest data,
-        // because the server only needs the final state for a new item.
         queue[existingIndex] = { ...newItem, operation: "create" };
       } else {
-        // Default: replace with the newer operation and data.
         queue[existingIndex] = newItem;
       }
     } else {
@@ -400,7 +241,7 @@ class SyncManager {
     }
 
     if (queue.length >= MAX_SYNC_QUEUE_SIZE * 0.8) {
-      this.showQueueCapacityWarning();
+      this.hasShownQueueWarning = showQueueCapacityWarning(this.hasShownQueueWarning);
     }
 
     await this.setQueue(queue);
@@ -408,7 +249,6 @@ class SyncManager {
   }
 
   private scheduleSyncDebounced() {
-    // Don't schedule if app is in background
     if (this.isPaused) {
       return;
     }
@@ -419,11 +259,10 @@ class SyncManager {
 
     this.syncTimer = setTimeout(() => {
       this.processSyncQueue();
-    }, 2000); // Increased debounce to 2 seconds for battery
+    }, 2000);
   }
 
   async processSyncQueue(): Promise<void> {
-    // Don't process if app is in background
     if (this.isPaused || !this.isOnline || this.isSyncing) {
       return;
     }
@@ -476,7 +315,7 @@ class SyncManager {
         this.consecutiveItemFailures.set(itemKey, prevFailures + 1);
 
         if (prevFailures + 1 >= 3 && !item.isFatal) {
-          this.notifySyncFailure(item.dataType, (item.data as { name?: string })?.name || (item.data as { title?: string })?.title || itemKey);
+          notifySyncFailure(item.dataType, (item.data as { name?: string })?.name || (item.data as { title?: string })?.title || itemKey);
         }
 
         if (isConflict) {
@@ -505,7 +344,17 @@ class SyncManager {
 
           this.isSyncing = false;
           this.notifyListeners();
-          this.showConflictAlert(conflictItem, serverVersion);
+          showConflictAlert(conflictItem, serverVersion, (conflictedItem, choice) => {
+            resolveConflict(conflictedItem, choice, {
+              getQueue: () => this.getQueue(),
+              setQueue: (q) => this.setQueue(q),
+              notifyListeners: () => { this.notifyListeners(); },
+              processSyncQueue: () => this.processSyncQueue(),
+              fullSync: () => this.fullSync(),
+            }).catch((err) => {
+              logger.error(`[Sync] Failed to resolve conflict with ${choice} version`, { error: (err as Error).message });
+            });
+          });
           return;
         } else if (is4xxError || item.retryCount >= maxRetries) {
           logger.warn("[Sync] Marking item as fatal", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id, retryCount: item.retryCount, statusCode });
@@ -574,12 +423,10 @@ class SyncManager {
         }),
       });
     } catch (error) {
-      // Network error - mark as failure
       this.markRequestFailure();
       throw error;
     }
 
-    // Got a response - mark as success (even if it's an error status, network worked)
     this.markRequestSuccess();
 
     if (!response.ok) {
@@ -625,12 +472,6 @@ class SyncManager {
     }
   }
 
-  // Full sync: push-then-pull. First drain the outbound queue (local→server),
-  // then fetch the server's current state and overwrite local storage per section.
-  // This ensures local pending changes are sent before the server snapshot replaces
-  // local data. Uses delta sync via lastSyncedAt to avoid re-downloading unchanged
-  // sections. After a full sync, the server is the source of truth for all sections
-  // that were returned.
   async fullSync(): Promise<{ success: boolean; error?: string }> {
     const token = await this.getAuthToken();
     if (!token) {
@@ -641,7 +482,6 @@ class SyncManager {
     this.notifyListeners();
 
     try {
-      // Step 1: Push — drain outbound queue so local changes reach the server first.
       await this.processSyncQueue();
 
       const baseUrl = getApiUrl();
@@ -688,8 +528,6 @@ class SyncManager {
 
       const { data } = result;
 
-      // Step 2: Pull — overwrite local storage with the server's latest snapshot.
-      // Each section is replaced entirely; the server is the source of truth.
       if (data) {
         if (data.inventory) {
           await AsyncStorage.setItem(
@@ -864,130 +702,6 @@ class SyncManager {
       this.userProfileSyncTimer = setTimeout(() => {
         this.flushUserProfileSync();
       }, 5000);
-    }
-  }
-
-  private showConflictAlert(item: SyncQueueItem, serverVersion: unknown) {
-    const localData = item.data as { name?: string; title?: string; id?: string };
-    const serverData = serverVersion as { name?: string; title?: string; id?: string } | null;
-    const itemName = localData.name || localData.title || localData.id || "Unknown item";
-    const serverName = serverData?.name || serverData?.title || serverData?.id || "Unknown item";
-
-    const localLabel = `This Device: "${itemName}"`;
-    const serverLabel = `Other Device: "${serverName}"`;
-
-    Alert.alert(
-      "Sync Conflict",
-      `This item was modified on another device. Which version would you like to keep?\n\n${localLabel}\n${serverLabel}`,
-      [
-        {
-          text: "This Device",
-          onPress: () => {
-            this.resolveConflict(item, "local").catch((err) => {
-              logger.error("[Sync] Failed to resolve conflict with local version", { error: (err as Error).message });
-            });
-          },
-        },
-        {
-          text: "Other Device",
-          onPress: () => {
-            this.resolveConflict(item, "remote").catch((err) => {
-              logger.error("[Sync] Failed to resolve conflict with remote version", { error: (err as Error).message });
-            });
-          },
-        },
-      ],
-    );
-  }
-
-  private async resolveConflict(
-    item: SyncQueueItem,
-    choice: "local" | "remote",
-  ): Promise<void> {
-    const queue = await this.getQueue();
-    const itemId = (item.data as { id?: string })?.id;
-
-    if (choice === "local") {
-      logger.log("[Sync] User chose local version — re-sending with fresh timestamp", { dataType: item.dataType, itemId });
-      const freshTimestamp = new Date().toISOString();
-      const updatedData = {
-        ...(item.data as Record<string, unknown>),
-        updatedAt: freshTimestamp,
-      };
-      const newQueue = queue.map((q) => {
-        if (q.id === item.id) {
-          return {
-            ...q,
-            data: updatedData,
-            timestamp: freshTimestamp,
-            isFatal: false,
-            retryCount: 0,
-            errorMessage: undefined,
-          };
-        }
-        return q;
-      });
-      await this.setQueue(newQueue);
-      this.notifyListeners();
-      this.processSyncQueue();
-    } else {
-      logger.log("[Sync] User chose remote version — discarding local change", { dataType: item.dataType, itemId });
-      const newQueue = queue.filter((q) => q.id !== item.id);
-      await this.setQueue(newQueue);
-      this.notifyListeners();
-      await this.fullSync();
-    }
-  }
-
-  private showQueueCapacityWarning() {
-    logger.warn("[Sync] Queue at 80%+ capacity — sync soon to avoid data loss", {
-      threshold: Math.floor(MAX_SYNC_QUEUE_SIZE * 0.8),
-      max: MAX_SYNC_QUEUE_SIZE,
-    });
-
-    if (this.hasShownQueueWarning) return;
-    this.hasShownQueueWarning = true;
-
-    try {
-      Alert.alert(
-        "Pending Changes Piling Up",
-        "You have a lot of unsynced changes saved on this device. "
-          + "Please connect to the internet so your data can sync to the cloud. "
-          + "If the queue fills up, the oldest changes may be dropped.",
-        [{ text: "OK", style: "default" }],
-      );
-    } catch {
-      logger.warn("[Sync] Could not show queue capacity warning");
-    }
-  }
-
-  private notifySyncFailure(dataType: string, itemName: string) {
-    const title = "Sync Issue";
-    const message =
-      "Some changes couldn't be saved to the cloud. Your data is safe on this device. "
-      + "Try these steps:\n\n"
-      + "1. Check your internet connection\n"
-      + "2. Go to Settings > Account > Sync Now\n"
-      + "3. If the problem persists, contact support";
-    try {
-      Alert.alert(title, message, [
-        {
-          text: "Go to Settings",
-          onPress: () => {
-            try {
-              const { navigationRef } = require("./navigationRef");
-              if (navigationRef.isReady()) {
-                navigationRef.navigate("Main" as never);
-              }
-            } catch {
-              logger.warn("[Sync] Could not navigate to Settings");
-            }
-          },
-        },
-        { text: "Dismiss", style: "cancel" },
-      ]);
-    } catch {
-      logger.warn("[Sync] Could not show sync failure alert", { dataType, itemName });
     }
   }
 
