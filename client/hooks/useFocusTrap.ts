@@ -125,7 +125,7 @@ export function useFocusTrap({ visible, onDismiss }: UseFocusTrapOptions) {
 
     if (typeof container.addEventListener === "function") {
       container.addEventListener("keydown", handleKeyDown);
-      return () => container.removeEventListener("keydown", handleKeyDown);
+      return () => container.removeEventListener?.("keydown", handleKeyDown);
     }
   }, [visible]);
 
