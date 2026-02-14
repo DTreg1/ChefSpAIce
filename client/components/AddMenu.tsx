@@ -210,7 +210,7 @@ export const AddMenu = memo(function AddMenu({
     visible: isOpen,
     onDismiss: onClose,
   });
-  const { focusTargetRef: focusTargetRef2, containerRef: containerRef2, onAccessibilityEscape: onAccessibilityEscape2 } = useFocusTrap({
+  const { containerRef: containerRef2, onAccessibilityEscape: onAccessibilityEscape2 } = useFocusTrap({
     visible: showUpgradePrompt,
     onDismiss: () => setShowUpgradePrompt(false),
   });

@@ -32,7 +32,7 @@ export function TermTooltip({
 }: TermTooltipProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
   });
@@ -55,11 +55,12 @@ export function TermTooltip({
           ]}
           onPress={(e) => e.stopPropagation()}
           accessibilityRole="none"
+          onAccessibilityEscape={onAccessibilityEscape}
         >
-          <GlassCard ref={containerRef} style={styles.tooltip} intensity="strong" onAccessibilityEscape={onAccessibilityEscape}>
+          <GlassCard style={styles.tooltip} intensity="strong">
             <View style={styles.header}>
               <View style={styles.titleRow}>
-                <ThemedText ref={focusTargetRef} type="h3">{term.term}</ThemedText>
+                <ThemedText type="h3">{term.term}</ThemedText>
                 <Pressable
                   onPress={onClose}
                   style={styles.closeButton}

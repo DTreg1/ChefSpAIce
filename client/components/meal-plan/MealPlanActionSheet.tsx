@@ -24,7 +24,7 @@ export function MealPlanActionSheet({
   onClose,
 }: MealPlanActionSheetProps) {
   const { theme } = useTheme();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
   });
@@ -51,7 +51,7 @@ export function MealPlanActionSheet({
           ]}
           onAccessibilityEscape={onAccessibilityEscape}
         >
-          <ThemedText ref={focusTargetRef} type="h4" style={styles.actionSheetTitle}>
+          <ThemedText type="h4" style={styles.actionSheetTitle}>
             {recipe?.title || "Meal Options"}
           </ThemedText>
 

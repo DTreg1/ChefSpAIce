@@ -45,7 +45,7 @@ export function IngredientSwapModal({
   onSelectSwap,
 }: IngredientSwapModalProps) {
   const { theme, isDark } = useTheme();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
   });
@@ -111,7 +111,7 @@ export function IngredientSwapModal({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Feather name="repeat" size={20} color={AppColors.primary} />
-          <ThemedText type="h3" style={styles.headerTitle} ref={focusTargetRef}>
+          <ThemedText type="h3" style={styles.headerTitle}>
             Swap Ingredient
           </ThemedText>
         </View>

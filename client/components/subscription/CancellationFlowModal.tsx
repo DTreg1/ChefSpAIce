@@ -72,7 +72,7 @@ export function CancellationFlowModal({
   onCanceled,
 }: CancellationFlowModalProps) {
   const { theme, isDark } = useTheme();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
   });
@@ -207,7 +207,7 @@ export function CancellationFlowModal({
   const renderStep1 = () => (
     <View>
       <View style={styles.header}>
-        <ThemedText type="h2" style={styles.title} ref={focusTargetRef}>
+        <ThemedText type="h2" style={styles.title}>
           We're sorry to see you go
         </ThemedText>
         <ThemedText type="body" style={[styles.subtitle, { color: theme.textSecondary }]}>

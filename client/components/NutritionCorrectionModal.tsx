@@ -51,7 +51,7 @@ export function NutritionCorrectionModal({
 }: NutritionCorrectionModalProps) {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
   });
@@ -214,7 +214,7 @@ export function NutritionCorrectionModal({
         >
           <GlassCard style={styles.card}>
             <View style={styles.header}>
-              <ThemedText type="h3" style={styles.title} ref={focusTargetRef}>
+              <ThemedText type="h3" style={styles.title}>
                 Report Nutrition Issue
               </ThemedText>
               <Pressable onPress={handleClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">

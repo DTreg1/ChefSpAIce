@@ -155,7 +155,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   const handleNavigate = (screen: string, params?: object) => {
-    navigation.navigate(screen as never, params as never);
+    (navigation as any).navigate(screen, params);
   };
 
   const handleAddPressIn = () => {

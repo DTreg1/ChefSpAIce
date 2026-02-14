@@ -75,7 +75,7 @@ export function RecipeSettingsModal({
   onGenerate,
 }: RecipeSettingsModalProps) {
   const { theme, isDark } = useTheme();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
   });
@@ -239,7 +239,7 @@ export function RecipeSettingsModal({
           ]}
         >
           <View style={styles.header}>
-            <ThemedText type="h3" ref={focusTargetRef}>Recipe Settings</ThemedText>
+            <ThemedText type="h3">Recipe Settings</ThemedText>
             <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close recipe settings">
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>

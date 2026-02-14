@@ -25,7 +25,7 @@ export type ErrorFallbackProps = {
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const { theme } = useTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const { focusTargetRef, triggerRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { triggerRef, onAccessibilityEscape } = useFocusTrap({
     visible: isModalVisible,
     onDismiss: () => setIsModalVisible(false),
   });
@@ -107,9 +107,9 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           accessibilityViewIsModal={true}
         >
           <View style={styles.modalOverlay}>
-            <ThemedView ref={containerRef} style={styles.modalContainer} onAccessibilityEscape={onAccessibilityEscape}>
+            <ThemedView style={styles.modalContainer} onAccessibilityEscape={onAccessibilityEscape}>
               <View style={styles.modalHeader}>
-                <ThemedText ref={focusTargetRef} type="h2" style={styles.modalTitle}>
+                <ThemedText type="h2" style={styles.modalTitle}>
                   Error Details
                 </ThemedText>
                 <Pressable

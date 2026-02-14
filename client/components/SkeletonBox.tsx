@@ -25,7 +25,7 @@ export function SkeletonBox({ width, height, borderRadius = 8, style }: Skeleton
     return (
       <View
         style={[
-          { width, height, borderRadius, backgroundColor: theme.glass.border, opacity: 0.5 },
+          { width: width as import("react-native").DimensionValue, height, borderRadius, backgroundColor: theme.glass.border, opacity: 0.5 },
           style,
         ]}
       />
@@ -39,7 +39,7 @@ export function SkeletonBox({ width, height, borderRadius = 8, style }: Skeleton
   return (
     <Animated.View
       style={[
-        { width, height, borderRadius, backgroundColor: theme.glass.border },
+        { width: width as import("react-native").DimensionValue, height, borderRadius, backgroundColor: theme.glass.border },
         animatedStyle,
         style,
       ]}

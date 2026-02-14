@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiClient } from "@/lib/api-client";
-import { storage, FoodItem } from "@/lib/storage";
+import type { FoodItem } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
 const FUN_FACT_TTL = 24 * 60 * 60 * 1000; // 24 hours

@@ -31,7 +31,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { generateId } from "@/lib/storage";
 import type { ChatMessage } from "@/lib/storage";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useChatMessages } from "@/hooks/useChatMessages";
@@ -49,7 +48,7 @@ export function ChatModal() {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { isChatOpen, closeChat } = useFloatingChat();
-  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+  const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible: isChatOpen,
     onDismiss: closeChat,
   });
@@ -228,7 +227,7 @@ export function ChatModal() {
             accessibilityElementsHidden={true}
             importantForAccessibility="no-hide-descendants"
           />
-          <ThemedText type="caption" style={styles.headerTitle} ref={focusTargetRef}>
+          <ThemedText type="caption" style={styles.headerTitle}>
             Kitchen Chef
           </ThemedText>
         </GlassView>

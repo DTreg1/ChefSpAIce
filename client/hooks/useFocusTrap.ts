@@ -136,9 +136,9 @@ export function useFocusTrap({ visible, onDismiss }: UseFocusTrapOptions) {
   }, [onDismiss]);
 
   return {
-    focusTargetRef,
-    triggerRef,
-    containerRef,
+    focusTargetRef: focusTargetRef as React.RefObject<any>,
+    triggerRef: triggerRef as React.RefObject<any>,
+    containerRef: containerRef as React.RefObject<any>,
     onAccessibilityEscape,
   };
 }
