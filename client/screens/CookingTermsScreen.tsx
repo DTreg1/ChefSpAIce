@@ -54,7 +54,7 @@ export default function CookingTermsScreen() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTerm, setSelectedTerm] = useState<CookingTerm | null>(null);
 
-  const { focusTargetRef: termFocusRef, containerRef: termContainerRef, onAccessibilityEscape: onTermEscape } = useFocusTrap({
+  const { containerRef: termContainerRef, onAccessibilityEscape: onTermEscape } = useFocusTrap({
     visible: selectedTerm !== null,
     onDismiss: () => setSelectedTerm(null),
   });
@@ -292,7 +292,7 @@ export default function CookingTermsScreen() {
               style={styles.modalContent}
               contentContainerStyle={styles.modalScrollContent}
             >
-              <ThemedText ref={termFocusRef} type="h2" style={styles.modalTitle}>
+              <ThemedText type="h2" style={styles.modalTitle}>
                 {selectedTerm.term}
               </ThemedText>
 

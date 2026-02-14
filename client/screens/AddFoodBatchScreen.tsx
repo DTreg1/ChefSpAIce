@@ -273,7 +273,7 @@ export default function AddFoodBatchScreen() {
   const { checkAfterInventoryAdd } = useAppReview();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
-  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+  const { containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
     visible: showUpgradePrompt,
     onDismiss: () => setShowUpgradePrompt(false),
   });
@@ -573,7 +573,6 @@ export default function AddFoodBatchScreen() {
       >
         <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
-            ref={upgradeFocusRef}
             type="limit"
             limitName="pantry items"
             remaining={0}

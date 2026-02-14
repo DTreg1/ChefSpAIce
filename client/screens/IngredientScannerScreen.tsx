@@ -233,7 +233,7 @@ export default function IngredientScannerScreen() {
         addedDate: new Date().toISOString(),
       };
 
-      await storage.addInventoryItem(newItem as FoodItem);
+      await storage.addInventoryItem(newItem as unknown as FoodItem);
     }
 
     if (Platform.OS !== "web") {

@@ -169,7 +169,7 @@ export default function RecipeScannerScreen() {
         source: "scanned",
       };
 
-      await storage.addRecipe(newRecipe as Recipe);
+      await storage.addRecipe(newRecipe as unknown as Recipe);
 
       if (Platform.OS !== "web") {
         await Haptics.notificationAsync(

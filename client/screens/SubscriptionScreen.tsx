@@ -293,7 +293,7 @@ export default function SubscriptionScreen() {
               "/api/subscriptions/preview-proration",
               { newPriceId: selectedPriceId },
             );
-            setProrationPreview(preview);
+            setProrationPreview({ proratedAmount: preview.immediatePayment, creditAmount: 0, newAmount: preview.immediatePayment, currency: preview.currency });
 
             const formattedAmount = (preview.immediatePayment / 100).toFixed(2);
             const currencySymbol = preview.currency === "usd" ? "$" : preview.currency.toUpperCase() + " ";

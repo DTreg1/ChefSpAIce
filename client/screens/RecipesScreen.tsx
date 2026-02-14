@@ -128,7 +128,7 @@ export default function RecipesScreen() {
     visible: isGenerating,
     onDismiss: () => {},
   });
-  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+  const { containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
     visible: showUpgradePrompt,
     onDismiss: dismissUpgradePrompt,
   });
@@ -870,7 +870,6 @@ export default function RecipesScreen() {
       >
         <View ref={upgradeContainerRef} style={styles.upgradeModalOverlay} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
-            ref={upgradeFocusRef}
             type="limit"
             limitName="AI recipes"
             remaining={(() => {

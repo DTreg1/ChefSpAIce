@@ -34,7 +34,6 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { apiClient, ApiClientError } from "@/lib/api-client";
-import { storage } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
 type StepData = {

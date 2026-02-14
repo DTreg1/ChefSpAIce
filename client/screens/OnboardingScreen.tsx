@@ -13,7 +13,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { storage, FoodItem, generateId } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
@@ -82,7 +82,7 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     if (stepLoaded && step !== "welcome") {
-      storage.saveOnboardingStep(step);
+      storage.setOnboardingStep(step);
     }
   }, [step, stepLoaded]);
 

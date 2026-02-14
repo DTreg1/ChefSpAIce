@@ -216,11 +216,11 @@ export default function AddItemScreen() {
   const [notes, setNotes] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const { focusTargetRef: datePickerFocusRef, containerRef: datePickerContainerRef, onAccessibilityEscape: onDatePickerEscape } = useFocusTrap({
+  const { containerRef: datePickerContainerRef, onAccessibilityEscape: onDatePickerEscape } = useFocusTrap({
     visible: showDatePicker,
     onDismiss: () => setShowDatePicker(false),
   });
-  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+  const { containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
     visible: showUpgradePrompt,
     onDismiss: () => setShowUpgradePrompt(false),
   });
@@ -388,7 +388,7 @@ export default function AddItemScreen() {
 
       await storage.addInventoryItem(newItem);
 
-      navigation.replace("IngredientScanner", { mode: "barcode" });
+      (navigation as any).replace("IngredientScanner", { mode: "barcode" });
     } catch (error) {
       logger.error("Error saving item:", error);
       Alert.alert("Error", "Failed to save item. Please try again.");
@@ -1149,7 +1149,7 @@ export default function AddItemScreen() {
                 onAccessibilityEscape={onDatePickerEscape}
               >
                 <View style={styles.datePickerHeader}>
-                  <ThemedText ref={datePickerFocusRef} type="h4">
+                  <ThemedText type="h4">
                     {datePickerField === "expiration"
                       ? "Expiration Date"
                       : "Purchase Date"}
@@ -1225,7 +1225,6 @@ export default function AddItemScreen() {
       >
         <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
-            ref={upgradeFocusRef}
             type="limit"
             limitName="pantry items"
             remaining={0}

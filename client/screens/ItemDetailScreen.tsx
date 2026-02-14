@@ -49,7 +49,7 @@ export default function ItemDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const { focusTargetRef: datePickerFocusRef, containerRef: datePickerContainerRef, onAccessibilityEscape: onDatePickerEscape } = useFocusTrap({
+  const { containerRef: datePickerContainerRef, onAccessibilityEscape: onDatePickerEscape } = useFocusTrap({
     visible: showDatePicker,
     onDismiss: () => setShowDatePicker(false),
   });
@@ -164,7 +164,7 @@ export default function ItemDetailScreen() {
           sodium: n.sodium,
           servingSize: n.servingSize,
         };
-        setItem(prev => prev ? { ...prev, nutrition: mapped } : prev);
+        setItem(prev => prev ? { ...prev, nutrition: mapped } as FoodItem : prev);
       } else {
         Alert.alert("No Data", "No nutrition data found for this item in the USDA database.");
       }
@@ -606,7 +606,7 @@ export default function ItemDetailScreen() {
                 onAccessibilityEscape={onDatePickerEscape}
               >
                 <View style={styles.datePickerHeader}>
-                  <ThemedText ref={datePickerFocusRef} type="h4">
+                  <ThemedText type="h4">
                     {datePickerField === "expiration"
                       ? "Expiration Date"
                       : "Purchase Date"}
