@@ -53,7 +53,6 @@ import ingredientsRouter from "./routers/user/ingredients.router";
 import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
-import recipeImagesRouter from "./routers/recipeImages.router";
 import feedbackRouter from "./routers/feedback.router";
 import logoExportRouter from "./routers/logo-export.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
@@ -283,7 +282,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/receipt", requireAuth, requireSubscription, receiptAnalysisRouter);
   app.use("/api/ingredients", requireAuth, requireSubscription, ingredientsRouter);
   app.use("/api/sync", requireAuth, requireSubscription, syncRouter);
-  app.use("/api/recipe-images", requireAuth, requireSubscription, recipeImagesRouter);
 
   // =========================================================================
   // FEATURE ROUTERS - Extracted to dedicated modules
