@@ -42,7 +42,7 @@ name: Inventory Flow
 - tapOn:
     id: "input-item-quantity"
     optional: true
-- clearText
+- eraseText
 - inputText: "3"
 
 - scrollUntilVisible:
