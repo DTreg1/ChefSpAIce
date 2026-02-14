@@ -73,6 +73,7 @@ import * as Linking from 'expo-linking';
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import { PendingSyncBanner } from "@/components/PendingSyncBanner";
 import { FloatingChatProvider } from "@/contexts/FloatingChatContext";
 import { SearchProvider } from "@/contexts/SearchContext";
@@ -89,6 +90,7 @@ import { VoiceQuickAction } from "@/components/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { initOfflineProcessor } from "@/lib/offline-processor";
 import { navigationRef } from "@/lib/navigationRef";
+import { useAppUpdate } from "@/hooks/useAppUpdate";
 
 /**
  * Screens where the floating chat button should NOT appear even after auth/onboarding.
@@ -142,6 +144,7 @@ function MobileAppContent() {
     user,
   } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
+  const { updateAvailable, isDownloading, forceUpdate, applyUpdate } = useAppUpdate();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
   );
@@ -236,6 +239,14 @@ function MobileAppContent() {
       >
         {/* Shows when device is offline */}
         <OfflineIndicator />
+
+        {/* Shows when an OTA update is available */}
+        <UpdateBanner
+          visible={updateAvailable}
+          isDownloading={isDownloading}
+          forceUpdate={forceUpdate}
+          onUpdate={applyUpdate}
+        />
 
         {/* Shows when changes are pending sync */}
         <PendingSyncBanner />

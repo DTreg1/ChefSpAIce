@@ -86,7 +86,13 @@
           "photosPermission": "ChefSpAIce needs photo library access to select images for your food items."
         }
       ],
-      "@sentry/react-native/expo"
+      "@sentry/react-native/expo",
+      [
+        "expo-updates",
+        {
+          "username": "dtreg1"
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true
@@ -96,6 +102,12 @@
         "projectId": "5b92d512-fd14-4e4f-b537-76dc95139451"
       }
     },
-    "owner": "dtreg1"
+    "owner": "dtreg1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5b92d512-fd14-4e4f-b537-76dc95139451"
+    }
   }
 }

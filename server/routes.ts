@@ -152,6 +152,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =========================================================================
+  // VERSION CHECK - Used by mobile app for OTA update decisions
+  // =========================================================================
+  const LATEST_APP_VERSION = "1.0.0";
+  const MIN_SUPPORTED_VERSION = "1.0.0";
+
+  app.get("/api/version-check", asyncHandler(async (req: Request, res: Response) => {
+    const currentVersion = (req.query.currentVersion as string) || "0.0.0";
+
+    const compareSemver = (a: string, b: string): number => {
+      const pa = a.split(".").map(Number);
+      const pb = b.split(".").map(Number);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const na = pa[i] || 0;
+        const nb = pb[i] || 0;
+        if (na < nb) return -1;
+        if (na > nb) return 1;
+      }
+      return 0;
+    };
+
+    const needsForceUpdate = compareSemver(currentVersion, MIN_SUPPORTED_VERSION) < 0;
+
+    res.json(successResponse({
+      forceUpdate: needsForceUpdate,
+      latestVersion: LATEST_APP_VERSION,
+      ...(needsForceUpdate
+        ? { message: "This version is no longer supported. Please update to continue." }
+        : {}),
+    }));
+  }));
+
+  // =========================================================================
   // RATE LIMITING - Applied to all /api/* routes as baseline protection
   // =========================================================================
   app.use("/api", generalLimiter);
