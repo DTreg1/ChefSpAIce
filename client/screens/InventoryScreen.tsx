@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   ViewStyle,
+  ScrollView,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,6 +21,7 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { InventorySkeleton } from "@/components/inventory/InventorySkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassCard } from "@/components/GlassCard";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { Spacing, AppColors } from "@/constants/theme";
 import {
@@ -62,7 +64,7 @@ export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
-  const { isTablet } = useDeviceType();
+  const { isTablet, isLandscape } = useDeviceType();
   const navigation =
     useNavigation<InventoryNavigation>();
   const queryClient = useQueryClient();
@@ -89,6 +91,7 @@ export default function InventoryScreen() {
     Record<string, boolean>
   >({});
   const [inventoryStatusLabel, setInventoryStatusLabel] = useState("");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
@@ -311,8 +314,19 @@ export default function InventoryScreen() {
   };
 
   const handleItemPress = (itemId: string) => {
-    navigation.navigate("ItemDetail", { itemId });
+    if (isTablet) {
+      setSelectedItemId(itemId);
+    } else {
+      navigation.navigate("ItemDetail", { itemId });
+    }
   };
+
+  const selectedItem = useMemo(() => {
+    if (!selectedItemId) return null;
+    return items.find((item) => item.id === selectedItemId) || null;
+  }, [selectedItemId, items]);
+
+  const sidePanelWidth = isTablet && isLandscape ? 380 : 320;
 
   const renderListHeader = () => (
     <>
@@ -482,37 +496,151 @@ export default function InventoryScreen() {
         accessibilityLabel={inventoryStatusLabel}
         style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
       />
-      <FlashList
-        key={isTablet ? "tablet" : "phone"}
-        style={styles.list}
-        accessibilityRole="list"
-        accessibilityLabel="Inventory items"
-        contentContainerStyle={[
-          styles.listContent,
-          {
-            paddingTop: 56 + insets.top + filterHeaderHeight + Spacing.md,
-            paddingBottom: tabBarHeight + Spacing.xl,
-          },
-        ]}
-        scrollIndicatorInsets={{ bottom: insets.bottom }}
-        data={groupedSections}
-        numColumns={isTablet ? 2 : 1}
-        keyExtractor={(item) => item.key}
-        renderItem={renderGroupedSection}
-        ListHeaderComponent={renderListHeader}
-        ListFooterComponent={renderListFooter}
-        ListEmptyComponent={renderEmptyState}
-
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={AppColors.primary}
-            accessibilityLabel={refreshing ? "Refreshing inventory" : "Pull to refresh inventory"}
-            accessibilityRole="button"
+      <View style={isTablet ? styles.masterDetailRow : styles.masterDetailColumn}>
+        <View style={{ flex: 1 }}>
+          <FlashList
+            key={isTablet ? "tablet-3col" : "phone"}
+            style={styles.list}
+            accessibilityRole="list"
+            accessibilityLabel="Inventory items"
+            contentContainerStyle={[
+              styles.listContent,
+              {
+                paddingTop: 56 + insets.top + filterHeaderHeight + Spacing.md,
+                paddingBottom: tabBarHeight + Spacing.xl,
+              },
+            ]}
+            scrollIndicatorInsets={{ bottom: insets.bottom }}
+            data={groupedSections}
+            numColumns={isTablet ? 3 : 1}
+            keyExtractor={(item) => item.key}
+            renderItem={renderGroupedSection}
+            ListHeaderComponent={renderListHeader}
+            ListFooterComponent={renderListFooter}
+            ListEmptyComponent={renderEmptyState}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={AppColors.primary}
+                accessibilityLabel={refreshing ? "Refreshing inventory" : "Pull to refresh inventory"}
+                accessibilityRole="button"
+              />
+            }
           />
-        }
-      />
+        </View>
+        {isTablet && (
+          <View
+            style={[
+              styles.sidePanel,
+              {
+                width: sidePanelWidth,
+                backgroundColor: theme.backgroundSecondary || theme.backgroundDefault,
+                borderLeftColor: theme.border,
+                paddingTop: 56 + insets.top + Spacing.md,
+                paddingBottom: tabBarHeight + Spacing.md,
+              },
+            ]}
+            testID="panel-item-detail"
+          >
+            {selectedItem ? (
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ padding: Spacing.lg }}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.sidePanelHeader}>
+                  <ThemedText type="h3" style={{ flex: 1 }}>
+                    {selectedItem.name}
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => setSelectedItemId(null)}
+                    style={[styles.closeButton, { backgroundColor: theme.backgroundRoot }]}
+                    testID="button-close-side-panel"
+                    accessibilityRole="button"
+                    accessibilityLabel="Close detail panel"
+                  >
+                    <Feather name="x" size={18} color={theme.text} />
+                  </Pressable>
+                </View>
+
+                <GlassCard style={{ marginTop: Spacing.md }}>
+                  <View style={styles.detailRow}>
+                    <Feather name="tag" size={16} color={AppColors.primary} />
+                    <View style={{ marginLeft: Spacing.sm }}>
+                      <ThemedText type="caption">Category</ThemedText>
+                      <ThemedText type="body">{selectedItem.category}</ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={[styles.detailRow, { marginTop: Spacing.md }]}>
+                    <Feather name="hash" size={16} color={AppColors.primary} />
+                    <View style={{ marginLeft: Spacing.sm }}>
+                      <ThemedText type="caption">Quantity</ThemedText>
+                      <ThemedText type="body">
+                        {selectedItem.quantity} {selectedItem.unit}
+                      </ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={[styles.detailRow, { marginTop: Spacing.md }]}>
+                    <Feather name="map-pin" size={16} color={AppColors.primary} />
+                    <View style={{ marginLeft: Spacing.sm }}>
+                      <ThemedText type="caption">Storage Location</ThemedText>
+                      <ThemedText type="body">
+                        {selectedItem.storageLocation
+                          ? selectedItem.storageLocation.charAt(0).toUpperCase() + selectedItem.storageLocation.slice(1)
+                          : "Not set"}
+                      </ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={[styles.detailRow, { marginTop: Spacing.md }]}>
+                    <Feather name="calendar" size={16} color={AppColors.primary} />
+                    <View style={{ marginLeft: Spacing.sm }}>
+                      <ThemedText type="caption">Expiration Date</ThemedText>
+                      <ThemedText type="body">
+                        {selectedItem.expirationDate
+                          ? new Date(selectedItem.expirationDate).toLocaleDateString()
+                          : "Not set"}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </GlassCard>
+
+                <Pressable
+                  onPress={() => navigation.navigate("ItemDetail", { itemId: selectedItem.id })}
+                  style={[styles.viewFullDetailsButton, { backgroundColor: AppColors.primary }]}
+                  testID="button-view-full-details"
+                  accessibilityRole="button"
+                  accessibilityLabel="View full details"
+                >
+                  <Feather name="maximize-2" size={16} color="#FFFFFF" />
+                  <ThemedText type="button" style={{ color: "#FFFFFF", marginLeft: Spacing.sm }}>
+                    View Full Details
+                  </ThemedText>
+                </Pressable>
+              </ScrollView>
+            ) : (
+              <View style={styles.sidePanelPlaceholder}>
+                <Feather name="inbox" size={48} color={theme.textSecondary} />
+                <ThemedText
+                  type="body"
+                  style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}
+                >
+                  Select an item
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  style={{ textAlign: "center", marginTop: Spacing.xs }}
+                >
+                  Tap an item from the list to see its details here
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
       <TrialExpiringModal
         visible={showExpiringModal}
         onDismiss={handleDismissExpiringModal}
@@ -531,6 +659,13 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
   },
+  masterDetailRow: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  masterDetailColumn: {
+    flex: 1,
+  },
   list: {
     flex: 1,
     ...Platform.select({
@@ -542,5 +677,40 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: Spacing.lg,
     gap: Spacing.md,
+  },
+  sidePanel: {
+    borderLeftWidth: 1,
+  },
+  sidePanelHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.sm,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  sidePanelPlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.lg,
+  },
+  viewFullDetailsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: 12,
+    marginTop: Spacing.lg,
   },
 });

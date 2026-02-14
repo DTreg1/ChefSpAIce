@@ -87,7 +87,7 @@ export default function RecipesScreen() {
   const { theme } = useTheme();
   const navigation =
     useNavigation<RecipesNavigation>();
-  const { isTablet, isLargeTablet } = useDeviceType();
+  const { isTablet, isLargeTablet, screenWidth, isLandscape } = useDeviceType();
 
   const isOnline = useOnlineStatus();
   const { getSearchQuery, collapseSearch } = useSearch();
@@ -109,6 +109,7 @@ export default function RecipesScreen() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedDietaryTags, setSelectedDietaryTags] = useState<string[]>([]);
   const [recipesStatusLabel, setRecipesStatusLabel] = useState("");
@@ -356,10 +357,14 @@ export default function RecipesScreen() {
         accessibilityLabel={`${recipe.title}, ${getMatchPercentage(recipe)}% ingredient match`}
       >
         <GlassCard
-          style={styles.recipeCard}
-          onPress={() =>
-            navigation.navigate("RecipeDetail", { recipeId: recipe.id })
-          }
+          style={[styles.recipeCard, isTablet && selectedRecipeId === recipe.id ? { borderColor: AppColors.primary, borderWidth: 2 } : undefined]}
+          onPress={() => {
+            if (isTablet) {
+              setSelectedRecipeId(recipe.id);
+            } else {
+              navigation.navigate("RecipeDetail", { recipeId: recipe.id });
+            }
+          }}
           accessibilityLabel={`${recipe.title}, ${matchPercentage}% ingredient match`}
           accessibilityHint="Opens recipe details"
         >
@@ -491,6 +496,127 @@ export default function RecipesScreen() {
     );
   };
 
+  const selectedRecipe = useMemo(() => {
+    if (!selectedRecipeId) return null;
+    return recipes.find((r) => r.id === selectedRecipeId) || null;
+  }, [selectedRecipeId, recipes]);
+
+  const previewPanelWidth = isLandscape && isTablet ? Math.min(400, screenWidth * 0.4) : 340;
+
+  const renderPreviewPanel = () => {
+    if (!isTablet) return null;
+
+    return (
+      <View style={[styles.previewPanel, { width: previewPanelWidth, borderLeftColor: theme.glass.border }]}>
+        {selectedRecipe ? (
+          <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewScrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.previewHeader}>
+              <ThemedText type="h4" style={{ flex: 1 }} numberOfLines={2}>
+                {selectedRecipe.title}
+              </ThemedText>
+              <Pressable
+                onPress={() => setSelectedRecipeId(null)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Close preview"
+                style={styles.previewCloseButton}
+              >
+                <Feather name="x" size={20} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+
+            {selectedRecipe.imageUri ? (
+              <View style={styles.previewImageContainer}>
+                <Image
+                  source={{ uri: selectedRecipe.imageUri }}
+                  style={styles.previewImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  accessibilityLabel={`Photo of ${selectedRecipe.title}`}
+                />
+              </View>
+            ) : null}
+
+            <View style={[styles.previewMatchBadge, {
+              backgroundColor: getMatchPercentage(selectedRecipe) >= 80
+                ? AppColors.success
+                : getMatchPercentage(selectedRecipe) >= 50
+                  ? AppColors.warning
+                  : AppColors.secondary,
+            }]}>
+              <ThemedText type="caption" style={styles.matchText}>
+                {getMatchPercentage(selectedRecipe)}% ingredient match
+              </ThemedText>
+            </View>
+
+            {selectedRecipe.description ? (
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                {selectedRecipe.description}
+              </ThemedText>
+            ) : null}
+
+            {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 ? (
+              <View style={styles.previewIngredientsSection}>
+                <ThemedText type="small" style={{ fontWeight: "600", marginBottom: Spacing.xs }}>
+                  Ingredients
+                </ThemedText>
+                {selectedRecipe.ingredients.slice(0, 8).map((ing, idx) => (
+                  <View key={idx} style={styles.previewIngredientRow}>
+                    <Feather name="check" size={12} color={AppColors.primary} style={{ marginRight: Spacing.xs }} />
+                    <ThemedText type="caption" numberOfLines={1} style={{ flex: 1 }}>
+                      {ing.quantity ? `${ing.quantity} ` : ""}{ing.unit ? `${ing.unit} ` : ""}{ing.name}
+                    </ThemedText>
+                  </View>
+                ))}
+                {selectedRecipe.ingredients.length > 8 ? (
+                  <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+                    +{selectedRecipe.ingredients.length - 8} more...
+                  </ThemedText>
+                ) : null}
+              </View>
+            ) : null}
+
+            <View style={styles.previewActions}>
+              <Pressable
+                style={[styles.previewViewButton, { backgroundColor: AppColors.primary }]}
+                onPress={() => navigation.navigate("RecipeDetail", { recipeId: selectedRecipe.id })}
+                accessibilityRole="button"
+                accessibilityLabel="View full recipe"
+              >
+                <Feather name="arrow-right" size={16} color="#FFFFFF" style={{ marginRight: Spacing.xs }} />
+                <ThemedText type="small" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                  View Full Recipe
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                onPress={() => handleToggleFavorite(selectedRecipe)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={selectedRecipe.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                style={[styles.previewFavoriteButton, { borderColor: theme.glass.border }]}
+              >
+                <Feather
+                  name="heart"
+                  size={20}
+                  color={selectedRecipe.isFavorite ? AppColors.error : theme.textSecondary}
+                  style={{ opacity: selectedRecipe.isFavorite ? 1 : 0.5 }}
+                />
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : (
+          <View style={styles.previewPlaceholder}>
+            <Feather name="book-open" size={48} color={theme.textSecondary} style={{ opacity: 0.3 }} />
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}>
+              Select a recipe to preview
+            </ThemedText>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ExpoGlassHeader
@@ -505,6 +631,7 @@ export default function RecipesScreen() {
         accessibilityLabel={recipesStatusLabel}
         style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
       />
+      <View style={isTablet ? styles.masterDetailRow : styles.masterDetailColumn}>
       <FlashList
         accessibilityRole="list"
         accessibilityLabel="Recipe collection"
@@ -520,7 +647,7 @@ export default function RecipesScreen() {
         data={filteredRecipes}
         keyExtractor={(item) => item.id}
         key={isLargeTablet ? "large-tablet" : isTablet ? "tablet" : "phone"}
-        numColumns={isLargeTablet ? 4 : isTablet ? 3 : 2}
+        numColumns={isTablet ? 2 : 2}
 
         renderItem={renderRecipeCard}
         ListHeaderComponent={
@@ -684,6 +811,8 @@ export default function RecipesScreen() {
           />
         }
       />
+      {renderPreviewPanel()}
+      </View>
       <RecipeSettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
@@ -895,5 +1024,81 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.lg,
+  },
+  masterDetailRow: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  masterDetailColumn: {
+    flex: 1,
+  },
+  previewPanel: {
+    borderLeftWidth: 1,
+    height: "100%",
+  },
+  previewScroll: {
+    flex: 1,
+  },
+  previewScrollContent: {
+    padding: Spacing.md,
+    paddingTop: Spacing.lg,
+  },
+  previewHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  previewCloseButton: {
+    padding: Spacing.xs,
+  },
+  previewImageContainer: {
+    height: 200,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+    marginBottom: Spacing.md,
+  },
+  previewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  previewMatchBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  previewIngredientsSection: {
+    marginTop: Spacing.md,
+  },
+  previewIngredientRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.xs,
+  },
+  previewActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+  },
+  previewViewButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  previewFavoriteButton: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  previewPlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

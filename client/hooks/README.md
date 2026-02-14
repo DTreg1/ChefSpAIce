@@ -17,9 +17,9 @@ This directory contains 22 custom React hooks for the ChefSpAIce application. Be
 
 ### useDeviceType
 **File:** `useDeviceType.ts`
-**Purpose:** Provides responsive breakpoint flags based on screen width (`isPhone`, `isTablet`, `isLargeTablet`).
-**Exports:** `useDeviceType() → { isPhone, isTablet, isLargeTablet }`
-**Dependencies:** `react-native` (`useWindowDimensions`)
+**Purpose:** Provides responsive breakpoint flags based on screen width (`isPhone`, `isTablet`, `isLargeTablet`), raw `screenWidth`, and `isLandscape` orientation detection via `Dimensions.addEventListener`.
+**Exports:** `useDeviceType() → { isPhone, isTablet, isLargeTablet, screenWidth, isLandscape }`
+**Dependencies:** `react-native` (`useWindowDimensions`, `Dimensions`)
 
 ---
 

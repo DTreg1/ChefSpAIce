@@ -52,7 +52,7 @@ export default function MealPlanScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<MealPlanNavigation>();
   const { checkFeature } = useSubscription();
-  const { isTablet } = useDeviceType();
+  const { isTablet, screenWidth, isLandscape } = useDeviceType();
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -383,11 +383,7 @@ export default function MealPlanScreen() {
                 })}
               />
             ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.tabletDaysContainer}
-              >
+              <View style={[styles.tabletDaysContainer, { gap: screenWidth > 1024 ? Spacing.sm : Spacing.xs }]}>
                 {getWeekDays().map((day) => {
                   const isToday = isSameDay(day, new Date());
                   const dateStr = format(day, "yyyy-MM-dd");
@@ -400,11 +396,11 @@ export default function MealPlanScreen() {
                       ]}
                     >
                       <View style={[styles.tabletDayHeader, { borderBottomColor: theme.glass.border }]}>
-                        <ThemedText type="h4" style={styles.tabletDayTitle}>
-                          {format(day, "EEE")}
+                        <ThemedText type={isLandscape ? "h4" : "small"} style={styles.tabletDayTitle}>
+                          {format(day, isLandscape ? "EEE" : "EEEEE")}
                         </ThemedText>
                         <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                          {format(day, "MMM d")}
+                          {format(day, isLandscape ? "MMM d" : "d")}
                         </ThemedText>
                       </View>
                       <View style={styles.tabletDaySlots}>
@@ -424,7 +420,7 @@ export default function MealPlanScreen() {
                     </GlassCard>
                   );
                 })}
-              </ScrollView>
+              </View>
             )}
           </>
         ) : (
@@ -677,12 +673,15 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   tabletDaysContainer: {
-    gap: Spacing.md,
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    gap: Spacing.xs,
     paddingVertical: Spacing.xs,
   },
   tabletDayColumn: {
-    width: 200,
+    flex: 1,
     gap: Spacing.sm,
+    minWidth: 0,
   },
   tabletDayHeader: {
     alignItems: "center",
