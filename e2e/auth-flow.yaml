@@ -47,6 +47,7 @@ name: Authentication Flow
       - waitForAnimationToEnd
       - inputText: "${output.TEST_EMAIL}"
 
+      - hideKeyboard
       - tapOn:
           id: "input-password"
       - waitForAnimationToEnd
@@ -54,6 +55,7 @@ name: Authentication Flow
 
       - evalScript: "console.log('LOG: Credentials entered, submitting sign in')"
 
+      - hideKeyboard
       - tapOn:
           id: "button-auth-submit"
 
@@ -101,12 +103,14 @@ name: Authentication Flow
             - eraseText: 100
             - inputText: "${output.TEST_EMAIL}"
 
+            - hideKeyboard
             - tapOn:
                 id: "input-password"
             - waitForAnimationToEnd
             - eraseText: 100
             - inputText: "${output.TEST_PASSWORD}"
 
+            - hideKeyboard
             - tapOn:
                 id: "input-confirm-password"
                 optional: true
@@ -115,6 +119,7 @@ name: Authentication Flow
 
             - evalScript: "console.log('LOG: Sign up credentials entered, submitting')"
 
+            - hideKeyboard
             - tapOn:
                 id: "button-auth-submit"
 
