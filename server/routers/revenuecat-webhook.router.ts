@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
-import { users } from "@shared/schema";
+import { users, subscriptions } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { logger } from '../lib/logger';
 import { AppError } from '../middleware/errorHandler';
@@ -76,6 +76,7 @@ async function handleSubscriptionUpdate(
   const entitlementTier = mapEntitlementToTier(event.entitlement_id);
   const productTier = mapProductIdToTier(event.product_id);
   const tier = entitlementTier || productTier;
+  const now = new Date();
 
   logger.info("RevenueCat processing subscription", { productId: event.product_id, entitlementId: event.entitlement_id, resolvedTier: tier });
 
@@ -95,9 +96,22 @@ async function handleSubscriptionUpdate(
     .set({
       subscriptionTier: keepTier ? tier : 'STANDARD',
       subscriptionStatus: status,
-      updatedAt: new Date(),
+      updatedAt: now,
     })
     .where(eq(users.id, userId));
+
+  const expirationDate = event.expiration_at_ms
+    ? new Date(event.expiration_at_ms)
+    : null;
+
+  await db
+    .update(subscriptions)
+    .set({
+      status,
+      ...(expirationDate ? { currentPeriodEnd: expirationDate } : {}),
+      updatedAt: now,
+    })
+    .where(eq(subscriptions.userId, userId));
 
   await invalidateSubscriptionCache(userId);
 
