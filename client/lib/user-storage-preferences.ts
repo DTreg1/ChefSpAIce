@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "@/lib/logger";
 
 const STORAGE_PREFS_KEY = "@chefspaice/user_storage_preferences";
-const PREFS_VERSION_KEY = "@chefspaice/user_storage_preferences_version";
 const CURRENT_VERSION = 1;
 
 interface StorageChoiceRecord {
@@ -17,6 +16,11 @@ interface CategoryPreferences {
 
 interface UserStoragePreferences {
   [category: string]: CategoryPreferences;
+}
+
+interface StoredPreferences {
+  version: number;
+  categories: UserStoragePreferences;
 }
 
 interface PreferenceResult {
@@ -55,7 +59,6 @@ async function loadPreferences(): Promise<UserStoragePreferences> {
   }
 
   try {
-    const version = await AsyncStorage.getItem(PREFS_VERSION_KEY);
     const prefsJson = await AsyncStorage.getItem(STORAGE_PREFS_KEY);
 
     if (!prefsJson) {
@@ -63,13 +66,21 @@ async function loadPreferences(): Promise<UserStoragePreferences> {
       return cachedPreferences;
     }
 
-    const prefs = JSON.parse(prefsJson) as UserStoragePreferences;
+    const parsed = JSON.parse(prefsJson);
 
-    if (!version || parseInt(version) < CURRENT_VERSION) {
-      await migratePreferences(prefs, parseInt(version || "0"));
+    if (parsed && typeof parsed.version === "number" && parsed.categories) {
+      const stored = parsed as StoredPreferences;
+      if (stored.version < CURRENT_VERSION) {
+        await migratePreferences(stored.categories, stored.version);
+      }
+      cachedPreferences = stored.categories;
+    } else if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      cachedPreferences = parsed as UserStoragePreferences;
+      await savePreferences(cachedPreferences);
+    } else {
+      cachedPreferences = {};
     }
 
-    cachedPreferences = prefs;
     return cachedPreferences;
   } catch (error) {
     logger.error("Error loading storage preferences:", error);
@@ -81,8 +92,8 @@ async function loadPreferences(): Promise<UserStoragePreferences> {
 async function savePreferences(prefs: UserStoragePreferences): Promise<void> {
   try {
     cachedPreferences = prefs;
-    await AsyncStorage.setItem(STORAGE_PREFS_KEY, JSON.stringify(prefs));
-    await AsyncStorage.setItem(PREFS_VERSION_KEY, CURRENT_VERSION.toString());
+    const stored: StoredPreferences = { version: CURRENT_VERSION, categories: prefs };
+    await AsyncStorage.setItem(STORAGE_PREFS_KEY, JSON.stringify(stored));
   } catch (error) {
     logger.error("Error saving storage preferences:", error);
   }
@@ -204,7 +215,6 @@ export async function clearPreferences(): Promise<void> {
   cachedPreferences = null;
   try {
     await AsyncStorage.removeItem(STORAGE_PREFS_KEY);
-    await AsyncStorage.removeItem(PREFS_VERSION_KEY);
   } catch (error) {
     logger.error("Error clearing storage preferences:", error);
   }

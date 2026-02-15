@@ -21,7 +21,6 @@ import { Feather } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
@@ -40,6 +39,7 @@ import {
   useStorageSuggestion,
   useStorageRecorder,
 } from "@/hooks/useStorageSuggestion";
+import { getUserPreference, recordStorageChoice } from "@/lib/user-storage-preferences";
 import {
   Spacing,
   BorderRadius,
@@ -250,8 +250,6 @@ export default function AddItemScreen() {
     foodName: name,
   });
 
-  const STORAGE_PREFS_KEY = "@chefspaice/storage_preferences";
-
   useEffect(() => {
     const loadStorageLocations = async () => {
       try {
@@ -267,15 +265,11 @@ export default function AddItemScreen() {
   useEffect(() => {
     const loadStoragePreference = async () => {
       try {
-        const prefsJson = await AsyncStorage.getItem(STORAGE_PREFS_KEY);
-        if (prefsJson) {
-          const prefs = JSON.parse(prefsJson);
-          const savedPref = prefs[category];
-          if (savedPref) {
-            setStorageLocation(savedPref);
-            setUserOverrodeStorage(true);
-            return;
-          }
+        const pref = await getUserPreference(category);
+        if (pref) {
+          setStorageLocation(pref.location);
+          setUserOverrodeStorage(true);
+          return;
         }
       } catch (e) {
         logger.log("Error loading storage preferences:", e);
@@ -298,10 +292,7 @@ export default function AddItemScreen() {
 
   const saveStoragePreference = async (cat: string, loc: string) => {
     try {
-      const prefsJson = await AsyncStorage.getItem(STORAGE_PREFS_KEY);
-      const prefs = prefsJson ? JSON.parse(prefsJson) : {};
-      prefs[cat] = loc;
-      await AsyncStorage.setItem(STORAGE_PREFS_KEY, JSON.stringify(prefs));
+      await recordStorageChoice(cat, loc, false);
     } catch (e) {
       logger.log("Error saving storage preference:", e);
     }
