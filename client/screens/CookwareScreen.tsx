@@ -305,9 +305,13 @@ export default function CookwareScreen() {
   const menuItems: MenuItemConfig[] = [];
 
   const [showOwnedOnly, _setShowOwnedOnly] = useState(false);
+  const [showFirstTimeSetup, setShowFirstTimeSetup] = useState<boolean | null>(
+    null,
+  );
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const [ownedCookwareIds, setOwnedCookwareIds] = useState<number[]>([]);
   const [loadingLocal, setLoadingLocal] = useState(true);
+  const [savingCommon, setSavingCommon] = useState(false);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(0);
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
@@ -345,6 +349,8 @@ export default function CookwareScreen() {
     try {
       const ids = await storage.getCookware();
       setOwnedCookwareIds(ids);
+      // Always update first-time setup status based on current cookware
+      setShowFirstTimeSetup(ids.length === 0);
     } catch (error) {
       logger.error("Error loading cookware:", error);
     } finally {
@@ -369,6 +375,7 @@ export default function CookwareScreen() {
   );
 
   const loading = loadingAppliances || loadingLocal;
+  const isFirstTimeUser = showFirstTimeSetup === true;
 
   const toggleAppliance = useCallback(
     async (applianceId: number) => {
@@ -403,6 +410,33 @@ export default function CookwareScreen() {
     },
     [togglingIds, ownedApplianceIds],
   );
+
+  const handleAddAllCommon = useCallback(async () => {
+    if (savingCommon) return;
+
+    const commonIds = commonAppliances.map((a) => a.id);
+    const newIds = commonIds.filter((id) => !ownedApplianceIds.has(id));
+
+    if (newIds.length === 0) {
+      setShowFirstTimeSetup(false);
+      return;
+    }
+
+    setSavingCommon(true);
+    try {
+      const updatedIds = [...ownedCookwareIds, ...newIds];
+      await storage.setCookware(updatedIds);
+      setOwnedCookwareIds(updatedIds);
+      setShowFirstTimeSetup(false);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      logger.error("Error adding common appliances:", error);
+    } finally {
+      setSavingCommon(false);
+    }
+  }, [commonAppliances, ownedApplianceIds, ownedCookwareIds, savingCommon]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -501,6 +535,61 @@ export default function CookwareScreen() {
       toggleAppliance,
       isAtLimit,
     ],
+  );
+
+  const renderFirstTimeSetup = () => (
+    <GlassCard style={styles.setupCard}>
+      <View style={styles.setupIconContainer}>
+        <Feather name="tool" size={48} color={AppColors.primary} />
+      </View>
+      <ThemedText type="h3" style={styles.setupTitle}>
+        Let's set up your kitchen
+      </ThemedText>
+      <ThemedText type="body" style={styles.setupDescription}>
+        We've pre-selected common kitchen cookware. Add them all with one tap,
+        then customize to match your kitchen.
+      </ThemedText>
+      <View style={styles.commonItemsPreview}>
+        {commonAppliances.slice(0, 6).map((appliance) => (
+          <View
+            key={appliance.id}
+            style={[
+              styles.previewItem,
+              { backgroundColor: theme.glass.backgroundSubtle },
+            ]}
+          >
+            <Feather
+              name={ICON_MAP[appliance.icon] || ICON_MAP.default}
+              size={16}
+              color={AppColors.primary}
+            />
+            <ThemedText type="caption" numberOfLines={1}>
+              {appliance.name}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
+      <GlassButton
+        onPress={handleAddAllCommon}
+        disabled={savingCommon}
+        loading={savingCommon}
+        style={styles.addAllButton}
+      >
+        {savingCommon
+          ? "Adding..."
+          : `Add ${commonAppliances.length} Common Items`}
+      </GlassButton>
+      <Pressable
+        style={styles.skipButton}
+        onPress={() => setShowFirstTimeSetup(false)}
+        accessibilityRole="button"
+        accessibilityLabel="Skip and customize manually"
+      >
+        <ThemedText type="small" style={{ color: theme.textSecondary }}>
+          Skip and customize manually
+        </ThemedText>
+      </Pressable>
+    </GlassCard>
   );
 
   const renderHeader = () => {

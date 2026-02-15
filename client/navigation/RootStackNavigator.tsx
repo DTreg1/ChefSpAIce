@@ -30,11 +30,10 @@
  *
  * NAVIGATION PRIORITY:
  * 1. Web + unauthenticated → Landing
- * 2. Not authenticated + needsOnboarding → Onboarding
- * 3. Not authenticated → Auth
- * 4. Authenticated + needsOnboarding → Onboarding
- * 5. Authenticated + subscription inactive → Subscription
- * 6. Otherwise → Main
+ * 2. Not authenticated → Auth
+ * 3. Authenticated + needsOnboarding → Onboarding
+ * 4. Authenticated + subscription inactive → Subscription
+ * 5. Otherwise → Main
  *
  * @module navigation/RootStackNavigator
  */
@@ -152,9 +151,7 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, [isAuthenticated, user?.hasCompletedOnboarding]);
 
-  // Set up sign out callback to navigate to the appropriate screen
-  // After account deletion, onboarding is reset so user should see Onboarding
-  // After regular sign out, user should see Auth (mobile) or Landing (web)
+  // Set up sign out callback to navigate to Auth (mobile) or Landing (web)
   useEffect(() => {
     setSignOutCallback(async () => {
       if (isWeb) {
@@ -167,17 +164,10 @@ function AuthGuardedNavigator() {
         return;
       }
 
-      let needs = false;
-      try {
-        needs = await storage.needsOnboarding();
-      } catch (err) {
-        logger.error("[Nav] Error checking onboarding in sign-out callback:", err);
-      }
-      logger.log(`[Nav] Sign-out callback: needsOnboarding=${needs}`);
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: needs ? "Onboarding" : "Auth" }],
+          routes: [{ name: "Auth" }],
         }),
       );
     });
@@ -207,17 +197,10 @@ function AuthGuardedNavigator() {
           return;
         }
 
-        let needs = false;
-        try {
-          needs = await storage.needsOnboarding();
-        } catch (err) {
-          logger.error("[Nav] Error checking onboarding in auth change:", err);
-        }
-        logger.log(`[Nav] Auth state change: needsOnboarding=${needs}`);
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: needs ? "Onboarding" : "Auth" }],
+            routes: [{ name: "Auth" }],
           }),
         );
       })();
@@ -389,11 +372,6 @@ function AuthGuardedNavigator() {
     if (isWeb && !isAuthenticated) {
       logger.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
-    }
-
-    if (!isAuthenticated && needsOnboarding) {
-      logger.log("[Nav] Initial route: Onboarding (unauthenticated, needs onboarding)");
-      return "Onboarding";
     }
 
     if (!isAuthenticated) {
