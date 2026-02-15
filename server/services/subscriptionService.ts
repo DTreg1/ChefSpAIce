@@ -126,7 +126,7 @@ export async function getUserEntitlements(
 
   return {
     tier,
-    status: user.subscriptionStatus || "active",
+    status: user.subscriptionStatus || "trialing",
     limits,
     usage: {
       pantryItemCount,
