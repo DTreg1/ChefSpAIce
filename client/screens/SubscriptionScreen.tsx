@@ -35,7 +35,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { logger } from "@/lib/logger";
 
 import { CurrentPlanCard } from "@/components/subscription/CurrentPlanCard";
-import { FeatureComparisonTable, PRO_FEATURES } from "@/components/subscription/FeatureComparisonTable";
+import { FeatureComparisonTable, STANDARD_FEATURES } from "@/components/subscription/FeatureComparisonTable";
 import { PlanToggle } from "@/components/subscription/PlanToggle";
 import { CancellationFlowModal } from "@/components/subscription/CancellationFlowModal";
 import { SubscriptionLegalLinks } from "@/components/subscription/SubscriptionLegalLinks";
@@ -492,7 +492,7 @@ export default function SubscriptionScreen() {
         </GlassCard>
 
         <FeatureComparisonTable
-          features={PRO_FEATURES}
+          features={STANDARD_FEATURES}
         />
 
         {(!isAuthenticated || !isStandardUser || currentStatus === "trialing") && (

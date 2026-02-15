@@ -17,7 +17,6 @@ const REVENUECAT_TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY || "";
 
 export const ENTITLEMENTS = {
   STANDARD: "standard",
-  PRO: "standard",
 } as const;
 
 export type PaywallResult =
@@ -57,7 +56,7 @@ class StoreKitService {
       if (customerInfo.entitlements.active[ENTITLEMENTS.STANDARD]) {
         const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.STANDARD];
         if (entitlement.periodType === "TRIAL") {
-          status = "active";
+          status = "trialing";
         }
       } else {
         status = "expired";

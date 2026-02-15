@@ -134,7 +134,7 @@ function ScanOptionCard({
               {isLocked && (
                 <View style={styles.proBadge}>
                   <ThemedText type="small" style={styles.proBadgeText}>
-                    PRO
+                    STANDARD
                   </ThemedText>
                 </View>
               )}

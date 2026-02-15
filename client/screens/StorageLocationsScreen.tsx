@@ -399,7 +399,7 @@ export default function StorageLocationsScreen() {
                     </ThemedText>
                     <View style={styles.proBadge}>
                       <ThemedText type="small" style={styles.proBadgeText}>
-                        PRO
+                        STANDARD
                       </ThemedText>
                     </View>
                   </View>

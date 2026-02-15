@@ -53,7 +53,7 @@ export function MealPlanWeekNav({
         {!canUseWeeklyPrepping && (
           <View style={styles.weekProBadge}>
             <ThemedText type="small" style={styles.weekProBadgeText}>
-              PRO
+              STANDARD
             </ThemedText>
           </View>
         )}

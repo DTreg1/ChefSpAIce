@@ -68,7 +68,7 @@ function mapEntitlementToTier(entitlementId: string | undefined): 'STANDARD' | n
 
 async function handleSubscriptionUpdate(
   event: RevenueCatWebhookEvent['event'],
-  status: 'active' | 'canceled' | 'past_due' | 'expired',
+  status: 'active' | 'canceled' | 'past_due' | 'expired' | 'trialing',
   keepTier: boolean
 ): Promise<void> {
   const userId = event.app_user_id;

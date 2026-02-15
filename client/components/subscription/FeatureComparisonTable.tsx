@@ -18,10 +18,7 @@ export const STANDARD_FEATURES = [
   { key: "weeklyMealPrep", name: "Weekly Meal Prepping", included: true },
 ];
 
-export const PRO_FEATURES = STANDARD_FEATURES;
-
 export type StandardFeature = (typeof STANDARD_FEATURES)[number];
-export type ProFeature = StandardFeature;
 
 interface FeatureComparisonTableProps {
   features: StandardFeature[];

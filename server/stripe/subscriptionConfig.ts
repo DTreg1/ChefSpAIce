@@ -2,28 +2,28 @@ import { SubscriptionTier, MONTHLY_PRICE, ANNUAL_PRICE } from "@shared/subscript
 import { logger } from "../lib/logger";
 
 export const SUBSCRIPTION_CONFIG = {
-  PRO_MONTHLY: {
-    priceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
+  STANDARD_MONTHLY: {
+    priceId: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID || '',
     amount: MONTHLY_PRICE * 100,
     interval: 'month',
     name: 'ChefSpAIce Monthly',
     tier: SubscriptionTier.STANDARD,
   },
-  PRO_ANNUAL: {
-    priceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
+  STANDARD_ANNUAL: {
+    priceId: process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID || '',
     amount: ANNUAL_PRICE * 100,
     interval: 'year',
     name: 'ChefSpAIce Annual',
     tier: SubscriptionTier.STANDARD,
   },
   MONTHLY: {
-    priceId: process.env.STRIPE_MONTHLY_PRICE_ID || process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
+    priceId: process.env.STRIPE_MONTHLY_PRICE_ID || process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID || '',
     amount: MONTHLY_PRICE * 100,
     interval: 'month',
     name: 'Monthly Subscription',
   },
   ANNUAL: {
-    priceId: process.env.STRIPE_ANNUAL_PRICE_ID || process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
+    priceId: process.env.STRIPE_ANNUAL_PRICE_ID || process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID || '',
     amount: ANNUAL_PRICE * 100,
     interval: 'year',
     name: 'Annual Subscription',
@@ -53,12 +53,12 @@ export function getPlanTypeFromPriceId(
 ): "monthly" | "annual" | null {
   if (!priceId) return null;
   
-  if (priceId === SUBSCRIPTION_CONFIG.PRO_MONTHLY.priceId ||
+  if (priceId === SUBSCRIPTION_CONFIG.STANDARD_MONTHLY.priceId ||
       priceId === SUBSCRIPTION_CONFIG.MONTHLY.priceId) {
     return "monthly";
   }
   
-  if (priceId === SUBSCRIPTION_CONFIG.PRO_ANNUAL.priceId ||
+  if (priceId === SUBSCRIPTION_CONFIG.STANDARD_ANNUAL.priceId ||
       priceId === SUBSCRIPTION_CONFIG.ANNUAL.priceId) {
     return "annual";
   }
