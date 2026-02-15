@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   },
   benefitDescription: {
     fontSize: 15,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
     lineHeight: 24,
   },

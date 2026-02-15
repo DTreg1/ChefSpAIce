@@ -197,11 +197,11 @@ const styles = StyleSheet.create({
   },
   pricingPeriod: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "rgba(255, 255, 255, 0.9)",
   },
   pricingDescription: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: "rgba(255, 255, 255, 0.9)",
     marginBottom: 24,
   },
   pricingFeatures: {

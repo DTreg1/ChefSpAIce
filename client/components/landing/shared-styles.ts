@@ -15,7 +15,7 @@ export const sharedStyles = StyleSheet.create({
   },
   sectionSubtitle: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
     marginBottom: 40,
   },

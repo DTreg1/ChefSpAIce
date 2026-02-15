@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   },
   ctaSubtitle: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 24,
   },
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   },
   donationText: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     lineHeight: 24,
   },

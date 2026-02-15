@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.8)",
   },
   footerDivider: {
-    color: "rgba(255, 255, 255, 0.2)",
+    color: "rgba(255, 255, 255, 0.35)",
   },
   copyright: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.8)",
   },
 });

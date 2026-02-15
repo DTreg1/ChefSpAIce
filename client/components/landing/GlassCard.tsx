@@ -5,6 +5,11 @@ import { GlassColors, GlassEffect } from "@/constants/theme";
 
 const isWeb = Platform.OS === "web";
 
+const LandingGlassColors = {
+  background: "rgba(255, 255, 255, 0.08)",
+  border: "rgba(255, 255, 255, 0.15)",
+};
+
 export function GlassCard({
   children,
   style,
@@ -19,7 +24,7 @@ export function GlassCard({
   accessibilityRole?: "button" | "summary" | "none";
 }) {
   const { isDark } = useTheme();
-  const glassColors = isDark ? GlassColors.dark : GlassColors.light;
+  const glassColors = isDark ? GlassColors.dark : LandingGlassColors;
 
   if (isWeb) {
     return (
