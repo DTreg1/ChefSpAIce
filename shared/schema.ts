@@ -565,8 +565,8 @@ export const insertMonthlyLogSummarySchema = createInsertSchema(monthlyLogSummar
 export type InsertMonthlyLogSummary = z.infer<typeof insertMonthlyLogSummarySchema>;
 export type MonthlyLogSummary = typeof monthlyLogSummaries.$inferSelect;
 
-export const userCustomLocations = pgTable(
-  "user_custom_locations",
+export const userStorageLocations = pgTable(
+  "user_storage_locations",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     userId: varchar("user_id")
@@ -580,17 +580,17 @@ export const userCustomLocations = pgTable(
     updatedAt: timestamp("updated_at").defaultNow(),
   },
   (table) => [
-    uniqueIndex("idx_user_custom_locations_user_loc").on(table.userId, table.locationId),
-    index("idx_user_custom_locations_user").on(table.userId),
+    uniqueIndex("idx_user_storage_locations_user_loc").on(table.userId, table.locationId),
+    index("idx_user_storage_locations_user").on(table.userId),
   ],
 );
 
-export const insertUserCustomLocationSchema = createInsertSchema(userCustomLocations).omit({
+export const insertUserStorageLocationSchema = createInsertSchema(userStorageLocations).omit({
   createdAt: true,
   updatedAt: true,
 });
-export type InsertUserCustomLocation = z.infer<typeof insertUserCustomLocationSchema>;
-export type UserCustomLocation = typeof userCustomLocations.$inferSelect;
+export type InsertUserStorageLocation = z.infer<typeof insertUserStorageLocationSchema>;
+export type UserStorageLocation = typeof userStorageLocations.$inferSelect;
 
 export const userSyncKV = pgTable(
   "user_sync_kv",

@@ -3,7 +3,7 @@
 ## 1. Database Schema Design — Grade: A
 
 ### Strengths
-- **Fully normalized relational schema**: All 12 JSONB columns successfully migrated from `userSyncData` to dedicated normalized tables (`userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`, `userWasteLogs`, `userConsumedLogs`, `userCustomLocations`, `userSyncKV`). The legacy table now only holds sync metadata.
+- **Fully normalized relational schema**: All 12 JSONB columns successfully migrated from `userSyncData` to dedicated normalized tables (`userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`, `userWasteLogs`, `userConsumedLogs`, `userStorageLocations`, `userSyncKV`). The legacy table now only holds sync metadata.
 - **Proper foreign key relationships**: Every user-facing table references `users.id` with `onDelete: "cascade"`, ensuring referential integrity and automatic cleanup.
 - **Composite unique indexes**: Each sync table enforces `(userId, itemId)` uniqueness, preventing duplicate entries even under concurrent sync operations.
 - **Purpose-specific indexes**: Category indexes (`userId, category`), expiration indexes (`userId, expirationDate`), date indexes (`userId, date`), and favorite indexes (`userId, isFavorite`) support the app's query patterns.

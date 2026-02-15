@@ -22,7 +22,7 @@ Neon handles backups natively through its Write-Ahead Log (WAL) architecture. No
 
 ### What Is Covered
 
-- All normalized tables: `userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`, `userWasteLogs`, `userConsumedLogs`, `userCustomLocations`, `userSyncKV`
+- All normalized tables: `userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`, `userWasteLogs`, `userConsumedLogs`, `userStorageLocations`, `userSyncKV`
 - Auth tables: `users`, `userSessions`, `auth_providers`
 - Subscription tables: `subscriptions`, `winback_campaigns`
 - Sync metadata: `userSyncData`
