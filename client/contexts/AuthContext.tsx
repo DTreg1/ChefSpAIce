@@ -53,19 +53,19 @@ interface AuthContextType extends AuthState {
   signIn: (
     email: string,
     password: string,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
   signUp: (
     email: string,
     password: string,
     displayName?: string,
     selectedTier?: "pro",
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
   signInWithApple: (
     selectedTier?: "pro",
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
   signInWithGoogle: (
     selectedTier?: "pro",
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
   signOut: () => Promise<void>;
   completeOnboarding: () => Promise<{ success: boolean; error?: string }>;
   setSignOutCallback: (callback: () => void | Promise<void>) => void;
@@ -300,7 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       });
 
-      return { success: true };
+      return { success: true, isNewUser: false };
     } catch (error) {
       logger.error("Sign in error:", error);
       return { success: false, error: "Network error. Please try again." };
@@ -352,7 +352,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
         });
 
-        return { success: true };
+        return { success: true, isNewUser: true };
       } catch (error) {
         logger.error("Sign up error:", error);
         return { success: false, error: "Network error. Please try again." };
@@ -473,7 +473,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       });
 
-      return { success: true };
+      return { success: true, isNewUser };
     },
     [promptAppleWebAsync],
   );
@@ -538,7 +538,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       });
 
-      return { success: true };
+      return { success: true, isNewUser };
     },
     [promptGoogleAsync],
   );

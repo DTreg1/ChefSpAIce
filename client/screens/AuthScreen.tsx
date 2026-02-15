@@ -157,7 +157,7 @@ export default function AuthScreen() {
         return;
       }
 
-      await handlePostAuthNavigation();
+      await handlePostAuthNavigation(result.isNewUser ?? isSignUp);
     } catch (err) {
       logger.error("Auth error:", err);
       setAuthError("An unexpected error occurred");
@@ -166,17 +166,27 @@ export default function AuthScreen() {
     }
   };
 
-  const handlePostAuthNavigation = async () => {
+  const handlePostAuthNavigation = async (isNewUser: boolean = false) => {
     await syncManager.clearQueue();
 
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
+    if (isNewUser) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Onboarding" }],
+        }),
+      );
+      return;
+    }
+
     await recheckOnboarding();
     const needsOnboarding = await storage.needsOnboarding();
 
-    if (isSignUp || needsOnboarding) {
+    if (needsOnboarding) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -227,7 +237,7 @@ export default function AuthScreen() {
         return;
       }
 
-      await handlePostAuthNavigation();
+      await handlePostAuthNavigation(result.isNewUser ?? false);
     } catch (err) {
       logger.error("Social auth error:", err);
       setAuthError("An unexpected error occurred");
