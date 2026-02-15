@@ -2,10 +2,14 @@ appId: com.chefspaice.chefspaice
 name: Settings Flow
 ---
 
+- evalScript: "console.log('LOG: Starting settings flow')"
+
 - runFlow: auth-flow.yaml
 
+- evalScript: "console.log('LOG: Auth complete, navigating to profile/settings')"
+
 - tapOn:
-    id: "button-header-menu"
+    id: "tab-profile"
     optional: true
 
 - tapOn:
@@ -28,13 +32,19 @@ name: Settings Flow
 - assertVisible:
     text: "Theme"
 
+- evalScript: "console.log('LOG: Settings screen visible, theme option found')"
+
 - assertVisible:
     text: "Member since"
     optional: true
 
+- evalScript: "console.log('LOG: Toggling theme to dark')"
+
 - tapOn:
     id: "button-theme-dark"
     optional: true
+
+- evalScript: "console.log('LOG: Toggling theme to light')"
 
 - tapOn:
     id: "button-theme-light"
@@ -42,3 +52,11 @@ name: Settings Flow
 
 - assertVisible:
     text: "Theme"
+
+- evalScript: "console.log('LOG: Theme toggle verified, settings still visible')"
+
+- assertVisible:
+    id: "button-sign-out"
+    optional: true
+
+- evalScript: "console.log('LOG: Settings flow complete')"

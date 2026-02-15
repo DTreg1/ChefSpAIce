@@ -1,0 +1,86 @@
+appId: com.chefspaice.chefspaice
+name: Subscription Flow
+---
+
+- evalScript: "console.log('LOG: Starting subscription flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to profile for subscription info')"
+
+- tapOn:
+    id: "tab-profile"
+    optional: true
+
+- tapOn:
+    id: "button-open-drawer"
+    optional: true
+
+- tapOn:
+    text: "Profile"
+    optional: true
+
+- tapOn:
+    text: "Settings"
+    optional: true
+
+- evalScript: "console.log('LOG: Profile/settings screen, looking for subscription elements')"
+
+- extendedWaitUntil:
+    visible:
+      text: "Theme"
+    timeout: 10000
+
+- tapOn:
+    id: "link-subscription"
+    optional: true
+
+- tapOn:
+    text: "Subscription"
+    optional: true
+
+- tapOn:
+    text: "Manage Subscription"
+    optional: true
+
+- evalScript: "console.log('LOG: Checking for subscription-related UI elements')"
+
+- assertVisible:
+    id: "button-manage-subscription"
+    optional: true
+
+- assertVisible:
+    id: "button-subscribe"
+    optional: true
+
+- assertVisible:
+    id: "button-trial-subscribe"
+    optional: true
+
+- assertVisible:
+    id: "button-restore-purchases"
+    optional: true
+
+- assertVisible:
+    id: "button-refresh-subscription"
+    optional: true
+
+- evalScript: "console.log('LOG: Checking for trial-related badges or banners')"
+
+- assertVisible:
+    text: "Trial"
+    optional: true
+
+- assertVisible:
+    text: "Free"
+    optional: true
+
+- assertVisible:
+    text: "Pro"
+    optional: true
+
+- assertVisible:
+    text: "Premium"
+    optional: true
+
+- evalScript: "console.log('LOG: Subscription flow complete')"

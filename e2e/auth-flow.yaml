@@ -2,68 +2,189 @@ appId: com.chefspaice.chefspaice
 name: Authentication Flow
 ---
 
-- launchApp
+- evalScript: "console.log('LOG: Starting auth flow')"
 
 - runScript:
-    file: helpers/generate-email.js
+    file: helpers/test-account.js
 
-- assertVisible:
-    text: "Create Account"
+- evalScript: "console.log('LOG: Test account loaded - ' + output.TEST_EMAIL)"
 
-- tapOn:
-    id: "input-email"
-- waitForAnimationToEnd
-- inputText: "${output.TEST_EMAIL}"
+- launchApp:
+    clearState: true
 
-- tapOn:
-    id: "input-password"
-- waitForAnimationToEnd
-- inputText: "TestP@ssw0rd123!"
-
-- tapOn:
-    id: "input-confirm-password"
-- waitForAnimationToEnd
-- inputText: "TestP@ssw0rd123!"
-
-- tapOn:
-    id: "button-auth-submit"
+- evalScript: "console.log('LOG: App launched with cleared state, waiting for auth or main screen')"
 
 - extendedWaitUntil:
     visible:
-      text: "Welcome"
+      id: "input-email"
     timeout: 15000
-
-- assertVisible:
-    text: "Welcome"
-
-- tapOn:
-    text: "Next"
     optional: true
 
-- tapOn:
-    text: "Continue"
-    optional: true
+- runFlow:
+    when:
+      visible:
+        id: "tab-kitchen"
+    commands:
+      - evalScript: "console.log('LOG: Already authenticated, main tabs visible - skipping auth')"
 
-- tapOn:
-    text: "Next"
-    optional: true
+- runFlow:
+    when:
+      visible:
+        id: "input-email"
+    commands:
+      - evalScript: "console.log('LOG: Auth screen visible, attempting sign in first')"
 
-- tapOn:
-    text: "Continue"
-    optional: true
+      - tapOn:
+          text: "Sign In"
+          optional: true
 
-- tapOn:
-    text: "Get Started"
-    optional: true
+      - tapOn:
+          text: "Log In"
+          optional: true
 
-- tapOn:
-    text: "Skip"
-    optional: true
+      - tapOn:
+          id: "input-email"
+      - waitForAnimationToEnd
+      - inputText: "${output.TEST_EMAIL}"
+
+      - tapOn:
+          id: "input-password"
+      - waitForAnimationToEnd
+      - inputText: "${output.TEST_PASSWORD}"
+
+      - evalScript: "console.log('LOG: Credentials entered, submitting sign in')"
+
+      - tapOn:
+          id: "button-auth-submit"
+
+      - extendedWaitUntil:
+          visible:
+            id: "tab-kitchen"
+          timeout: 10000
+          optional: true
+
+      - runFlow:
+          when:
+            visible:
+              id: "tab-kitchen"
+          commands:
+            - evalScript: "console.log('LOG: Sign in succeeded, main tabs visible')"
+
+      - runFlow:
+          when:
+            notVisible:
+              id: "tab-kitchen"
+          commands:
+            - evalScript: "console.log('LOG: Sign in failed, switching to sign up mode')"
+
+            - tapOn:
+                id: "button-switch-auth-mode"
+                optional: true
+
+            - tapOn:
+                text: "Create Account"
+                optional: true
+
+            - tapOn:
+                text: "Sign Up"
+                optional: true
+
+            - extendedWaitUntil:
+                visible:
+                  id: "input-confirm-password"
+                timeout: 5000
+                optional: true
+
+            - tapOn:
+                id: "input-email"
+            - waitForAnimationToEnd
+            - clearText
+            - inputText: "${output.TEST_EMAIL}"
+
+            - tapOn:
+                id: "input-password"
+            - waitForAnimationToEnd
+            - clearText
+            - inputText: "${output.TEST_PASSWORD}"
+
+            - tapOn:
+                id: "input-confirm-password"
+                optional: true
+            - waitForAnimationToEnd
+            - inputText: "${output.TEST_PASSWORD}"
+
+            - evalScript: "console.log('LOG: Sign up credentials entered, submitting')"
+
+            - tapOn:
+                id: "button-auth-submit"
+
+            - evalScript: "console.log('LOG: Sign up submitted, waiting for onboarding or main tabs')"
+
+            - extendedWaitUntil:
+                visible:
+                  id: "onboarding-welcome-step"
+                timeout: 15000
+                optional: true
+
+            - runFlow:
+                when:
+                  visible:
+                    id: "onboarding-welcome-step"
+                commands:
+                  - evalScript: "console.log('LOG: Onboarding welcome step visible')"
+
+                  - tapOn:
+                      id: "button-get-started"
+                      optional: true
+
+                  - tapOn:
+                      text: "Get Started"
+                      optional: true
+
+                  - tapOn:
+                      text: "Next"
+                      optional: true
+
+                  - tapOn:
+                      text: "Continue"
+                      optional: true
+
+                  - tapOn:
+                      text: "Next"
+                      optional: true
+
+                  - tapOn:
+                      text: "Continue"
+                      optional: true
+
+                  - tapOn:
+                      text: "Next"
+                      optional: true
+
+                  - tapOn:
+                      text: "Skip"
+                      optional: true
+
+                  - tapOn:
+                      text: "Continue"
+                      optional: true
+
+                  - tapOn:
+                      text: "Get Started"
+                      optional: true
+
+                  - tapOn:
+                      text: "Done"
+                      optional: true
+
+                  - evalScript: "console.log('LOG: Onboarding steps completed')"
 
 - extendedWaitUntil:
     visible:
       id: "tab-kitchen"
-    timeout: 15000
+    timeout: 20000
+
+- evalScript: "console.log('LOG: Main tabs visible, auth flow complete')"
 
 - assertVisible:
     id: "tab-kitchen"

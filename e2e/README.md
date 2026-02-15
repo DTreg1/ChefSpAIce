@@ -54,47 +54,68 @@ npm run test:e2e
 
 ### Setting the App ID
 
-Maestro needs your app's bundle identifier. Set the `APP_ID` environment variable before running:
+The app bundle identifier is hardcoded in each flow as `com.chefspaice.chefspaice`. If your bundle ID differs, update the `appId` field at the top of each `.yaml` file.
 
-```bash
-# iOS
-APP_ID=com.chefspaice.app maestro test e2e/
+## Shared Test Account
 
-# Android
-APP_ID=com.chefspaice.app maestro test e2e/
+All test flows (except `onboarding-flow.yaml`) use a **single shared test account** defined in `helpers/test-account.js`:
+
+- **Email**: `maestro-e2e@chefspaice.test`
+- **Password**: `MaestroTest@2026!`
+
+This ensures consistent, reproducible test runs. The `auth-flow.yaml` handles both first-run sign-up and subsequent sign-in automatically.
+
+The `onboarding-flow.yaml` is the exception — it creates a fresh unique account each run to test the new-user onboarding experience.
+
+## Logging
+
+Every test flow includes `evalScript` logging at key steps, prefixed with `LOG:`. These logs appear in Maestro's console output and help trace test execution:
+
 ```
-
-Or set it in a `.env.maestro` file at the project root:
-
-```
-APP_ID=com.chefspaice.app
+LOG: Starting auth flow
+LOG: App launched, waiting for auth screen
+LOG: Sign in succeeded, main tabs visible
+LOG: Starting inventory flow
+LOG: Inventory item added successfully
 ```
 
 ## Test Flows
 
 | Flow | File | Description |
 |------|------|-------------|
-| Authentication | `auth-flow.yaml` | Sign up with unique email, complete onboarding, verify main tabs |
-| Inventory | `inventory-flow.yaml` | Add item, verify it appears, swipe to delete, verify removal |
-| Recipes | `recipe-flow.yaml` | Navigate to recipes tab, attempt recipe generation, handle subscription prompt |
-| Settings | `settings-flow.yaml` | Navigate to profile/settings, verify profile info, toggle theme |
+| Authentication | `auth-flow.yaml` | Sign in (or sign up on first run), handle onboarding, verify main tabs |
+| Inventory | `inventory-flow.yaml` | Add item manually, verify it appears, swipe to delete, verify removal |
+| Recipes | `recipe-flow.yaml` | Navigate to recipes tab, attempt generation, handle subscription/upgrade prompt |
+| Settings | `settings-flow.yaml` | Navigate to profile/settings, toggle theme, verify settings persist |
+| Onboarding | `onboarding-flow.yaml` | Create fresh account, step through full onboarding flow, reach main tabs |
+| Subscription | `subscription-flow.yaml` | Navigate to subscription settings, verify status and subscription UI elements |
+| Meal Plan | `mealplan-flow.yaml` | Navigate to meal plan tab, verify week view and meal slot elements |
+| Cookware | `cookware-flow.yaml` | Navigate to cookware tab, verify cookware screen elements |
+| Profile | `profile-flow.yaml` | Navigate to profile tab, verify profile elements and sign-out button presence |
 
 ### Flow Dependencies
 
-- `inventory-flow.yaml`, `recipe-flow.yaml`, and `settings-flow.yaml` all depend on `auth-flow.yaml` (run via `runFlow`).
-- Each flow creates a fresh authenticated session before testing its feature.
+- All flows except `onboarding-flow.yaml` depend on `auth-flow.yaml` (run via `runFlow`) using the shared test account.
+- `onboarding-flow.yaml` is standalone and uses a unique email each run.
+- Each flow launches the app and authenticates before testing its feature.
 
 ## How to Add New Flows
 
 1. Create a new `.yaml` file in `e2e/`:
 
    ```yaml
-   appId: ${APP_ID}
+   appId: com.chefspaice.chefspaice
    name: My New Flow
    ---
 
+   # Log test start
+   - evalScript: "console.log('LOG: Starting my new flow')"
+
    # If authentication is needed:
    - runFlow: auth-flow.yaml
+
+   # Log a checkpoint
+   - evalScript: "console.log('LOG: Auth complete, beginning test')"
 
    # Interact with elements using testID:
    - tapOn:
@@ -123,7 +144,13 @@ APP_ID=com.chefspaice.app
 
 4. Use `optional: true` on steps that may not always be present (e.g., conditional UI).
 
-5. See the [Maestro docs](https://maestro.mobile.dev/) for the full command reference.
+5. Add `evalScript` logging at key checkpoints for traceability:
+
+   ```yaml
+   - evalScript: "console.log('LOG: Completed step X')"
+   ```
+
+6. See the [Maestro docs](https://maestro.mobile.dev/) for the full command reference.
 
 ## Known Limitations
 
@@ -131,6 +158,6 @@ APP_ID=com.chefspaice.app
 - **No Expo Go support** — Maestro requires a development build (`expo run:ios` / `expo run:android`), not Expo Go.
 - **Platform differences** — Some interactions (e.g., swipe gestures, system dialogs) may behave differently between iOS and Android. Test on both platforms when possible.
 - **OAuth / third-party auth** — Apple Sign-In and Google Sign-In cannot be tested via Maestro as they launch system-level auth flows. The email/password auth path is tested instead.
-- **Subscription flows** — In-app purchases (RevenueCat / StoreKit) require sandbox accounts and real devices. The recipe flow checks for the upgrade prompt but cannot complete a purchase.
+- **Subscription flows** — In-app purchases (RevenueCat / StoreKit) require sandbox accounts and real devices. The subscription flow verifies UI elements but cannot complete a purchase.
 - **Timing sensitivity** — Network-dependent operations (recipe generation, syncing) use generous timeouts but may still fail on very slow connections. Adjust `timeout` values as needed.
-- **Unique test data** — The auth flow generates unique emails using timestamps. Old test accounts are not cleaned up automatically. Implement server-side cleanup if test data accumulates.
+- **Shared account** — The shared test account accumulates data across runs. If test isolation is needed, consider adding cleanup steps or server-side test data reset.

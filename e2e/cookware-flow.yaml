@@ -1,0 +1,49 @@
+appId: com.chefspaice.chefspaice
+name: Cookware Flow
+---
+
+- evalScript: "console.log('LOG: Starting cookware flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to cookware tab')"
+
+- tapOn:
+    id: "tab-cookware"
+
+- evalScript: "console.log('LOG: Tapped cookware tab, waiting for screen to load')"
+
+- extendedWaitUntil:
+    visible:
+      text: "Cookware"
+    timeout: 10000
+
+- evalScript: "console.log('LOG: Cookware screen loaded')"
+
+- assertVisible:
+    text: "Cookware"
+
+- runFlow:
+    when:
+      visible:
+        text: "Add"
+    commands:
+      - evalScript: "console.log('LOG: Add cookware button visible')"
+      - assertVisible:
+          text: "Add"
+
+- runFlow:
+    when:
+      visible:
+        text: "No cookware"
+    commands:
+      - evalScript: "console.log('LOG: Empty state visible - no cookware items yet')"
+
+- runFlow:
+    when:
+      notVisible:
+        text: "No cookware"
+    commands:
+      - evalScript: "console.log('LOG: Cookware items are present on screen')"
+
+- evalScript: "console.log('LOG: Cookware flow complete')"

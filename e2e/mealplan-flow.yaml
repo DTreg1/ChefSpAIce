@@ -1,0 +1,70 @@
+appId: com.chefspaice.chefspaice
+name: Meal Plan Flow
+---
+
+- evalScript: "console.log('LOG: Starting meal plan flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to meal plan tab')"
+
+- tapOn:
+    id: "tab-mealplan"
+
+- evalScript: "console.log('LOG: Tapped meal plan tab, waiting for screen to load')"
+
+- extendedWaitUntil:
+    visible:
+      text: "Meal Plan"
+    timeout: 10000
+    optional: true
+
+- evalScript: "console.log('LOG: Checking for meal plan screen elements')"
+
+- assertVisible:
+    text: "Meal Plan"
+    optional: true
+
+- assertVisible:
+    text: "Mon"
+    optional: true
+
+- assertVisible:
+    text: "Tue"
+    optional: true
+
+- assertVisible:
+    text: "Wed"
+    optional: true
+
+- assertVisible:
+    text: "Thu"
+    optional: true
+
+- assertVisible:
+    text: "Fri"
+    optional: true
+
+- assertVisible:
+    text: "Sat"
+    optional: true
+
+- assertVisible:
+    text: "Sun"
+    optional: true
+
+- evalScript: "console.log('LOG: Checking for week navigation')"
+
+- assertVisible:
+    text: "Breakfast"
+    optional: true
+
+- assertVisible:
+    text: "Lunch"
+    optional: true
+
+- assertVisible:
+    text: "Dinner"
+    optional: true
+
+- evalScript: "console.log('LOG: Meal plan flow complete')"

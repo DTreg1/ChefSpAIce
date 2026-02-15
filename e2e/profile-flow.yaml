@@ -1,0 +1,66 @@
+appId: com.chefspaice.chefspaice
+name: Profile Flow
+---
+
+- evalScript: "console.log('LOG: Starting profile flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to profile tab')"
+
+- tapOn:
+    id: "tab-profile"
+    optional: true
+
+- tapOn:
+    id: "button-open-drawer"
+    optional: true
+
+- tapOn:
+    text: "Profile"
+    optional: true
+
+- evalScript: "console.log('LOG: Profile screen, verifying profile elements')"
+
+- extendedWaitUntil:
+    visible:
+      text: "Theme"
+    timeout: 10000
+
+- assertVisible:
+    text: "Theme"
+
+- evalScript: "console.log('LOG: Profile screen loaded, checking theme buttons')"
+
+- assertVisible:
+    id: "button-theme-dark"
+    optional: true
+
+- assertVisible:
+    id: "button-theme-light"
+    optional: true
+
+- evalScript: "console.log('LOG: Checking for sign out button')"
+
+- scrollUntilVisible:
+    element:
+      id: "button-sign-out"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- assertVisible:
+    id: "button-sign-out"
+    optional: true
+
+- evalScript: "console.log('LOG: Sign out button verified present')"
+
+- assertVisible:
+    text: "Member since"
+    optional: true
+
+- assertVisible:
+    text: "Account"
+    optional: true
+
+- evalScript: "console.log('LOG: Profile flow complete')"

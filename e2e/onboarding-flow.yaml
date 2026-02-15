@@ -1,0 +1,142 @@
+appId: com.chefspaice.chefspaice
+name: Onboarding Flow
+---
+
+- evalScript: "console.log('LOG: Starting onboarding flow with fresh account')"
+
+- runScript:
+    file: helpers/generate-email.js
+
+- evalScript: "console.log('LOG: Generated unique email: ' + output.TEST_EMAIL)"
+
+- launchApp:
+    clearState: true
+
+- evalScript: "console.log('LOG: App launched with cleared state')"
+
+- extendedWaitUntil:
+    visible:
+      id: "input-email"
+    timeout: 15000
+
+- evalScript: "console.log('LOG: Auth screen visible, creating new account')"
+
+- tapOn:
+    text: "Create Account"
+    optional: true
+
+- tapOn:
+    text: "Sign Up"
+    optional: true
+
+- tapOn:
+    id: "button-switch-auth-mode"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "input-confirm-password"
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    id: "input-email"
+- waitForAnimationToEnd
+- inputText: "${output.TEST_EMAIL}"
+
+- tapOn:
+    id: "input-password"
+- waitForAnimationToEnd
+- inputText: "OnboardTest@2026!"
+
+- tapOn:
+    id: "input-confirm-password"
+    optional: true
+- waitForAnimationToEnd
+- inputText: "OnboardTest@2026!"
+
+- evalScript: "console.log('LOG: New account credentials entered, submitting')"
+
+- tapOn:
+    id: "button-auth-submit"
+
+- evalScript: "console.log('LOG: Account created, waiting for onboarding')"
+
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-welcome-step"
+    timeout: 15000
+
+- assertVisible:
+    id: "onboarding-welcome-step"
+
+- evalScript: "console.log('LOG: Onboarding welcome step visible')"
+
+- tapOn:
+    id: "button-get-started"
+    optional: true
+
+- tapOn:
+    text: "Get Started"
+    optional: true
+
+- evalScript: "console.log('LOG: Tapped Get Started, proceeding through onboarding steps')"
+
+- tapOn:
+    text: "Next"
+    optional: true
+
+- evalScript: "console.log('LOG: Onboarding step 2')"
+
+- tapOn:
+    text: "Continue"
+    optional: true
+
+- evalScript: "console.log('LOG: Onboarding step 3')"
+
+- tapOn:
+    text: "Next"
+    optional: true
+
+- evalScript: "console.log('LOG: Onboarding step 4')"
+
+- tapOn:
+    text: "Continue"
+    optional: true
+
+- evalScript: "console.log('LOG: Onboarding step 5')"
+
+- tapOn:
+    text: "Next"
+    optional: true
+
+- tapOn:
+    text: "Skip"
+    optional: true
+
+- tapOn:
+    text: "Continue"
+    optional: true
+
+- tapOn:
+    text: "Get Started"
+    optional: true
+
+- tapOn:
+    text: "Done"
+    optional: true
+
+- evalScript: "console.log('LOG: Onboarding steps completed, waiting for main tabs')"
+
+- extendedWaitUntil:
+    visible:
+      id: "tab-kitchen"
+    timeout: 20000
+
+- assertVisible:
+    id: "tab-kitchen"
+
+- assertVisible:
+    id: "tab-recipes"
+
+- evalScript: "console.log('LOG: Main tabs visible, onboarding flow complete')"

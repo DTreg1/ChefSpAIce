@@ -2,7 +2,11 @@ appId: com.chefspaice.chefspaice
 name: Inventory Flow
 ---
 
+- evalScript: "console.log('LOG: Starting inventory flow')"
+
 - runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to kitchen tab')"
 
 - tapOn:
     id: "tab-kitchen"
@@ -14,6 +18,8 @@ name: Inventory Flow
 
 - assertVisible:
     id: "screen-inventory"
+
+- evalScript: "console.log('LOG: Inventory screen visible, tapping add button')"
 
 - tapOn:
     id: "add-button"
@@ -35,15 +41,28 @@ name: Inventory Flow
       id: "input-item-name"
     timeout: 10000
 
+- evalScript: "console.log('LOG: Add item form visible, entering item details')"
+
+- runScript:
+    file: helpers/test-account.js
+
+- evalScript: |
+    var ts = new Date().getTime();
+    output.ITEM_NAME = "Test Apple " + ts;
+    console.log('LOG: Generated item name: ' + output.ITEM_NAME);
+
 - tapOn:
     id: "input-item-name"
-- inputText: "Test Apple"
+- waitForAnimationToEnd
+- inputText: "${output.ITEM_NAME}"
 
 - tapOn:
     id: "input-item-quantity"
     optional: true
 - eraseText
 - inputText: "3"
+
+- evalScript: "console.log('LOG: Item name and quantity entered, selecting category')"
 
 - scrollUntilVisible:
     element:
@@ -54,21 +73,25 @@ name: Inventory Flow
 - tapOn:
     id: "chip-category-fruits"
 
+- evalScript: "console.log('LOG: Category selected, saving item')"
+
 - tapOn:
     id: "button-save-item"
 
 - extendedWaitUntil:
     visible:
-      text: "Test Apple"
+      text: "${output.ITEM_NAME}"
     timeout: 10000
 
 - assertVisible:
-    text: "Test Apple"
+    text: "${output.ITEM_NAME}"
+
+- evalScript: "console.log('LOG: Inventory item added successfully, now deleting')"
 
 - swipe:
     direction: LEFT
     from:
-      text: "Test Apple"
+      text: "${output.ITEM_NAME}"
 
 - tapOn:
     text: "Delete"
@@ -80,5 +103,7 @@ name: Inventory Flow
 
 - extendedWaitUntil:
     notVisible:
-      text: "Test Apple"
+      text: "${output.ITEM_NAME}"
     timeout: 10000
+
+- evalScript: "console.log('LOG: Inventory item deleted successfully, inventory flow complete')"

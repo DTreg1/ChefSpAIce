@@ -2,7 +2,11 @@ appId: com.chefspaice.chefspaice
 name: Recipe Flow
 ---
 
+- evalScript: "console.log('LOG: Starting recipe flow')"
+
 - runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to recipes tab')"
 
 - tapOn:
     id: "tab-recipes"
@@ -15,6 +19,8 @@ name: Recipe Flow
 - assertVisible:
     id: "input-recipe-search"
 
+- evalScript: "console.log('LOG: Recipes screen visible with search input')"
+
 - tapOn:
     id: "button-generate-recipe"
     optional: true
@@ -23,11 +29,14 @@ name: Recipe Flow
     text: "Generate"
     optional: true
 
+- evalScript: "console.log('LOG: Attempted recipe generation, checking for upgrade prompt or spinner')"
+
 - runFlow:
     when:
       visible:
         id: "upgrade-prompt-card"
     commands:
+      - evalScript: "console.log('LOG: Upgrade prompt shown - subscription required')"
       - assertVisible:
           id: "upgrade-prompt-card"
       - assertVisible:
@@ -38,6 +47,7 @@ name: Recipe Flow
       visible:
         id: "spinner-recipe-generating"
     commands:
+      - evalScript: "console.log('LOG: Recipe generation started, spinner visible')"
       - assertVisible:
           id: "spinner-recipe-generating"
       - extendedWaitUntil:
@@ -45,3 +55,6 @@ name: Recipe Flow
             id: "text-streaming-preview"
           timeout: 30000
           optional: true
+      - evalScript: "console.log('LOG: Recipe streaming preview appeared')"
+
+- evalScript: "console.log('LOG: Recipe flow complete')"
