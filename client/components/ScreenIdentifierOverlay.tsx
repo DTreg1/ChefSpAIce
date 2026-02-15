@@ -8,11 +8,13 @@ import {
   Alert,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import * as Updates from "expo-updates";
 import { logger } from "@/lib/logger";
 import { storage } from "@/lib/storage";
 import { syncManager } from "@/lib/sync-manager";
 import { queryClient } from "@/lib/query-client";
 import { apiClient } from "@/lib/api-client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface ScreenIdentifierOverlayProps {
   screenName: string | undefined;
@@ -63,28 +65,41 @@ export function ScreenIdentifierOverlay({
           logger.warn("Logout API call failed during reset", { error: err instanceof Error ? err.message : String(err) });
         });
 
-        // 3. Clear all local storage and caches
         await storage.resetAllStorage();
         await syncManager.clearQueue();
         queryClient.clear();
 
+        const allKeys = await AsyncStorage.getAllKeys();
+        if (allKeys.length > 0) {
+          await AsyncStorage.multiRemove(allKeys);
+          logger.log("[Reset] Cleared ALL AsyncStorage keys:", allKeys.length);
+        }
+
         logger.log("[Reset] Signed out and cleared all local data");
 
-        // 4. Reload the page to show landing/auth screen
         if (Platform.OS === "web") {
           window.location.reload();
         } else {
-          Alert.alert(
-            "App Reset",
-            "The app has been reset. Please restart to see the landing screen.",
-          );
+          try {
+            await Updates.reloadAsync();
+          } catch (err) {
+            logger.warn("[Reset] Updates.reloadAsync failed, showing manual restart alert", { error: err instanceof Error ? err.message : String(err) });
+            Alert.alert(
+              "App Reset",
+              "All data has been cleared. Please close and reopen the app.",
+            );
+          }
         }
       } catch (err) {
         logger.error("Failed to reset:", err);
         if (Platform.OS === "web") {
           window.location.reload();
         } else {
-          Alert.alert("Reset Error", "Please restart the app manually.");
+          try {
+            await Updates.reloadAsync();
+          } catch {
+            Alert.alert("Reset Error", "Please close and reopen the app.");
+          }
         }
       } finally {
         setResetting(false);
