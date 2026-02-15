@@ -98,13 +98,13 @@ name: Authentication Flow
             - tapOn:
                 id: "input-email"
             - waitForAnimationToEnd
-            - clearText
+            - eraseText: 100
             - inputText: "${output.TEST_EMAIL}"
 
             - tapOn:
                 id: "input-password"
             - waitForAnimationToEnd
-            - clearText
+            - eraseText: 100
             - inputText: "${output.TEST_PASSWORD}"
 
             - tapOn:
