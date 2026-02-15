@@ -29,6 +29,7 @@ export async function requireSubscription(
           subscriptionStatus: subscriptions.status,
           subscriptionPaymentFailedAt: subscriptions.paymentFailedAt,
           subscriptionUpdatedAt: subscriptions.updatedAt,
+          subscriptionTrialEnd: subscriptions.trialEnd,
           userTier: users.subscriptionTier,
         })
         .from(users)
@@ -46,7 +47,7 @@ export async function requireSubscription(
       return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
     }
 
-    const { subscriptionStatus, subscriptionPaymentFailedAt, subscriptionUpdatedAt, userTier } = result;
+    const { subscriptionStatus, subscriptionPaymentFailedAt, subscriptionUpdatedAt, subscriptionTrialEnd, userTier } = result;
 
     if (!subscriptionStatus) {
       if (userTier === SubscriptionTier.STANDARD) {
@@ -59,6 +60,20 @@ export async function requireSubscription(
 
     if (!ACTIVE_STATUSES.includes(subscriptionStatus)) {
       return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
+    }
+
+    if (subscriptionStatus === "trialing" && subscriptionTrialEnd) {
+      if (new Date() > new Date(subscriptionTrialEnd)) {
+        await Promise.all([
+          subscriptionCache.delete(userId),
+          db.update(subscriptions).set({ status: "expired", updatedAt: new Date() }).where(eq(subscriptions.userId, userId)),
+          db.update(users).set({ subscriptionStatus: "expired" }).where(eq(users.id, userId)),
+        ]);
+        return next(AppError.forbidden(
+          "Your free trial has expired. Please subscribe to continue using ChefSpAIce.",
+          "TRIAL_EXPIRED"
+        ));
+      }
     }
 
     if (subscriptionStatus === "past_due") {

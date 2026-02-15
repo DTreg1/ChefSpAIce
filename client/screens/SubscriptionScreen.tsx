@@ -61,6 +61,7 @@ export default function SubscriptionScreen() {
     refetch,
     handleManageSubscription,
     isManaging,
+    trialDaysRemaining,
   } = useSubscription();
 
   const reason = route.params?.reason;
@@ -133,6 +134,8 @@ export default function SubscriptionScreen() {
         return { label: "Active", color: AppColors.success };
       case "past_due":
         return { label: "Past Due", color: AppColors.error };
+      case "trialing":
+        return { label: "Free Trial", color: AppColors.primary };
       case "canceled":
         return { label: "Canceled", color: AppColors.error };
       case "expired":
@@ -375,6 +378,29 @@ export default function SubscriptionScreen() {
           statusInfo={statusInfo}
         />
 
+        {currentStatus === "trialing" && (
+          <GlassCard
+            style={[
+              styles.blockingBanner,
+              { backgroundColor: `${AppColors.primary}15` },
+            ]}
+            accessibilityRole="status"
+            accessibilityLabel={`Free trial: ${trialDaysRemaining} days remaining`}
+          >
+            <Feather name="clock" size={24} color={AppColors.primary} />
+            <View style={styles.blockingTextContainer}>
+              <ThemedText type="h4" style={{ color: AppColors.primary }}>
+                Free Trial
+              </ThemedText>
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                {trialDaysRemaining !== null && trialDaysRemaining > 0
+                  ? `${trialDaysRemaining} day${trialDaysRemaining !== 1 ? 's' : ''} remaining`
+                  : 'Your trial is expiring soon'}
+              </ThemedText>
+            </View>
+          </GlassCard>
+        )}
+
         <GlassCard style={styles.usageCard} accessibilityRole="summary" accessibilityLabel="Usage summary">
           <View style={styles.sectionHeader} accessibilityRole="header">
             <Feather
@@ -469,7 +495,7 @@ export default function SubscriptionScreen() {
           features={PRO_FEATURES}
         />
 
-        {(!isAuthenticated || !isStandardUser) && (
+        {(!isAuthenticated || !isStandardUser || currentStatus === "trialing") && (
           <GlassCard style={styles.upgradeCard}>
             <View style={styles.upgradeHeader} accessibilityRole="header">
               <Feather

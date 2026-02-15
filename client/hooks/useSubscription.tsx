@@ -65,6 +65,8 @@ export interface SubscriptionData {
   paymentFailedAt: string | null;
   gracePeriodEnd: string | null;
   graceDaysRemaining: number | null;
+  trialEnd: string | null;
+  trialDaysRemaining: number | null;
 }
 
 export interface LimitCheckResult {
@@ -84,6 +86,9 @@ export interface SubscriptionContextValue {
   subscription: SubscriptionData | null;
   isPastDue: boolean;
   graceDaysRemaining: number | null;
+  trialEnd: string | null;
+  trialDaysRemaining: number | null;
+  isTrialing: boolean;
   checkLimit: (
     type: "pantryItems" | "aiRecipes" | "cookware",
   ) => LimitCheckResult;
@@ -127,6 +132,9 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   subscription: null,
   isPastDue: false,
   graceDaysRemaining: null,
+  trialEnd: null,
+  trialDaysRemaining: null,
+  isTrialing: false,
   checkLimit: () => ({ allowed: true, remaining: "unlimited" }),
   checkFeature: () => false,
   refetch: async () => {},
@@ -194,6 +202,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         paymentFailedAt?: string | null;
         gracePeriodEnd?: string | null;
         graceDaysRemaining?: number | null;
+        trialEnd?: string | null;
+        trialDaysRemaining?: number | null;
       }>("/api/subscriptions/me");
       if (data) {
 
@@ -239,6 +249,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           paymentFailedAt: data.paymentFailedAt ?? null,
           gracePeriodEnd: data.gracePeriodEnd ?? null,
           graceDaysRemaining: data.graceDaysRemaining ?? null,
+          trialEnd: data.trialEnd ?? null,
+          trialDaysRemaining: data.trialDaysRemaining ?? null,
         };
 
         setSubscriptionData(sub);
@@ -319,6 +331,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const isPastDue = status === "past_due";
   const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
   const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
+  const isTrialing = status === "trialing";
+  const trialEnd = subscriptionData?.trialEnd ?? null;
+  const trialDaysRemaining = subscriptionData?.trialDaysRemaining ?? null;
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;
@@ -397,6 +412,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       subscription: subscriptionData,
       isPastDue,
       graceDaysRemaining,
+      trialEnd,
+      trialDaysRemaining,
+      isTrialing,
       checkLimit,
       checkFeature,
       refetch: forceRefetch,
@@ -415,6 +433,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       subscriptionData,
       isPastDue,
       graceDaysRemaining,
+      trialEnd,
+      trialDaysRemaining,
+      isTrialing,
       checkLimit,
       checkFeature,
       forceRefetch,

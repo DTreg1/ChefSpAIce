@@ -12,6 +12,7 @@ import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
 import { createSession } from "../domain/services";
 import { encryptTokenOrNull } from "../lib/token-encryption";
+import { createOrUpdateSubscription } from "../stripe/subscriptionService";
 
 const router = Router();
 
@@ -182,6 +183,25 @@ router.post("/apple", validateBody(appleAuthSchema), async (req, res, next) => {
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
+      
+      try {
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        await createOrUpdateSubscription({
+          userId,
+          status: "trialing",
+          planType: "monthly",
+          currentPeriodStart: now,
+          currentPeriodEnd: trialEnd,
+          trialStart: now,
+          trialEnd: trialEnd,
+        });
+      } catch (subError) {
+        logger.error("Failed to create trial subscription for Apple auth (non-fatal)", {
+          userId,
+          error: subError instanceof Error ? subError.message : String(subError),
+        });
+      }
     }
 
     const { rawToken, expiresAt } = await createSession(userId, {
@@ -367,6 +387,25 @@ router.post("/google", validateBody(googleAuthSchema), async (req, res, next) =>
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
+      
+      try {
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        await createOrUpdateSubscription({
+          userId,
+          status: "trialing",
+          planType: "monthly",
+          currentPeriodStart: now,
+          currentPeriodEnd: trialEnd,
+          trialStart: now,
+          trialEnd: trialEnd,
+        });
+      } catch (subError) {
+        logger.error("Failed to create trial subscription for Google auth (non-fatal)", {
+          userId,
+          error: subError instanceof Error ? subError.message : String(subError),
+        });
+      }
     }
 
     const { rawToken, expiresAt } = await createSession(userId, {

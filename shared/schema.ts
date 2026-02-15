@@ -90,12 +90,12 @@ import { z } from "zod";
  *
  * Subscription fields:
  * - subscriptionTier: "STANDARD" (default: STANDARD)
- * - subscriptionStatus: "active", "canceled", or "expired" (default: active)
+ * - subscriptionStatus: "trialing", "active", "canceled", or "expired" (default: trialing)
  * - stripeCustomerId: Stripe customer ID for payment processing
  * - stripeSubscriptionId: Stripe subscription ID for managing subscription
  * - aiRecipesGeneratedThisMonth: Counter for AI recipe generation limit (resets monthly)
  * - aiRecipesResetDate: When the monthly AI recipe counter resets
- * - trialEndsAt: Legacy field (no longer used)
+ * - trialEndsAt: When the user's 7-day free trial expires
  *
  * Pre-registration fields (for landing page signups):
  * - preRegistrationSource: Where the user signed up from ("landing", "app", etc.)
@@ -138,7 +138,7 @@ export const users = pgTable("users", {
   primaryProvider: varchar("primary_provider"),
   primaryProviderId: varchar("primary_provider_id"),
   subscriptionTier: text("subscription_tier").notNull().default("STANDARD"),
-  subscriptionStatus: text("subscription_status").notNull().default("active"),
+  subscriptionStatus: text("subscription_status").notNull().default("trialing"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month")
