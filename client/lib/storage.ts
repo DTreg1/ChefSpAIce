@@ -330,14 +330,15 @@ async function setItem<T>(key: string, value: T): Promise<void> {
 export const storage = {
   async getInventory(): Promise<FoodItem[]> {
     const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
-    return allItems.filter(item => !item.deletedAt);
+    return allItems.filter((item) => !item.deletedAt);
   },
 
   async getDeletedInventory(): Promise<FoodItem[]> {
     const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    return allItems.filter(item =>
-      item.deletedAt && new Date(item.deletedAt).getTime() > thirtyDaysAgo
+    return allItems.filter(
+      (item) =>
+        item.deletedAt && new Date(item.deletedAt).getTime() > thirtyDaysAgo,
     );
   },
 
@@ -460,9 +461,13 @@ export const storage = {
 
   async restoreInventoryItem(id: string): Promise<void> {
     const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
-    const index = allItems.findIndex(i => i.id === id);
+    const index = allItems.findIndex((i) => i.id === id);
     if (index !== -1) {
-      allItems[index] = { ...allItems[index], deletedAt: null, updatedAt: new Date().toISOString() };
+      allItems[index] = {
+        ...allItems[index],
+        deletedAt: null,
+        updatedAt: new Date().toISOString(),
+      };
       await setItem(STORAGE_KEYS.INVENTORY, allItems);
 
       const token = await this.getAuthToken();
@@ -485,7 +490,10 @@ export const storage = {
     const toPurge: FoodItem[] = [];
 
     for (const item of allItems) {
-      if (item.deletedAt && new Date(item.deletedAt).getTime() <= thirtyDaysAgo) {
+      if (
+        item.deletedAt &&
+        new Date(item.deletedAt).getTime() <= thirtyDaysAgo
+      ) {
         toPurge.push(item);
       } else {
         toKeep.push(item);
@@ -624,7 +632,12 @@ export const storage = {
     const token = await this.getAuthToken();
     if (token) {
       // Queue cloud upload in background (non-blocking)
-      this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch((err) => logger.warn("Background image upload failed", { recipeId: recipe.id, error: err instanceof Error ? err.message : String(err) }));
+      this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch((err) =>
+        logger.warn("Background image upload failed", {
+          recipeId: recipe.id,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
 
       // Queue sync change - cloudImageUri will be added after upload completes
       const recipeForSync = { ...recipeWithTimestamp, imageUri: undefined };
@@ -657,13 +670,17 @@ export const storage = {
         return;
       }
 
-      const response = await apiClient.raw("POST", "/api/recipe-images/upload", {
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipeId,
-          base64Data,
-        }),
-      });
+      const response = await apiClient.raw(
+        "POST",
+        "/api/recipe-images/upload",
+        {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipeId,
+            base64Data,
+          }),
+        },
+      );
 
       if (response.ok) {
         const result = (await response.json()).data;
@@ -715,7 +732,11 @@ export const storage = {
             recipe.imageUri?.startsWith("file://"));
         if (imageChanged) {
           this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(
-            (err) => logger.warn("Background image upload failed", { recipeId: recipe.id, error: err instanceof Error ? err.message : String(err) }),
+            (err) =>
+              logger.warn("Background image upload failed", {
+                recipeId: recipe.id,
+                error: err instanceof Error ? err.message : String(err),
+              }),
           );
         }
 
@@ -1028,9 +1049,24 @@ export const storage = {
       // Fallback: If user has existing data, assume onboarding was completed
       // This prevents false redirects due to storage read failures or cleared cache
       const [recipes, inventory, preferences] = await Promise.all([
-        this.getRecipes().catch((err) => { logger.warn("Failed to read recipes during onboarding check", { error: err instanceof Error ? err.message : String(err) }); return []; }),
-        this.getInventory().catch((err) => { logger.warn("Failed to read inventory during onboarding check", { error: err instanceof Error ? err.message : String(err) }); return []; }),
-        this.getPreferences().catch((err) => { logger.warn("Failed to read preferences during onboarding check", { error: err instanceof Error ? err.message : String(err) }); return null; }),
+        this.getRecipes().catch((err) => {
+          logger.warn("Failed to read recipes during onboarding check", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          return [];
+        }),
+        this.getInventory().catch((err) => {
+          logger.warn("Failed to read inventory during onboarding check", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          return [];
+        }),
+        this.getPreferences().catch((err) => {
+          logger.warn("Failed to read preferences during onboarding check", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          return null;
+        }),
       ]);
 
       const hasExistingData =
@@ -1040,7 +1076,11 @@ export const storage = {
           `[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`,
         );
         // Auto-fix: Mark onboarding as completed since user has data
-        await this.setOnboardingCompleted().catch((err) => logger.warn("Failed to persist onboarding state", { error: err instanceof Error ? err.message : String(err) }));
+        await this.setOnboardingCompleted().catch((err) =>
+          logger.warn("Failed to persist onboarding state", {
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
         return false;
       }
 
@@ -1086,10 +1126,7 @@ export const storage = {
   async resetAllStorage(): Promise<void> {
     const allKeys = await AsyncStorage.getAllKeys();
     const appKeys = allKeys.filter(
-      (key) =>
-        key.startsWith("@chefspaice/") ||
-        key.startsWith("@freshpantry/") ||
-        key === "auth_state",
+      (key) => key.startsWith("@chefspaice/") || key === "auth_state",
     );
     if (appKeys.length > 0) {
       await AsyncStorage.multiRemove(appKeys);
@@ -1126,7 +1163,8 @@ export const storage = {
       locations.filter((l) => l.key !== key),
     );
 
-    const allInventory = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const allInventory =
+      (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
     let migratedCount = 0;
     const updatedInventory = allInventory.map((item) => {
       if (item.storageLocation === key && !item.deletedAt) {
