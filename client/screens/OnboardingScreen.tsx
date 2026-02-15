@@ -17,6 +17,7 @@ import { Spacing } from "@/constants/theme";
 import { storage, FoodItem, generateId } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 
 import {
@@ -36,6 +37,7 @@ export default function OnboardingScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const { markOnboardingComplete } = useOnboardingStatus();
+  const { completeOnboarding, isAuthenticated } = useAuth();
   const { entitlements } = useSubscription();
 
   const isPro = entitlements.maxCookware === "unlimited";
@@ -361,6 +363,14 @@ export default function OnboardingScreen() {
 
       await storage.setOnboardingCompleted();
       await storage.clearOnboardingStep();
+
+      if (isAuthenticated) {
+        const onboardingResult = await completeOnboarding();
+        if (!onboardingResult.success) {
+          logger.warn("Failed to mark onboarding complete on server:", onboardingResult.error);
+        }
+      }
+
       markOnboardingComplete();
 
       const saveResult = await storage.syncToCloud();

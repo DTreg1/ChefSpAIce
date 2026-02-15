@@ -67,6 +67,7 @@ interface AuthContextType extends AuthState {
     selectedTier?: "pro",
   ) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
+  completeOnboarding: () => Promise<{ success: boolean; error?: string }>;
   setSignOutCallback: (callback: () => void | Promise<void>) => void;
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
@@ -85,6 +86,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithApple: async () => ({ success: false }),
   signInWithGoogle: async () => ({ success: false }),
   signOut: async () => {},
+  completeOnboarding: async () => ({ success: false }),
   setSignOutCallback: () => {},
 });
 
@@ -391,6 +393,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOutRef.current = signOut;
   }, [signOut]);
 
+  const completeOnboarding = useCallback(async () => {
+    try {
+      await apiClient.post<void>("/api/auth/complete-onboarding");
+      setState((prev) => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, hasCompletedOnboarding: true } : null,
+      }));
+      const storedData = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+      if (storedData) {
+        const parsed: StoredAuthData = JSON.parse(storedData);
+        parsed.user.hasCompletedOnboarding = true;
+        await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
+      }
+      return { success: true };
+    } catch (error) {
+      logger.error("Complete onboarding error:", error);
+      return { success: false, error: "Failed to complete onboarding" };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      state.user &&
+      state.token &&
+      !state.isLoading &&
+      state.user.hasCompletedOnboarding === false
+    ) {
+      (async () => {
+        try {
+          const needsOnboarding = await storage.needsOnboarding();
+          if (!needsOnboarding) {
+            logger.log("[Auth] Backward-compat: local storage says onboarding complete, syncing to server");
+            await apiClient.post<void>("/api/auth/complete-onboarding");
+            setState((prev) => ({
+              ...prev,
+              user: prev.user ? { ...prev.user, hasCompletedOnboarding: true } : null,
+            }));
+            const storedData = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+            if (storedData) {
+              const parsed: StoredAuthData = JSON.parse(storedData);
+              parsed.user.hasCompletedOnboarding = true;
+              await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
+            }
+          }
+        } catch (err) {
+          logger.warn("[Auth] Backward-compat migration failed (non-critical):", err);
+        }
+      })();
+    }
+  }, [state.user?.id, state.user?.hasCompletedOnboarding, state.isLoading]);
+
   const signInWithApple = useCallback(
     async (selectedTier?: "pro") => {
       const result = await appleSignInApi(promptAppleWebAsync, selectedTier);
@@ -408,6 +461,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatarUrl: userData.avatarUrl,
           provider: "apple",
           createdAt: userData.createdAt,
+          hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
         },
         token: authToken,
       };
@@ -472,6 +526,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatarUrl: userData.avatarUrl,
           provider: "google",
           createdAt: userData.createdAt,
+          hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
         },
         token: authToken,
       };
@@ -532,6 +587,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithApple,
       signInWithGoogle,
       signOut,
+      completeOnboarding,
       setSignOutCallback,
     }),
     [
@@ -543,6 +599,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithApple,
       signInWithGoogle,
       signOut,
+      completeOnboarding,
       setSignOutCallback,
     ],
   );

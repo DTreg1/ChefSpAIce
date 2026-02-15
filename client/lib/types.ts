@@ -180,6 +180,7 @@ export interface AuthResponseData {
     provider?: "password" | "apple" | "google";
     isNewUser?: boolean;
     createdAt: string;
+    hasCompletedOnboarding?: boolean;
   };
   token: string;
 }
@@ -192,6 +193,7 @@ export interface RestoreSessionData {
     avatarUrl?: string;
     provider?: "password" | "apple" | "google";
     createdAt: string;
+    hasCompletedOnboarding?: boolean;
   };
 }
 

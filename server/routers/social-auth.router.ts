@@ -167,6 +167,7 @@ router.post("/apple", validateBody(appleAuthSchema), async (req, res, next) => {
           displayName: users.displayName,
           profileImageUrl: users.profileImageUrl,
           createdAt: users.createdAt,
+          hasCompletedOnboarding: users.hasCompletedOnboarding,
         })
         .from(users)
         .where(eq(users.id, resolvedUserId))
@@ -200,6 +201,7 @@ router.post("/apple", validateBody(appleAuthSchema), async (req, res, next) => {
         provider: "apple",
         isNewUser,
         createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
+        hasCompletedOnboarding: dbUser.hasCompletedOnboarding ?? false,
       },
       token: rawToken,
       expiresAt: expiresAt.toISOString(),
@@ -350,6 +352,7 @@ router.post("/google", validateBody(googleAuthSchema), async (req, res, next) =>
           displayName: users.displayName,
           profileImageUrl: users.profileImageUrl,
           createdAt: users.createdAt,
+          hasCompletedOnboarding: users.hasCompletedOnboarding,
         })
         .from(users)
         .where(eq(users.id, resolvedUserId))
@@ -383,6 +386,7 @@ router.post("/google", validateBody(googleAuthSchema), async (req, res, next) =>
         provider: "google",
         isNewUser,
         createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
+        hasCompletedOnboarding: dbUser.hasCompletedOnboarding ?? false,
       },
       token: rawToken,
       expiresAt: expiresAt.toISOString(),

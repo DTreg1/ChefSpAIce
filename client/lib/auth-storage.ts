@@ -14,6 +14,7 @@ export interface AuthUser {
   avatarUrl?: string;
   provider?: "password" | "apple" | "google";
   createdAt: string;
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface StoredAuthData {

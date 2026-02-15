@@ -139,6 +139,7 @@ function AuthGuardedNavigator() {
     isAuthenticated,
     isLoading: authLoading,
     setSignOutCallback,
+    user,
   } = useAuth();
   const { isActive, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
@@ -149,7 +150,7 @@ function AuthGuardedNavigator() {
 
   useEffect(() => {
     checkOnboardingStatus();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.hasCompletedOnboarding]);
 
   // Set up sign out callback to navigate to the appropriate screen
   // After account deletion, onboarding is reset so user should see Onboarding
@@ -364,9 +365,15 @@ function AuthGuardedNavigator() {
 
   const checkOnboardingStatus = async () => {
     try {
-      const needs = await storage.needsOnboarding();
-      logger.log(`[Nav] Onboarding check: needsOnboarding=${needs}`);
-      setNeedsOnboarding(needs);
+      if (isAuthenticated && user) {
+        const needs = !(user.hasCompletedOnboarding ?? false);
+        logger.log(`[Nav] Onboarding check (server): needsOnboarding=${needs}`);
+        setNeedsOnboarding(needs);
+      } else {
+        const needs = await storage.needsOnboarding();
+        logger.log(`[Nav] Onboarding check (local): needsOnboarding=${needs}`);
+        setNeedsOnboarding(needs);
+      }
     } catch (err) {
       logger.error("[Nav] Error checking onboarding status:", err);
     } finally {
