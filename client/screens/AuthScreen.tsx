@@ -157,7 +157,14 @@ export default function AuthScreen() {
         return;
       }
 
-      await handlePostAuthNavigation(result.isNewUser ?? isSignUp);
+      if (result.isNewUser ?? isSignUp) {
+        if (Platform.OS !== "web") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        navigateToOnboarding();
+      } else {
+        await handleReturningUserNavigation();
+      }
     } catch (err) {
       logger.error("Auth error:", err);
       setAuthError("An unexpected error occurred");
@@ -166,33 +173,27 @@ export default function AuthScreen() {
     }
   };
 
-  const handlePostAuthNavigation = async (isNewUser: boolean = false) => {
+  const navigateToOnboarding = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "Onboarding" }],
+      }),
+    );
+  };
+
+  const handleReturningUserNavigation = async () => {
     await syncManager.clearQueue();
 
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    if (isNewUser) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Onboarding" }],
-        }),
-      );
-      return;
-    }
-
     await recheckOnboarding();
     const needsOnboarding = await storage.needsOnboarding();
 
     if (needsOnboarding) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Onboarding" }],
-        }),
-      );
+      navigateToOnboarding();
       return;
     }
 
@@ -237,7 +238,14 @@ export default function AuthScreen() {
         return;
       }
 
-      await handlePostAuthNavigation(result.isNewUser ?? false);
+      if (result.isNewUser) {
+        if (Platform.OS !== "web") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        navigateToOnboarding();
+      } else {
+        await handleReturningUserNavigation();
+      }
     } catch (err) {
       logger.error("Social auth error:", err);
       setAuthError("An unexpected error occurred");
