@@ -1,6 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
+import { z } from "zod";
 import { requireAuth } from "../../middleware/auth";
 import { successResponse } from "../../lib/apiResponse";
+import { AppError } from "../../middleware/errorHandler";
 import {
   getAllAppliances,
   getCommonAppliances,
@@ -49,10 +51,24 @@ userAppliancesRouter.get("/", async (req: Request, res: Response, next: NextFunc
   }
 });
 
+const addApplianceSchema = z.object({
+  applianceId: z.number({ required_error: "applianceId is required" }).int().positive(),
+  notes: z.string().optional(),
+  brand: z.string().optional(),
+});
+
+const bulkSyncSchema = z.object({
+  applianceIds: z.array(z.number().int().positive()).min(1, "At least one applianceId is required"),
+});
+
 userAppliancesRouter.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const parsed = addApplianceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(AppError.badRequest(parsed.error.errors[0]?.message || "Invalid request body", "VALIDATION_ERROR"));
+    }
     const userId = req.userId!;
-    const { applianceId, notes, brand } = req.body;
+    const { applianceId, notes, brand } = parsed.data;
     const result = await addUserAppliance(userId, applianceId, notes, brand);
     res.status(201).json(successResponse(result));
   } catch (error) {
@@ -66,6 +82,9 @@ userAppliancesRouter.delete(
     try {
       const userId = req.userId!;
       const applianceId = parseInt(req.params.applianceId, 10);
+      if (isNaN(applianceId)) {
+        return next(AppError.badRequest("Invalid appliance ID", "INVALID_APPLIANCE_ID"));
+      }
       await removeUserAppliance(userId, applianceId);
       res.json(successResponse(null, "Appliance removed from kitchen"));
     } catch (error) {
@@ -76,8 +95,12 @@ userAppliancesRouter.delete(
 
 userAppliancesRouter.post("/bulk", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const parsed = bulkSyncSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(AppError.badRequest(parsed.error.errors[0]?.message || "Invalid request body", "VALIDATION_ERROR"));
+    }
     const userId = req.userId!;
-    const { applianceIds } = req.body;
+    const { applianceIds } = parsed.data;
     const result = await bulkSyncAppliances(userId, applianceIds);
     res.json(successResponse(result, `Synced ${result.total} appliances`));
   } catch (error) {

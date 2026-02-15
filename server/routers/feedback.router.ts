@@ -2,13 +2,14 @@ import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { AppError } from "../middleware/errorHandler";
 import { db } from "../db";
-import { feedback, feedbackBuckets, userSessions, users } from "@shared/schema";
+import { feedback, feedbackBuckets, userSessions } from "@shared/schema";
 import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
 import { successResponse } from "../lib/apiResponse";
 import { hashToken } from "../lib/auth-utils";
 import { validateBody } from "../middleware/validateBody";
+import { requireAdmin } from "../middleware/requireAdmin";
 
 const router = Router();
 
@@ -36,38 +37,6 @@ const updateFeedbackSchema = z.object({
   assignedTo: z.string().optional().nullable(),
   bucketId: z.number().optional().nullable(),
 });
-
-async function getAuthenticatedAdmin(authHeader: string | undefined): Promise<typeof users.$inferSelect> {
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw AppError.unauthorized("Authentication required", "AUTH_REQUIRED");
-  }
-  
-  const rawToken = authHeader.slice(7);
-  const hashedToken = hashToken(rawToken);
-  const sessions = await db
-    .select()
-    .from(userSessions)
-    .where(eq(userSessions.token, hashedToken));
-  
-  if (sessions.length === 0 || new Date(sessions[0].expiresAt) <= new Date()) {
-    throw AppError.unauthorized("Invalid session", "INVALID_SESSION");
-  }
-
-  const userResult = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, sessions[0].userId));
-
-  if (userResult.length === 0) {
-    throw AppError.unauthorized("User not found", "USER_NOT_FOUND");
-  }
-
-  if (!userResult[0].isAdmin) {
-    throw AppError.forbidden("Admin access required", "ADMIN_REQUIRED");
-  }
-
-  return userResult[0];
-}
 
 async function categorizeFeedback(feedbackItem: typeof feedback.$inferSelect): Promise<{ bucketId: number | null; isNewBucket: boolean }> {
   const existingBuckets = await db
@@ -221,10 +190,8 @@ router.post("/", validateBody(feedbackRequestSchema), async (req: Request, res: 
   }
 });
 
-router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
-
     const { status, type, priority } = req.query;
 
     const allFeedback = await db
@@ -250,9 +217,8 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.get("/stats", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/stats", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const allFeedback = await db.select().from(feedback);
     const allBuckets = await db.select().from(feedbackBuckets);
@@ -285,9 +251,8 @@ router.get("/stats", async (req: Request, res: Response, next: NextFunction) => 
   }
 });
 
-router.get("/buckets", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/buckets", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const { status } = req.query;
 
@@ -317,9 +282,8 @@ router.get("/buckets", async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
-router.post("/buckets/:id/generate-prompt", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/buckets/:id/generate-prompt", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -432,9 +396,8 @@ ${items.map((item, idx) => `${idx + 1}. Address: ${item.message.substring(0, 100
   }
 });
 
-router.post("/buckets/:id/complete", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/buckets/:id/complete", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -469,9 +432,8 @@ router.post("/buckets/:id/complete", async (req: Request, res: Response, next: N
   }
 });
 
-router.post("/categorize-uncategorized", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/categorize-uncategorized", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const uncategorized = await db
       .select()
@@ -500,9 +462,8 @@ router.post("/categorize-uncategorized", async (req: Request, res: Response, nex
   }
 });
 
-router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/:id", requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -524,9 +485,8 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.patch("/:id", validateBody(updateFeedbackSchema), async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", requireAdmin, validateBody(updateFeedbackSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {

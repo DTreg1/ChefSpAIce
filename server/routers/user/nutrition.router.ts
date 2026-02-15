@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
-import { nutritionCorrections } from "@shared/schema";
+import { nutritionCorrections, users } from "@shared/schema";
 import { db } from "../../db";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
@@ -84,6 +84,19 @@ router.get("/corrections", async (req: Request, res: Response, next: NextFunctio
 
 router.patch("/corrections/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      throw AppError.unauthorized("Authentication required", "AUTH_REQUIRED");
+    }
+    const [adminUser] = await db
+      .select({ isAdmin: users.isAdmin })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (!adminUser?.isAdmin) {
+      throw AppError.forbidden("Admin access required", "ADMIN_REQUIRED");
+    }
+
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       throw AppError.badRequest("Invalid correction ID", "INVALID_CORRECTION_ID");
