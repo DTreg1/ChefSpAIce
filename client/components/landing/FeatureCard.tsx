@@ -1,5 +1,6 @@
 import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import { GlassCard } from "./GlassCard";
+import { getLandingColors } from "./landing-colors";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -18,20 +19,22 @@ export function FeatureCard({
   isDark,
   isWide,
 }: FeatureCardProps) {
+  const lc = getLandingColors(isDark);
+
   return (
     <GlassCard
       style={[styles.featureCard, isWide && styles.featureCardWide] as ViewStyle[]}
       testId={`card-feature-${testId}`}
     >
-      <View style={styles.featureIconContainer}>{icon}</View>
+      <View style={[styles.featureIconContainer, { backgroundColor: lc.iconBgTint }]}>{icon}</View>
       <Text
-        style={[styles.featureTitle, { color: "rgba(255, 255, 255, 0.95)" }]}
+        style={[styles.featureTitle, { color: lc.textPrimary }]}
         data-testid={`text-feature-title-${testId}`}
       >
         {title}
       </Text>
       <Text
-        style={[styles.featureDescription, { color: "rgba(255, 255, 255, 0.9)" }]}
+        style={[styles.featureDescription, { color: lc.textSecondary }]}
         data-testid={`text-feature-desc-${testId}`}
       >
         {description}
@@ -52,7 +55,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,

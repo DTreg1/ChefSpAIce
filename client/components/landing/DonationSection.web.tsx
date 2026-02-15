@@ -5,9 +5,11 @@ import { useState } from "react";
 import { AppColors } from "@/constants/theme";
 import { GlassCard } from "./GlassCard";
 import { donationAmounts } from "@/data/landing-data";
-import { sharedStyles } from "./shared-styles";
+import { sharedStyles, getLandingTextStyles } from "./shared-styles";
 import { logger } from "@/lib/logger";
 import { apiClient } from "@/lib/api-client";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 const isWeb = Platform.OS === "web";
 
@@ -17,6 +19,9 @@ interface DonationSectionProps {
 
 export function DonationSection({ isWide }: DonationSectionProps) {
   const [isDonating, setIsDonating] = useState(false);
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
+  const textStyles = getLandingTextStyles(isDark);
 
   const handleDonate = async (amount: number) => {
     if (isDonating) return;
@@ -53,8 +58,8 @@ export function DonationSection({ isWide }: DonationSectionProps) {
     <>
       <View style={styles.ctaSection} data-testid="section-cta">
         <GlassCard style={styles.ctaCard}>
-          <Text style={styles.ctaTitle}>Ready to reduce food waste?</Text>
-          <Text style={styles.ctaSubtitle}>
+          <Text style={[styles.ctaTitle, { color: lc.textPrimary }]}>Ready to reduce food waste?</Text>
+          <Text style={[styles.ctaSubtitle, { color: lc.textPrimary }]}>
             Join thousands of users saving money and the planet
           </Text>
         </GlassCard>
@@ -62,11 +67,11 @@ export function DonationSection({ isWide }: DonationSectionProps) {
 
       {isWeb && (
         <View style={sharedStyles.section} data-testid="section-donate">
-          <Text style={sharedStyles.sectionTitle} data-testid="text-donate-title">
+          <Text style={textStyles.sectionTitle} data-testid="text-donate-title">
             Support ChefSpAIce
           </Text>
           <Text
-            style={sharedStyles.sectionSubtitle}
+            style={textStyles.sectionSubtitle}
             data-testid="text-donate-subtitle"
           >
             Help us fight food waste and keep the app free for everyone
@@ -79,7 +84,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
                 size={32}
                 color={AppColors.primary}
               />
-              <Text style={styles.donationText}>
+              <Text style={[styles.donationText, { color: lc.textPrimary }]}>
                 Your donation helps us maintain and improve ChefSpAIce, keeping
                 it accessible to everyone while we work to reduce global food
                 waste.
@@ -110,7 +115,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
                   </Pressable>
                 ))}
               </View>
-              <Text style={styles.donationNote}>
+              <Text style={[styles.donationNote, { color: lc.textMuted }]}>
                 Secure payment powered by Stripe
               </Text>
             </View>
@@ -136,13 +141,11 @@ const styles = StyleSheet.create({
   ctaTitle: {
     fontSize: 28,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 12,
   },
   ctaSubtitle: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 24,
   },
@@ -158,7 +161,6 @@ const styles = StyleSheet.create({
   },
   donationText: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     lineHeight: 24,
   },
@@ -194,7 +196,6 @@ const styles = StyleSheet.create({
   },
   donationNote: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.95)",
     marginTop: 8,
   },
 });

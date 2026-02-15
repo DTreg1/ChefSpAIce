@@ -6,6 +6,7 @@ import { HeroDeviceMockup } from "./HeroDeviceMockup";
 import { ScreenshotShowcase } from "./ScreenshotShowcase";
 import { ReplitLogo } from "./ReplitLogo";
 import { trustLogos } from "@/data/landing-data";
+import { getLandingColors } from "./landing-colors";
 
 const logoImage = require("../../assets/images/transparent/chef-hat-light-256.png");
 
@@ -16,12 +17,14 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
+  const lc = getLandingColors(isDark);
+
   return (
     <>
       <View style={styles.header} data-testid="header" role="banner" accessibilityLabel="Site header">
         <View style={styles.logoContainer}>
           <Image source={logoImage} style={{ width: 28, height: 28 }} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants" />
-          <Text style={styles.logoText} data-testid="text-logo">
+          <Text style={[styles.logoText, { color: lc.textPrimary }]} data-testid="text-logo">
             ChefSpAIce
           </Text>
         </View>
@@ -29,6 +32,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
           <Pressable
             style={({ pressed }) => [
               styles.signInButton,
+              { borderColor: lc.borderStrong, backgroundColor: lc.surfaceMedium },
               pressed && styles.buttonPressed,
             ]}
             onPress={onSupport}
@@ -37,7 +41,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
             accessibilityRole="button"
             accessibilityLabel="Contact support"
           >
-            <Text style={styles.signInButtonText}>Support</Text>
+            <Text style={[styles.signInButtonText, { color: lc.textPrimary }]}>Support</Text>
           </Pressable>
         )}
       </View>
@@ -50,19 +54,19 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
           <View
             style={[styles.heroContent, isWide && styles.heroContentWide]}
           >
-            <View style={styles.tagline}>
-              <MaterialCommunityIcons name="leaf" size={14} color="#FFFFFF" />
-              <Text style={styles.taglineText} data-testid="text-tagline">
+            <View style={[styles.tagline, { backgroundColor: lc.taglineBg, borderColor: lc.taglineBorder }]}>
+              <MaterialCommunityIcons name="leaf" size={14} color={lc.taglineIcon} />
+              <Text style={[styles.taglineText, { color: lc.textPrimary }]} data-testid="text-tagline">
                 Reduce Food Waste, Save Money
               </Text>
             </View>
 
-            <Text style={styles.heroTitle} data-testid="text-hero-title">
+            <Text style={[styles.heroTitle, { color: lc.textPrimary }]} data-testid="text-hero-title">
               Your AI-Powered{"\n"}Kitchen Assistant
             </Text>
 
             <Text
-              style={styles.heroSubtitle}
+              style={[styles.heroSubtitle, { color: lc.textSecondary }]}
               data-testid="text-hero-subtitle"
             >
               Manage your pantry, generate recipes from what you have, plan
@@ -84,8 +88,8 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
 
       <ScreenshotShowcase isWide={isWide} />
 
-      <View style={styles.trustSection} data-testid="section-trust">
-        <Text style={styles.trustTitle}>Featured On</Text>
+      <View style={[styles.trustSection, { borderColor: lc.borderSubtle }]} data-testid="section-trust">
+        <Text style={[styles.trustTitle, { color: lc.textPrimary }]}>Featured On</Text>
         <View style={[styles.trustLogos, isWide && styles.trustLogosWide]}>
           {trustLogos.map((logo, index) => (
             <View key={index} style={styles.trustLogoItem}>
@@ -94,19 +98,19 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
                   <MaterialCommunityIcons
                     name={logo.icon as keyof typeof MaterialCommunityIcons.glyphMap}
                     size={24}
-                    color="rgba(255, 255, 255, 0.8)"
+                    color={lc.iconColor}
                   />
                 ) : logo.iconType === "custom" && logo.icon === "replit" ? (
-                  <ReplitLogo size={24} color="rgba(255, 255, 255, 0.8)" />
+                  <ReplitLogo size={24} color={lc.iconColor} />
                 ) : (
                   <Feather
                     name={logo.icon as keyof typeof Feather.glyphMap}
                     size={24}
-                    color="rgba(255, 255, 255, 0.8)"
+                    color={lc.iconColor}
                   />
                 )}
               </View>
-              <Text style={styles.trustLogoText}>{logo.name}</Text>
+              <Text style={[styles.trustLogoText, { color: lc.textPrimary }]}>{logo.name}</Text>
             </View>
           ))}
         </View>
@@ -132,18 +136,14 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 22,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.95)",
   },
   signInButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   signInButtonText: {
-    color: "rgba(255, 255, 255, 0.95)",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -191,27 +191,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: GlassEffect.borderRadius.pill,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(39, 174, 96, 0.3)",
     marginBottom: 24,
   },
   taglineText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.95)",
   },
   heroTitle: {
     fontSize: 40,
     fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 48,
   },
   heroSubtitle: {
     fontSize: 18,
-    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
     marginBottom: 32,
     lineHeight: 28,
@@ -223,12 +218,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   trustTitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.95)",
     textTransform: "uppercase",
     letterSpacing: 2,
     marginBottom: 24,
@@ -254,6 +247,5 @@ const styles = StyleSheet.create({
   },
   trustLogoText: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.95)",
   },
 });

@@ -2,6 +2,8 @@ import { StyleSheet, View, Text, Pressable } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { Feather } from "@expo/vector-icons";
 import { GlassCard } from "./GlassCard";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 interface FAQItemProps {
   question: string;
@@ -12,12 +14,15 @@ interface FAQItemProps {
 }
 
 export function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
+
   return (
     <Pressable onPress={onToggle} {...webAccessibilityProps(onToggle)} data-testid={`faq-item-${testId}`} accessibilityRole="button" accessibilityLabel={`${question}, ${isOpen ? 'collapse' : 'expand'} answer`} accessibilityState={{ expanded: isOpen }}>
       <GlassCard style={styles.faqCard}>
         <View style={styles.faqHeader}>
           <Text
-            style={styles.faqQuestion}
+            style={[styles.faqQuestion, { color: lc.textPrimary }]}
             data-testid={`text-faq-question-${testId}`}
           >
             {question}
@@ -25,12 +30,12 @@ export function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemP
           <Feather
             name={isOpen ? "chevron-up" : "chevron-down"}
             size={20}
-            color="rgba(255, 255, 255, 0.85)"
+            color={lc.textMuted}
           />
         </View>
         {isOpen && (
           <Text
-            style={styles.faqAnswer}
+            style={[styles.faqAnswer, { color: lc.textSecondary }]}
             data-testid={`text-faq-answer-${testId}`}
           >
             {answer}
@@ -53,13 +58,11 @@ const styles = StyleSheet.create({
   faqQuestion: {
     fontSize: 16,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.95)",
     flex: 1,
     paddingRight: 16,
   },
   faqAnswer: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 22,
     marginTop: 16,
   },

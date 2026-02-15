@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
-import { AppColors } from "@/constants/theme";
+import { LandingBackgrounds } from "@/components/landing/landing-colors";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -25,8 +25,12 @@ export function AnimatedBackground({
 }: AnimatedBackgroundProps) {
   const { isDark } = useTheme();
 
-  const baseColor = isDark ? AppColors.backgroundBase : AppColors.backgroundHighlight;
-  const highlightColor = isDark ? AppColors.backgroundHighlight : AppColors.backgroundHighlightLight;
+  const bg = isDark ? LandingBackgrounds.dark : LandingBackgrounds.light;
+  const baseColor = bg.animated.base;
+  const highlightColor = bg.animated.highlight;
+
+  const bubbleBgColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 80, 30, 0.08)";
+  const bubbleBorderColor = isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 80, 30, 0.12)";
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];
@@ -86,8 +90,8 @@ export function AnimatedBackground({
           }
           .bubble {
             position: absolute;
-            background-color: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            background-color: var(--bubble-bg-color);
+            border: 1px solid var(--bubble-border-color);
             border-radius: 50%;
             opacity: 0;
             transform: translateY(${SCREEN_HEIGHT + 50}px);
@@ -110,6 +114,8 @@ export function AnimatedBackground({
               "--delay": `${config.delay}ms`,
               "--bubble-opacity": config.opacity,
               "--wobble-amount": `${config.wobbleAmount}px`,
+              "--bubble-bg-color": bubbleBgColor,
+              "--bubble-border-color": bubbleBorderColor,
             } as React.CSSProperties
           }
         />

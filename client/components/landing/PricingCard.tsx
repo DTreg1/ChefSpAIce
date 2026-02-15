@@ -4,6 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassCard } from "./GlassCard";
 import { AppColors, GlassEffect } from "@/constants/theme";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 interface PricingCardProps {
   tier: string;
@@ -36,6 +38,9 @@ export function PricingCard({
   onDownloadiOS,
   onDownloadAndroid,
 }: PricingCardProps) {
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
+
   return (
     <GlassCard
       style={[
@@ -51,22 +56,22 @@ export function PricingCard({
         </View>
       )}
       <Text
-        style={styles.pricingTier}
+        style={[styles.pricingTier, { color: lc.textPrimary }]}
         data-testid={`text-pricing-tier-${testId}`}
       >
         {tier}
       </Text>
       <View style={styles.pricingPriceContainer}>
         <Text
-          style={styles.pricingPrice}
+          style={[styles.pricingPrice, { color: lc.textPrimary }]}
           data-testid={`text-pricing-price-${testId}`}
         >
           {price}
         </Text>
-        {period && <Text style={styles.pricingPeriod}>/{period}</Text>}
+        {period && <Text style={[styles.pricingPeriod, { color: lc.textSecondary }]}>/{period}</Text>}
       </View>
       <Text
-        style={styles.pricingDescription}
+        style={[styles.pricingDescription, { color: lc.textSecondary }]}
         data-testid={`text-pricing-desc-${testId}`}
       >
         {description}
@@ -75,17 +80,18 @@ export function PricingCard({
         {features.map((feature, index) => (
           <View key={index} style={styles.pricingFeatureRow}>
             <Feather name="check" size={16} color={AppColors.primary} />
-            <Text style={styles.pricingFeatureText}>{feature}</Text>
+            <Text style={[styles.pricingFeatureText, { color: lc.textSecondary }]}>{feature}</Text>
           </View>
         ))}
       </View>
       {showDownloadButtons ? (
         <View style={styles.downloadButtonsContainer}>
-          <Text style={styles.downloadLabel}>Download the app:</Text>
+          <Text style={[styles.downloadLabel, { color: lc.textMuted }]}>Download the app:</Text>
           <View style={styles.downloadButtons}>
             <Pressable
               style={({ pressed }) => [
                 styles.downloadButton,
+                { borderColor: lc.borderMedium, backgroundColor: lc.surfaceMedium },
                 pressed && styles.buttonPressed,
               ]}
               onPress={onDownloadiOS}
@@ -95,11 +101,12 @@ export function PricingCard({
               accessibilityLabel="Download on the App Store"
             >
               <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
-              <Text style={styles.downloadButtonText}>App Store</Text>
+              <Text style={[styles.downloadButtonText, { color: lc.textSecondary }]}>App Store</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
                 styles.downloadButton,
+                { borderColor: lc.borderMedium, backgroundColor: lc.surfaceMedium },
                 pressed && styles.buttonPressed,
               ]}
               onPress={onDownloadAndroid}
@@ -113,7 +120,7 @@ export function PricingCard({
                 size={20}
                 color="#FFFFFF"
               />
-              <Text style={styles.downloadButtonText}>Google Play</Text>
+              <Text style={[styles.downloadButtonText, { color: lc.textSecondary }]}>Google Play</Text>
             </Pressable>
           </View>
         </View>
@@ -122,7 +129,7 @@ export function PricingCard({
           style={({ pressed }) => [
             isPopular
               ? styles.pricingButtonPrimary
-              : styles.pricingButtonSecondary,
+              : [styles.pricingButtonSecondary, { borderColor: lc.borderStrong, backgroundColor: lc.surfaceSubtle }],
             pressed && styles.buttonPressed,
           ]}
           onPress={onPress}
@@ -141,7 +148,7 @@ export function PricingCard({
               <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
             </LinearGradient>
           ) : (
-            <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
+            <Text style={[styles.pricingButtonTextSecondary, { color: lc.textPrimary }]}>{buttonText}</Text>
           )}
         </Pressable>
       )}
@@ -181,7 +188,6 @@ const styles = StyleSheet.create({
   pricingTier: {
     fontSize: 20,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.95)",
     marginBottom: 8,
     marginTop: 8,
   },
@@ -193,15 +199,12 @@ const styles = StyleSheet.create({
   pricingPrice: {
     fontSize: 48,
     fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.95)",
   },
   pricingPeriod: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
   },
   pricingDescription: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
     marginBottom: 24,
   },
   pricingFeatures: {
@@ -216,7 +219,6 @@ const styles = StyleSheet.create({
   },
   pricingFeatureText: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
   },
   pricingButtonPrimary: {
     width: "100%",
@@ -228,8 +230,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     alignItems: "center",
   },
   pricingButtonGradient: {
@@ -244,7 +244,6 @@ const styles = StyleSheet.create({
   pricingButtonTextSecondary: {
     fontSize: 16,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.95)",
   },
   downloadButtonsContainer: {
     width: "100%",
@@ -253,7 +252,6 @@ const styles = StyleSheet.create({
   },
   downloadLabel: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: 4,
   },
   downloadButtons: {
@@ -269,14 +267,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: GlassEffect.borderRadius.pill,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   downloadButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.9)",
   },
   buttonPressed: {
     opacity: 0.8,

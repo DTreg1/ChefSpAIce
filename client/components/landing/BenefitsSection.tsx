@@ -2,20 +2,24 @@ import { StyleSheet, View, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { AppColors } from "@/constants/theme";
 import { BenefitCard } from "./BenefitCard";
-import { sharedStyles } from "./shared-styles";
+import { sharedStyles, getLandingTextStyles } from "./shared-styles";
+import { useTheme } from "@/hooks/useTheme";
 
 interface BenefitsSectionProps {
   isWide: boolean;
 }
 
 export function BenefitsSection({ isWide }: BenefitsSectionProps) {
+  const { isDark } = useTheme();
+  const textStyles = getLandingTextStyles(isDark);
+
   return (
     <View style={sharedStyles.section} data-testid="section-benefits">
-      <Text style={sharedStyles.sectionTitle} data-testid="text-benefits-title">
+      <Text style={textStyles.sectionTitle} data-testid="text-benefits-title">
         Why Choose ChefSpAIce?
       </Text>
       <Text
-        style={sharedStyles.sectionSubtitle}
+        style={textStyles.sectionSubtitle}
         data-testid="text-benefits-subtitle"
       >
         Save money, reduce waste, and eat better

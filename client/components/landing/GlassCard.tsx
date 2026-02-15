@@ -1,14 +1,10 @@
 import { StyleSheet, View, Platform, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/hooks/useTheme";
-import { GlassColors, GlassEffect } from "@/constants/theme";
+import { GlassEffect } from "@/constants/theme";
+import { getLandingColors } from "./landing-colors";
 
 const isWeb = Platform.OS === "web";
-
-const LandingGlassColors = {
-  background: "rgba(255, 255, 255, 0.08)",
-  border: "rgba(255, 255, 255, 0.15)",
-};
 
 export function GlassCard({
   children,
@@ -24,7 +20,7 @@ export function GlassCard({
   accessibilityRole?: "button" | "summary" | "none";
 }) {
   const { isDark } = useTheme();
-  const glassColors = isDark ? GlassColors.dark : LandingGlassColors;
+  const lc = getLandingColors(isDark);
 
   if (isWeb) {
     return (
@@ -32,8 +28,8 @@ export function GlassCard({
         style={[
           styles.glassCardWeb,
           {
-            backgroundColor: glassColors.background,
-            borderColor: glassColors.border,
+            backgroundColor: lc.glassBg,
+            borderColor: lc.glassBorder,
           },
           style,
         ]}
@@ -56,8 +52,8 @@ export function GlassCard({
         style={[
           styles.glassCardInner,
           {
-            backgroundColor: glassColors.background,
-            borderColor: glassColors.border,
+            backgroundColor: lc.glassBg,
+            borderColor: lc.glassBorder,
           },
         ]}
         data-testid={testId}

@@ -1,5 +1,7 @@
 import { StyleSheet, View, Text, Platform } from "react-native";
 import { PhoneFrame } from "./PhoneFrame";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 const isWeb = Platform.OS === "web";
 
@@ -28,6 +30,8 @@ export function DeviceMockup({
   onHover,
   totalCount = 4,
 }: DeviceMockupProps) {
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
   const frameWidth = isWide ? 220 : 160;
 
   const centerIndex = (totalCount - 1) / 2;
@@ -83,7 +87,7 @@ export function DeviceMockup({
       <Text
         style={[
           styles.mockupLabel,
-          { opacity: isHovered || !isWeb ? 1 : 0.7 },
+          { color: lc.textPrimary, opacity: isHovered || !isWeb ? 1 : 0.7 },
         ]}
         data-testid={`text-mockup-label-${testId}`}
       >
@@ -92,7 +96,7 @@ export function DeviceMockup({
       <Text
         style={[
           styles.mockupDescription,
-          { opacity: isHovered || !isWeb ? 1 : 0.5 },
+          { color: lc.textMuted, opacity: isHovered || !isWeb ? 1 : 0.5 },
         ]}
         data-testid={`text-mockup-desc-${testId}`}
       >
@@ -124,13 +128,11 @@ const styles = StyleSheet.create({
   mockupLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginTop: 4,
   },
   mockupDescription: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
   },
 });

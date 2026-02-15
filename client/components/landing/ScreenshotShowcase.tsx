@@ -2,6 +2,8 @@ import { StyleSheet, View, Text, ScrollView, Platform } from "react-native";
 import { useState } from "react";
 import { DeviceMockup } from "./DeviceMockup";
 import { showcaseScreenshots, getShowcaseImageUrl } from "@/data/landing-data";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 const isWeb = Platform.OS === "web";
 
@@ -11,6 +13,8 @@ interface ScreenshotShowcaseProps {
 
 export function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
 
   if (isWeb) {
     return (
@@ -19,13 +23,13 @@ export function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
         data-testid="section-screenshot-showcase"
       >
         <Text
-          style={styles.showcaseTitle}
+          style={[styles.showcaseTitle, { color: lc.textPrimary }]}
           data-testid="text-showcase-title"
         >
           See ChefSpAIce in Action
         </Text>
         <Text
-          style={styles.showcaseSubtitle}
+          style={[styles.showcaseSubtitle, { color: lc.textSecondary }]}
           data-testid="text-showcase-subtitle"
         >
           Experience the app that transforms your kitchen
@@ -59,7 +63,7 @@ export function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
             />
           ))}
         </div>
-        <Text style={styles.hoverHint} data-testid="text-hover-hint">
+        <Text style={[styles.hoverHint, { color: lc.textHint }]} data-testid="text-hover-hint">
           Hover over a screen to explore
         </Text>
       </View>
@@ -72,13 +76,13 @@ export function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
       data-testid="section-screenshot-showcase"
     >
       <Text
-        style={styles.showcaseTitle}
+        style={[styles.showcaseTitle, { color: lc.textPrimary }]}
         data-testid="text-showcase-title"
       >
         See ChefSpAIce in Action
       </Text>
       <Text
-        style={styles.showcaseSubtitle}
+        style={[styles.showcaseSubtitle, { color: lc.textSecondary }]}
         data-testid="text-showcase-subtitle"
       >
         Experience the app that transforms your kitchen
@@ -119,13 +123,11 @@ const styles = StyleSheet.create({
   showcaseTitle: {
     fontSize: 32,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 12,
   },
   showcaseSubtitle: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 32,
     maxWidth: 500,
@@ -144,7 +146,6 @@ const styles = StyleSheet.create({
   },
   hoverHint: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginTop: 16,
     fontStyle: "italic",

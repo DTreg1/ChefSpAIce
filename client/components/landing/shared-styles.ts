@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { getLandingColors } from "./landing-colors";
 
 export const sharedStyles = StyleSheet.create({
   section: {
@@ -6,17 +7,23 @@ export const sharedStyles = StyleSheet.create({
     paddingVertical: 24,
     alignItems: "center",
   },
-  sectionTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.95)",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  sectionSubtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    marginBottom: 40,
-  },
 });
+
+export function getLandingTextStyles(isDark: boolean) {
+  const lc = getLandingColors(isDark);
+  return {
+    sectionTitle: {
+      fontSize: 32,
+      fontWeight: "700" as const,
+      color: lc.textPrimary,
+      textAlign: "center" as const,
+      marginBottom: 12,
+    },
+    sectionSubtitle: {
+      fontSize: 16,
+      color: lc.textSecondary,
+      textAlign: "center" as const,
+      marginBottom: 40,
+    },
+  };
+}

@@ -1,6 +1,6 @@
 import { StyleSheet, View, Text } from "react-native";
 import { StepCard } from "./StepCard";
-import { sharedStyles } from "./shared-styles";
+import { sharedStyles, getLandingTextStyles } from "./shared-styles";
 
 interface HowItWorksSectionProps {
   isWide: boolean;
@@ -8,13 +8,15 @@ interface HowItWorksSectionProps {
 }
 
 export function HowItWorksSection({ isWide, isDark }: HowItWorksSectionProps) {
+  const textStyles = getLandingTextStyles(isDark);
+
   return (
     <View style={sharedStyles.section} data-testid="section-how-it-works">
-      <Text style={sharedStyles.sectionTitle} data-testid="text-howitworks-title">
+      <Text style={textStyles.sectionTitle} data-testid="text-howitworks-title">
         How It Works
       </Text>
       <Text
-        style={sharedStyles.sectionSubtitle}
+        style={textStyles.sectionSubtitle}
         data-testid="text-howitworks-subtitle"
       >
         Get started in three simple steps

@@ -2,7 +2,7 @@ import { StyleSheet, View, Text } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { AppColors } from "@/constants/theme";
 import { FeatureCard } from "./FeatureCard";
-import { sharedStyles } from "./shared-styles";
+import { sharedStyles, getLandingTextStyles } from "./shared-styles";
 
 interface FeatureGridSectionProps {
   isWide: boolean;
@@ -10,13 +10,15 @@ interface FeatureGridSectionProps {
 }
 
 export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) {
+  const textStyles = getLandingTextStyles(isDark);
+
   return (
     <View style={sharedStyles.section} data-testid="section-features">
-      <Text style={sharedStyles.sectionTitle} data-testid="text-features-title">
+      <Text style={textStyles.sectionTitle} data-testid="text-features-title">
         Smart Features
       </Text>
       <Text
-        style={sharedStyles.sectionSubtitle}
+        style={textStyles.sectionSubtitle}
         data-testid="text-features-subtitle"
       >
         Everything you need to run an efficient kitchen

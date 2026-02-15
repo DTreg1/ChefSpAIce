@@ -1,4 +1,6 @@
 import { StyleSheet, View, Text } from "react-native";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 interface BenefitCardProps {
   icon: React.ReactNode;
@@ -15,20 +17,23 @@ export function BenefitCard({
   testId,
   isWide,
 }: BenefitCardProps) {
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
+
   return (
     <View
       style={[styles.benefitCard, isWide && styles.benefitCardWide]}
       data-testid={`card-benefit-${testId}`}
     >
-      <View style={styles.benefitIconContainer}>{icon}</View>
+      <View style={[styles.benefitIconContainer, { backgroundColor: lc.iconBgTint }]}>{icon}</View>
       <Text
-        style={styles.benefitTitle}
+        style={[styles.benefitTitle, { color: lc.textPrimary }]}
         data-testid={`text-benefit-title-${testId}`}
       >
         {title}
       </Text>
       <Text
-        style={styles.benefitDescription}
+        style={[styles.benefitDescription, { color: lc.textSecondary }]}
         data-testid={`text-benefit-desc-${testId}`}
       >
         {description}
@@ -50,7 +55,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -58,13 +62,11 @@ const styles = StyleSheet.create({
   benefitTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.95)",
     marginBottom: 8,
     textAlign: "center",
   },
   benefitDescription: {
     fontSize: 15,
-    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
     lineHeight: 24,
   },

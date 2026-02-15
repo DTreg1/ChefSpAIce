@@ -4,7 +4,9 @@ import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { AppColors } from "@/constants/theme";
 import { PricingCard } from "./PricingCard";
 import { SUBSCRIPTION_FEATURES } from "@/data/landing-data";
-import { sharedStyles } from "./shared-styles";
+import { sharedStyles, getLandingTextStyles } from "./shared-styles";
+import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 interface PricingSectionProps {
   isWide: boolean;
@@ -13,6 +15,9 @@ interface PricingSectionProps {
 
 export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
   const [isAnnual, setIsAnnual] = useState(false);
+  const { isDark } = useTheme();
+  const lc = getLandingColors(isDark);
+  const textStyles = getLandingTextStyles(isDark);
 
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return null;
@@ -20,11 +25,11 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
 
   return (
     <View style={sharedStyles.section} data-testid="section-pricing">
-      <Text style={sharedStyles.sectionTitle} data-testid="text-pricing-title">
+      <Text style={textStyles.sectionTitle} data-testid="text-pricing-title">
         Simple, Transparent Pricing
       </Text>
       <Text
-        style={sharedStyles.sectionSubtitle}
+        style={textStyles.sectionSubtitle}
         data-testid="text-pricing-subtitle"
       >
         One plan, everything included. Start with a 7-day free trial.
@@ -32,7 +37,7 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
 
       <View style={styles.billingToggleContainer}>
         <Pressable
-          style={styles.billingToggle}
+          style={[styles.billingToggle, { backgroundColor: lc.surfaceMedium, borderColor: lc.borderMedium }]}
           onPress={() => setIsAnnual(!isAnnual)}
           {...webAccessibilityProps(() => setIsAnnual(!isAnnual))}
           data-testid="toggle-billing-period"
@@ -48,6 +53,7 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
             <Text
               style={[
                 styles.billingOptionText,
+                { color: lc.textMuted },
                 !isAnnual && styles.billingOptionTextActive,
               ]}
             >
@@ -63,13 +69,14 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
             <Text
               style={[
                 styles.billingOptionText,
+                { color: lc.textMuted },
                 isAnnual && styles.billingOptionTextActive,
               ]}
             >
               Annually
             </Text>
-            <View style={styles.saveBadge}>
-              <Text style={styles.saveBadgeText}>Save 17%</Text>
+            <View style={[styles.saveBadge, !isAnnual && { backgroundColor: lc.surfaceMedium }]}>
+              <Text style={[styles.saveBadgeText, !isAnnual && { color: lc.textPrimary }]}>Save 17%</Text>
             </View>
           </View>
         </Pressable>
@@ -92,7 +99,7 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
         />
       </View>
 
-      <Text style={styles.trialText} data-testid="text-trial-info">
+      <Text style={[styles.trialText, { color: lc.textMuted }]} data-testid="text-trial-info">
         7-day free trial included
       </Text>
     </View>
@@ -106,11 +113,9 @@ const styles = StyleSheet.create({
   },
   billingToggle: {
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 30,
     padding: 4,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   billingOption: {
     flexDirection: "row",
@@ -126,7 +131,6 @@ const styles = StyleSheet.create({
   billingOptionText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.8)",
   },
   billingOptionTextActive: {
     color: "rgba(255, 255, 255, 0.95)",
@@ -145,7 +149,6 @@ const styles = StyleSheet.create({
   trialText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.85)",
     marginTop: 16,
     textAlign: "center" as const,
   },

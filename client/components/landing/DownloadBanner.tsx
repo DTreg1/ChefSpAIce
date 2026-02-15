@@ -13,15 +13,19 @@ import { GlassEffect } from "@/constants/theme";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/data/landing-data";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
+import { useTheme } from "@/hooks/useTheme";
+import { getLandingColors } from "./landing-colors";
 
 const DISMISS_KEY = "@chefspaice/download_banner_dismissed";
 
 function StoreBadge({
   store,
   onPress,
+  colors,
 }: {
   store: "ios" | "android";
   onPress: () => void;
+  colors: ReturnType<typeof getLandingColors>;
 }) {
   const isIOS = store === "ios";
   return (
@@ -42,10 +46,10 @@ function StoreBadge({
         color="#FFFFFF"
       />
       <View>
-        <Text style={styles.badgeLabel}>
+        <Text style={[styles.badgeLabel, { color: colors.textMuted }]}>
           {isIOS ? "Download on the" : "Get it on"}
         </Text>
-        <Text style={styles.badgeStore}>
+        <Text style={[styles.badgeStore, { color: colors.textPrimary }]}>
           {isIOS ? "App Store" : "Google Play"}
         </Text>
       </View>
@@ -61,6 +65,8 @@ export function DownloadBanner() {
     return false;
   });
   const { width } = useWindowDimensions();
+  const { isDark } = useTheme();
+  const colors = getLandingColors(isDark);
   const isWide = width > 600;
 
   const handleDismiss = () => {
@@ -91,10 +97,10 @@ export function DownloadBanner() {
             />
           </View>
           <View style={styles.textGroup}>
-            <Text style={styles.title} data-testid="text-download-title">
+            <Text style={[styles.title, { color: colors.textSecondary }]} data-testid="text-download-title">
               ChefSpAIce is a mobile-first app
             </Text>
-            <Text style={styles.subtitle} data-testid="text-download-subtitle">
+            <Text style={[styles.subtitle, { color: colors.textMuted }]} data-testid="text-download-subtitle">
               Get the best experience on your phone. Web app coming soon.
             </Text>
           </View>
@@ -102,8 +108,8 @@ export function DownloadBanner() {
 
         <View style={[styles.right, isWide && styles.rightWide]}>
           <View style={styles.badges}>
-            <StoreBadge store="ios" onPress={() => openStore("ios")} />
-            <StoreBadge store="android" onPress={() => openStore("android")} />
+            <StoreBadge store="ios" onPress={() => openStore("ios")} colors={colors} />
+            <StoreBadge store="android" onPress={() => openStore("android")} colors={colors} />
           </View>
         </View>
 
@@ -118,7 +124,7 @@ export function DownloadBanner() {
           accessibilityRole="button"
           accessibilityLabel="Dismiss download banner"
         >
-          <Feather name="x" size={16} color="rgba(255, 255, 255, 0.8)" />
+          <Feather name="x" size={16} color={colors.textHint} />
         </Pressable>
       </View>
     </View>
@@ -171,11 +177,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.9)",
   },
   subtitle: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
     marginTop: 2,
   },
   right: {
@@ -205,13 +209,11 @@ const styles = StyleSheet.create({
   },
   badgeLabel: {
     fontSize: 9,
-    color: "rgba(255, 255, 255, 0.8)",
     lineHeight: 11,
   },
   badgeStore: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#FFFFFF",
     lineHeight: 16,
   },
   dismissButton: {

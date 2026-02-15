@@ -2,7 +2,6 @@ import { StyleSheet, View, ScrollView, useWindowDimensions, Linking, Platform } 
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 import { logger } from "@/lib/logger";
-
 import {
   HeroSection,
   BenefitsSection,
@@ -45,8 +44,12 @@ export default function LandingScreen({
       <LinearGradient
         colors={
           isDark
-            ? ["#0A1F0F", "#0F1419", "#0A0F14"]
-            : ["#1A3D2A", "#1E4D35", "#0F2A1A"]
+            ? (Platform.OS === "web" 
+                ? ["oklch(24% 0.06 132)", "oklch(27.4% 0.072 132.109)", "oklch(21% 0.055 132)"]
+                : ["#1a3510", "#1f3a0e", "#152c0b"])
+            : (Platform.OS === "web"
+                ? ["oklch(92.5% 0.084 155.995)", "oklch(90% 0.075 155)", "oklch(94% 0.07 155)"]
+                : ["#d4eec8", "#c5e4b5", "#ddf4d4"])
         }
       />
 

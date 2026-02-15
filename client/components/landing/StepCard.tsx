@@ -1,6 +1,7 @@
 import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import { GlassCard } from "./GlassCard";
 import { AppColors } from "@/constants/theme";
+import { getLandingColors } from "./landing-colors";
 
 interface StepCardProps {
   number: string;
@@ -17,6 +18,8 @@ export function StepCard({
   isDark,
   isWide,
 }: StepCardProps) {
+  const lc = getLandingColors(isDark);
+
   return (
     <GlassCard
       style={[styles.stepCard, isWide && styles.stepCardWide] as ViewStyle[]}
@@ -27,13 +30,13 @@ export function StepCard({
       </View>
       <View style={styles.stepContent}>
         <Text
-          style={[styles.stepTitle, { color: "rgba(255, 255, 255, 0.95)" }]}
+          style={[styles.stepTitle, { color: lc.textPrimary }]}
           data-testid={`text-step-title-${number}`}
         >
           {title}
         </Text>
         <Text
-          style={[styles.stepDescription, { color: "rgba(255, 255, 255, 0.9)" }]}
+          style={[styles.stepDescription, { color: lc.textSecondary }]}
           data-testid={`text-step-desc-${number}`}
         >
           {description}
