@@ -326,6 +326,7 @@ export const userInventoryItems = pgTable(
     notes: text("notes"),
     imageUri: text("image_uri"),
     fdcId: integer("fdc_id"),
+    servingSize: text("serving_size"),
     addedAt: timestamp("added_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     deletedAt: timestamp("deleted_at"),
@@ -656,6 +657,7 @@ export const syncInventoryItemSchema = z.object({
   notes: z.string().optional().nullable(),
   imageUri: z.string().optional().nullable(),
   fdcId: z.number().optional().nullable(),
+  servingSize: z.string().optional().nullable(),
   updatedAt: z.string().optional(),
   deletedAt: z.string().optional().nullable(),
 });
