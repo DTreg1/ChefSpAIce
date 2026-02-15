@@ -413,37 +413,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    if (
-      state.user &&
-      state.token &&
-      !state.isLoading &&
-      state.user.hasCompletedOnboarding === false
-    ) {
-      (async () => {
-        try {
-          const needsOnboarding = await storage.needsOnboarding();
-          if (!needsOnboarding) {
-            logger.log("[Auth] Backward-compat: local storage says onboarding complete, syncing to server");
-            await apiClient.post<void>("/api/auth/complete-onboarding");
-            setState((prev) => ({
-              ...prev,
-              user: prev.user ? { ...prev.user, hasCompletedOnboarding: true } : null,
-            }));
-            const storedData = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-            if (storedData) {
-              const parsed: StoredAuthData = JSON.parse(storedData);
-              parsed.user.hasCompletedOnboarding = true;
-              await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
-            }
-          }
-        } catch (err) {
-          logger.warn("[Auth] Backward-compat migration failed (non-critical):", err);
-        }
-      })();
-    }
-  }, [state.user?.id, state.user?.hasCompletedOnboarding, state.isLoading]);
-
   const signInWithApple = useCallback(
     async (selectedTier?: "pro") => {
       const result = await appleSignInApi(promptAppleWebAsync, selectedTier);

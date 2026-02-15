@@ -107,7 +107,7 @@ export default function InventoryScreen() {
 
   const handleDismissExpiringModal = async () => {
     setShowExpiringModal(false);
-    await AsyncStorage.setItem("@trial_expiring_modal_dismissed", "true");
+    await AsyncStorage.setItem("@chefspaice/trial_modal_dismissed", "true");
   };
 
 

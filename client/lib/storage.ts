@@ -1373,7 +1373,7 @@ export function formatDate(dateString: string): string {
   });
 }
 
-const SWIPE_HINT_KEY = "@chefspaice_swipe_hint_shown";
+const SWIPE_HINT_KEY = "@chefspaice/swipe_hint_shown";
 
 export async function hasSeenSwipeHint(): Promise<boolean> {
   const val = await AsyncStorage.getItem(SWIPE_HINT_KEY);

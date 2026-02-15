@@ -37,7 +37,7 @@ export function useFunFact(items: FoodItem[], nutritionTotals: NutritionTotals) 
 
     if (!forceRefresh) {
       try {
-        const cached = await AsyncStorage.getItem("funFact");
+        const cached = await AsyncStorage.getItem("@chefspaice/fun_fact");
         if (cached) {
           const parsed = JSON.parse(cached);
           const elapsed = Date.now() - parsed.timestamp;
@@ -67,7 +67,7 @@ export function useFunFact(items: FoodItem[], nutritionTotals: NutritionTotals) 
       setFunFact(data.fact);
       setFunFactTimestamp(timestamp);
       await AsyncStorage.setItem(
-        "funFact",
+        "@chefspaice/fun_fact",
         JSON.stringify({ fact: data.fact, timestamp }),
       );
     } catch (error) {

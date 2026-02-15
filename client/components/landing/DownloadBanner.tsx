@@ -14,7 +14,7 @@ import { APP_STORE_URL, PLAY_STORE_URL } from "@/data/landing-data";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
 
-const DISMISS_KEY = "chefspaice_download_banner_dismissed";
+const DISMISS_KEY = "@chefspaice/download_banner_dismissed";
 
 function StoreBadge({
   store,

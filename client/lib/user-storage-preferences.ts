@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "@/lib/logger";
 
-const STORAGE_PREFS_KEY = "@user_storage_preferences";
-const PREFS_VERSION_KEY = "@user_storage_preferences_version";
+const STORAGE_PREFS_KEY = "@chefspaice/user_storage_preferences";
+const PREFS_VERSION_KEY = "@chefspaice/user_storage_preferences_version";
 const CURRENT_VERSION = 1;
 
 interface StorageChoiceRecord {

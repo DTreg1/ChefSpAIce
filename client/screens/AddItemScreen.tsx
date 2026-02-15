@@ -250,7 +250,7 @@ export default function AddItemScreen() {
     foodName: name,
   });
 
-  const STORAGE_PREFS_KEY = "@storage_preferences";
+  const STORAGE_PREFS_KEY = "@chefspaice/storage_preferences";
 
   useEffect(() => {
     const loadStorageLocations = async () => {
