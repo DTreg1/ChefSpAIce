@@ -12,14 +12,21 @@ name: Onboarding Flow
 - launchApp:
     clearState: true
 
-- evalScript: "console.log('LOG: App launched with cleared state')"
+- evalScript: "console.log('LOG: App launched with cleared state, waiting for app to stabilize')"
+
+- waitForAnimationToEnd
+- wait: 3000
+
+- evalScript: "console.log('LOG: App stabilized, waiting for auth screen')"
 
 - extendedWaitUntil:
     visible:
       id: "input-email"
     timeout: 15000
 
-- evalScript: "console.log('LOG: Auth screen visible, creating new account')"
+- waitForAnimationToEnd
+
+- evalScript: "console.log('LOG: Auth screen visible, switching to sign up mode')"
 
 - tapOn:
     text: "Create Account"
@@ -32,6 +39,8 @@ name: Onboarding Flow
 - tapOn:
     id: "button-switch-auth-mode"
     optional: true
+
+- waitForAnimationToEnd
 
 - extendedWaitUntil:
     visible:
@@ -60,12 +69,17 @@ name: Onboarding Flow
 - tapOn:
     id: "button-auth-submit"
 
+- waitForAnimationToEnd
+- wait: 2000
+
 - evalScript: "console.log('LOG: Account created, waiting for onboarding')"
 
 - extendedWaitUntil:
     visible:
       id: "onboarding-welcome-step"
     timeout: 15000
+
+- waitForAnimationToEnd
 
 - assertVisible:
     id: "onboarding-welcome-step"
@@ -80,11 +94,15 @@ name: Onboarding Flow
     text: "Get Started"
     optional: true
 
+- waitForAnimationToEnd
+
 - evalScript: "console.log('LOG: Tapped Get Started, proceeding through onboarding steps')"
 
 - tapOn:
     text: "Next"
     optional: true
+
+- waitForAnimationToEnd
 
 - evalScript: "console.log('LOG: Onboarding step 2')"
 
@@ -92,11 +110,15 @@ name: Onboarding Flow
     text: "Continue"
     optional: true
 
+- waitForAnimationToEnd
+
 - evalScript: "console.log('LOG: Onboarding step 3')"
 
 - tapOn:
     text: "Next"
     optional: true
+
+- waitForAnimationToEnd
 
 - evalScript: "console.log('LOG: Onboarding step 4')"
 
@@ -104,27 +126,39 @@ name: Onboarding Flow
     text: "Continue"
     optional: true
 
+- waitForAnimationToEnd
+
 - evalScript: "console.log('LOG: Onboarding step 5')"
 
 - tapOn:
     text: "Next"
     optional: true
 
+- waitForAnimationToEnd
+
 - tapOn:
     text: "Skip"
     optional: true
+
+- waitForAnimationToEnd
 
 - tapOn:
     text: "Continue"
     optional: true
 
+- waitForAnimationToEnd
+
 - tapOn:
     text: "Get Started"
     optional: true
 
+- waitForAnimationToEnd
+
 - tapOn:
     text: "Done"
     optional: true
+
+- waitForAnimationToEnd
 
 - evalScript: "console.log('LOG: Onboarding steps completed, waiting for main tabs')"
 
