@@ -143,7 +143,7 @@ router.post("/apple", validateBody(appleAuthSchema), async (req, res, next) => {
           const [userResult] = await tx
             .insert(users)
             .values({
-              email: appleUserId + '@apple.privaterelay',
+              email: appleUserId + '@noreply.chefspaice.com',
               primaryProvider: 'apple',
               primaryProviderId: appleUserId,
             })
@@ -326,7 +326,7 @@ router.post("/google", validateBody(googleAuthSchema), async (req, res, next) =>
           const [userResult] = await tx
             .insert(users)
             .values({
-              email: googleUserId + '@google.privaterelay',
+              email: googleUserId + '@noreply.chefspaice.com',
               profileImageUrl: picture,
               primaryProvider: 'google',
               primaryProviderId: googleUserId,
