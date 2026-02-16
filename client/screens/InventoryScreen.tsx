@@ -101,9 +101,6 @@ export default function InventoryScreen() {
 
   const [showExpiringModal, setShowExpiringModal] = useState(false);
 
-  useEffect(() => {
-    // No trial milestone checks needed
-  }, [hasActiveSubscription]);
 
   const handleDismissExpiringModal = async () => {
     setShowExpiringModal(false);
@@ -142,6 +139,11 @@ export default function InventoryScreen() {
   }, []);
 
   useEffect(() => {
+    loadItems(true);
+    loadStorageLocations();
+  }, [loadItems, loadStorageLocations]);
+
+  useEffect(() => {
     const unsubscribeFocus = navigation.addListener("focus", () => {
       if (hasLoadedRef.current) {
         loadItems(false);
@@ -156,11 +158,6 @@ export default function InventoryScreen() {
       unsubscribeBlur();
     };
   }, [navigation, loadItems, loadStorageLocations, collapseSearch]);
-
-  useEffect(() => {
-    loadItems(true);
-    loadStorageLocations();
-  }, []);
 
   const [showSwipeHint, setShowSwipeHint] = useState(false);
   const [recentlyDeletedCount, setRecentlyDeletedCount] = useState(0);
@@ -401,7 +398,7 @@ export default function InventoryScreen() {
     );
   };
 
-  const renderGroupedSection = ({
+  const renderGroupedSection = useCallback(({
     item,
     index,
   }: {
@@ -432,7 +429,7 @@ export default function InventoryScreen() {
         />
       </View>
     );
-  };
+  }, [collapsedSections, toggleSection, handleMarkAsConsumed, handleMarkAsWasted, handleItemPress, theme, showSwipeHint]);
 
   const renderEmptyState = () => {
     if (loading) {

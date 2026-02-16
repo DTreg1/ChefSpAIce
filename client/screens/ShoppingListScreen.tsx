@@ -67,7 +67,7 @@ export default function ShoppingListScreen() {
     setRefreshing(false);
   };
 
-  const handleToggleItem = async (id: string) => {
+  const handleToggleItem = useCallback(async (id: string) => {
     const updatedItems = items.map((item) =>
       item.id === id ? { ...item, isChecked: !item.isChecked } : item,
     );
@@ -77,13 +77,13 @@ export default function ShoppingListScreen() {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-  };
+  }, [items]);
 
-  const handleDeleteItem = async (id: string) => {
+  const handleDeleteItem = useCallback(async (id: string) => {
     const updatedItems = items.filter((item) => item.id !== id);
     setItems(updatedItems);
     await storage.setShoppingList(updatedItems);
-  };
+  }, [items]);
 
   const handleClearChecked = () => {
     const checkedCount = items.filter((i) => i.isChecked).length;
@@ -129,7 +129,7 @@ export default function ShoppingListScreen() {
   const uncheckedItems = items.filter((i) => !i.isChecked);
   const checkedItems = items.filter((i) => i.isChecked);
 
-  const renderItem = ({ item }: { item: ShoppingListItem }) => (
+  const renderItem = useCallback(({ item }: { item: ShoppingListItem }) => (
     <Animated.View
       entering={FadeIn}
       exiting={FadeOut}
@@ -203,7 +203,7 @@ export default function ShoppingListScreen() {
         </Pressable>
       </GlassCard>
     </Animated.View>
-  );
+  ), [theme, handleToggleItem, handleDeleteItem]);
 
   const renderEmptyState = () => (
     <EmptyState

@@ -48,39 +48,42 @@ export default function SelectRecipeScreen() {
     loadRecipes();
   }, [loadRecipes]);
 
-  const handleSelectRecipe = async (recipe: Recipe) => {
-    const mealPlans = await storage.getMealPlans();
-    const existingPlanIndex = mealPlans.findIndex((p) => p.date === date);
+  const handleSelectRecipe = useCallback(
+    async (recipe: Recipe) => {
+      const mealPlans = await storage.getMealPlans();
+      const existingPlanIndex = mealPlans.findIndex((p) => p.date === date);
 
-    if (existingPlanIndex !== -1) {
-      const existingPlan = mealPlans[existingPlanIndex];
-      const updatedPlan: MealPlan = {
-        ...existingPlan,
-        meals: {
-          ...existingPlan.meals,
-          [mealType]: recipe.id,
-        },
-      };
-      mealPlans[existingPlanIndex] = updatedPlan;
-      await storage.setMealPlans(mealPlans);
-    } else {
-      const newPlan: MealPlan = {
-        id: `mp_${Date.now()}`,
-        date,
-        meals: {
-          [mealType]: recipe.id,
-        },
-      };
-      await storage.addMealPlan(newPlan);
-    }
+      if (existingPlanIndex !== -1) {
+        const existingPlan = mealPlans[existingPlanIndex];
+        const updatedPlan: MealPlan = {
+          ...existingPlan,
+          meals: {
+            ...existingPlan.meals,
+            [mealType]: recipe.id,
+          },
+        };
+        mealPlans[existingPlanIndex] = updatedPlan;
+        await storage.setMealPlans(mealPlans);
+      } else {
+        const newPlan: MealPlan = {
+          id: `mp_${Date.now()}`,
+          date,
+          meals: {
+            [mealType]: recipe.id,
+          },
+        };
+        await storage.addMealPlan(newPlan);
+      }
 
-    try {
-      const Haptics = await import("expo-haptics");
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+      try {
+        const Haptics = await import("expo-haptics");
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
 
-    navigation.goBack();
-  };
+      navigation.goBack();
+    },
+    [date, mealType, navigation],
+  );
 
   const filteredRecipes = recipes.filter(
     (recipe) =>
@@ -88,71 +91,74 @@ export default function SelectRecipeScreen() {
       recipe.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const renderRecipeItem = ({ item }: { item: Recipe }) => {
-    const imageUrl = item.imageUri
-      ? item.imageUri.startsWith("http") ||
-        item.imageUri.startsWith("file://") ||
-        item.imageUri.startsWith("data:")
-        ? item.imageUri
-        : `${getApiUrl()}${item.imageUri}`
-      : null;
+  const renderRecipeItem = useCallback(
+    ({ item }: { item: Recipe }) => {
+      const imageUrl = item.imageUri
+        ? item.imageUri.startsWith("http") ||
+          item.imageUri.startsWith("file://") ||
+          item.imageUri.startsWith("data:")
+          ? item.imageUri
+          : `${getApiUrl()}${item.imageUri}`
+        : null;
 
-    return (
-      <Pressable
-        style={styles.recipeItem}
-        onPress={() => handleSelectRecipe(item)}
-        accessibilityRole="button"
-        accessibilityLabel={`Select recipe ${item.title}`}
-      >
-        <GlassCard style={styles.recipeCard}>
-          <View style={styles.recipeContent}>
-            {imageUrl ? (
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.recipeImage}
-                contentFit="cover"
-                accessibilityLabel={`Photo of ${item.title}`}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.recipeImage,
-                  styles.placeholderImage,
-                  { backgroundColor: themeStyle.glass.background },
-                ]}
-              >
-                <Feather
-                  name="book-open"
-                  size={24}
-                  color={theme.textSecondary}
+      return (
+        <Pressable
+          style={styles.recipeItem}
+          onPress={() => handleSelectRecipe(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Select recipe ${item.title}`}
+        >
+          <GlassCard style={styles.recipeCard}>
+            <View style={styles.recipeContent}>
+              {imageUrl ? (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={styles.recipeImage}
+                  contentFit="cover"
+                  accessibilityLabel={`Photo of ${item.title}`}
                 />
-              </View>
-            )}
-            <View style={styles.recipeInfo}>
-              <ThemedText type="body" numberOfLines={2}>
-                {item.title}
-              </ThemedText>
-              <View style={styles.recipeMeta}>
-                <Feather name="clock" size={14} color={theme.textSecondary} />
-                <ThemedText type="caption">
-                  {item.prepTime + item.cookTime} min
-                </ThemedText>
-                {item.isFavorite ? (
+              ) : (
+                <View
+                  style={[
+                    styles.recipeImage,
+                    styles.placeholderImage,
+                    { backgroundColor: themeStyle.glass.background },
+                  ]}
+                >
                   <Feather
-                    name="heart"
-                    size={14}
-                    color={AppColors.error}
-                    style={{ marginLeft: Spacing.sm }}
+                    name="book-open"
+                    size={24}
+                    color={theme.textSecondary}
                   />
-                ) : null}
+                </View>
+              )}
+              <View style={styles.recipeInfo}>
+                <ThemedText type="body" numberOfLines={2}>
+                  {item.title}
+                </ThemedText>
+                <View style={styles.recipeMeta}>
+                  <Feather name="clock" size={14} color={theme.textSecondary} />
+                  <ThemedText type="caption">
+                    {item.prepTime + item.cookTime} min
+                  </ThemedText>
+                  {item.isFavorite ? (
+                    <Feather
+                      name="heart"
+                      size={14}
+                      color={AppColors.error}
+                      style={{ marginLeft: Spacing.sm }}
+                    />
+                  ) : null}
+                </View>
               </View>
+              <Feather name="plus-circle" size={24} color={AppColors.primary} />
             </View>
-            <Feather name="plus-circle" size={24} color={AppColors.primary} />
-          </View>
-        </GlassCard>
-      </Pressable>
-    );
-  };
+          </GlassCard>
+        </Pressable>
+      );
+    },
+    [handleSelectRecipe, themeStyle, theme],
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>

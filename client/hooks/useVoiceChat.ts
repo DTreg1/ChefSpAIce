@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   useAudioRecorder,
   RecordingPresets,
@@ -44,6 +44,14 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const aiVoice = useAIVoice();
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   const updateState = useCallback((updates: Partial<VoiceChatState>) => {
     if (isMountedRef.current) {

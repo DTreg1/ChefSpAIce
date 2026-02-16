@@ -78,7 +78,7 @@ function getMealTypeFromTime(): { mealType: string; greeting: string } {
 
 export default function GenerateRecipeScreen() {
   const insets = useSafeAreaInsets();
-  const { theme, style: themeStyle } = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation<RecipesNavigation>();
   const route = useRoute<RouteProp<RecipesStackParamList, "GenerateRecipe">>();
   const customSettings = route.params?.customSettings;

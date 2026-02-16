@@ -336,142 +336,154 @@ export default function RecipesScreen() {
     loadData();
   };
 
-  const renderRecipeCard = ({
-    item: recipe,
-    index,
-  }: {
-    item: Recipe;
-    index: number;
-  }) => {
-    const matchPercentage = getMatchPercentage(recipe);
-    const hasCookware = canMakeWithCookware(recipe);
-    const hasCookwareData =
-      recipe.requiredCookware && recipe.requiredCookware.length > 0;
+  const renderRecipeCard = useCallback(
+    ({
+      item: recipe,
+      index,
+    }: {
+      item: Recipe;
+      index: number;
+    }) => {
+      const matchPercentage = getMatchPercentage(recipe);
+      const hasCookware = canMakeWithCookware(recipe);
+      const hasCookwareData =
+        recipe.requiredCookware && recipe.requiredCookware.length > 0;
 
-    return (
-      <Animated.View
-        entering={FadeIn.delay(index * 50)}
-        style={styles.cardWrapper}
-        testID={`card-recipe-${recipe.id}`}
-        {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})}
-        accessibilityLabel={`${recipe.title}, ${getMatchPercentage(recipe)}% ingredient match`}
-      >
-        <GlassCard
-          style={[styles.recipeCard, isTablet && selectedRecipeId === recipe.id ? { borderColor: AppColors.primary, borderWidth: 2 } : undefined]}
-          onPress={() => {
-            if (isTablet) {
-              setSelectedRecipeId(recipe.id);
-            } else {
-              navigation.navigate("RecipeDetail", { recipeId: recipe.id });
-            }
-          }}
-          accessibilityLabel={`${recipe.title}, ${matchPercentage}% ingredient match`}
-          accessibilityHint="Opens recipe details"
+      return (
+        <Animated.View
+          entering={FadeIn.delay(index * 50)}
+          style={styles.cardWrapper}
+          testID={`card-recipe-${recipe.id}`}
+          {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})}
+          accessibilityLabel={`${recipe.title}, ${getMatchPercentage(recipe)}% ingredient match`}
         >
-          {recipe.imageUri ? (
-            <View
-              style={styles.recipeImageContainer}
-              testID={`container-recipe-image-${recipe.id}`}
-            >
-              <Image
-                source={{ uri: recipe.imageUri }}
-                style={styles.recipeImage}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                accessibilityLabel={`Photo of ${recipe.title}`}
-                testID={`img-recipe-${recipe.id}`}
-              />
-              {hasCookwareData && !hasCookware ? (
-                <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">
-                  <Feather
-                    name="alert-circle"
-                    size={14}
-                    color={AppColors.warning}
-                  />
-                </View>
-              ) : null}
-            </View>
-          ) : (
-            <View
-              style={[
-                styles.recipePlaceholder,
-                {
-                  backgroundColor: themeStyle.glass.background,
-                  borderWidth: 1,
-                  borderColor: themeStyle.glass.borderSubtle,
-                },
-              ]}
-            >
-              <Feather name="book-open" size={32} color={theme.textSecondary} />
-              {hasCookwareData && !hasCookware ? (
-                <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">
-                  <Feather
-                    name="alert-circle"
-                    size={14}
-                    color={AppColors.warning}
-                  />
-                </View>
-              ) : null}
-            </View>
-          )}
-          <View style={styles.recipeContent}>
-            <ThemedText
-              type="small"
-              numberOfLines={2}
-              style={styles.recipeTitle}
-            >
-              {recipe.title}
-            </ThemedText>
-            <View style={styles.recipeFooter}>
+          <GlassCard
+            style={[styles.recipeCard, isTablet && selectedRecipeId === recipe.id ? { borderColor: AppColors.primary, borderWidth: 2 } : undefined]}
+            onPress={() => {
+              if (isTablet) {
+                setSelectedRecipeId(recipe.id);
+              } else {
+                navigation.navigate("RecipeDetail", { recipeId: recipe.id });
+              }
+            }}
+            accessibilityLabel={`${recipe.title}, ${matchPercentage}% ingredient match`}
+            accessibilityHint="Opens recipe details"
+          >
+            {recipe.imageUri ? (
+              <View
+                style={styles.recipeImageContainer}
+                testID={`container-recipe-image-${recipe.id}`}
+              >
+                <Image
+                  source={{ uri: recipe.imageUri }}
+                  style={styles.recipeImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  accessibilityLabel={`Photo of ${recipe.title}`}
+                  testID={`img-recipe-${recipe.id}`}
+                />
+                {hasCookwareData && !hasCookware ? (
+                  <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">
+                    <Feather
+                      name="alert-circle"
+                      size={14}
+                      color={AppColors.warning}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            ) : (
               <View
                 style={[
-                  styles.matchBadge,
+                  styles.recipePlaceholder,
                   {
-                    backgroundColor:
-                      matchPercentage >= 80
-                        ? AppColors.success
-                        : matchPercentage >= 50
-                          ? AppColors.warning
-                          : AppColors.secondary,
+                    backgroundColor: themeStyle.glass.background,
+                    borderWidth: 1,
+                    borderColor: themeStyle.glass.borderSubtle,
                   },
                 ]}
               >
-                <ThemedText type="caption" style={[styles.matchText, { color: theme.buttonText }]}>
-                  {matchPercentage}% match
-                </ThemedText>
-              </View>
-              <View style={styles.cardIcons}>
-                {hasCookwareData ? (
-                  <Feather
-                    name="tool"
-                    size={14}
-                    color={hasCookware ? AppColors.success : AppColors.warning}
-                    style={{ marginRight: Spacing.xs }}
-                  />
+                <Feather name="book-open" size={32} color={theme.textSecondary} />
+                {hasCookwareData && !hasCookware ? (
+                  <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">
+                    <Feather
+                      name="alert-circle"
+                      size={14}
+                      color={AppColors.warning}
+                    />
+                  </View>
                 ) : null}
-                <Pressable
-                  onPress={() => handleToggleFavorite(recipe)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}, ${recipe.title}`}
-                  accessibilityState={{ selected: recipe.isFavorite }}
+              </View>
+            )}
+            <View style={styles.recipeContent}>
+              <ThemedText
+                type="small"
+                numberOfLines={2}
+                style={styles.recipeTitle}
+              >
+                {recipe.title}
+              </ThemedText>
+              <View style={styles.recipeFooter}>
+                <View
+                  style={[
+                    styles.matchBadge,
+                    {
+                      backgroundColor:
+                        matchPercentage >= 80
+                          ? AppColors.success
+                          : matchPercentage >= 50
+                            ? AppColors.warning
+                            : AppColors.secondary,
+                    },
+                  ]}
                 >
-                  <Feather
-                    name={recipe.isFavorite ? "heart" : "heart"}
-                    size={18}
-                    color={
-                      recipe.isFavorite ? AppColors.error : theme.textSecondary
-                    }
-                    style={{ opacity: recipe.isFavorite ? 1 : 0.5 }}
-                  />
-                </Pressable>
+                  <ThemedText type="caption" style={[styles.matchText, { color: theme.buttonText }]}>
+                    {matchPercentage}% match
+                  </ThemedText>
+                </View>
+                <View style={styles.cardIcons}>
+                  {hasCookwareData ? (
+                    <Feather
+                      name="tool"
+                      size={14}
+                      color={hasCookware ? AppColors.success : AppColors.warning}
+                      style={{ marginRight: Spacing.xs }}
+                    />
+                  ) : null}
+                  <Pressable
+                    onPress={() => handleToggleFavorite(recipe)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}, ${recipe.title}`}
+                    accessibilityState={{ selected: recipe.isFavorite }}
+                  >
+                    <Feather
+                      name={recipe.isFavorite ? "heart" : "heart"}
+                      size={18}
+                      color={
+                        recipe.isFavorite ? AppColors.error : theme.textSecondary
+                      }
+                      style={{ opacity: recipe.isFavorite ? 1 : 0.5 }}
+                    />
+                  </Pressable>
+                </View>
               </View>
             </View>
-          </View>
-        </GlassCard>
-      </Animated.View>
-    );
-  };
+          </GlassCard>
+        </Animated.View>
+      );
+    },
+    [
+      getMatchPercentage,
+      canMakeWithCookware,
+      theme,
+      themeStyle,
+      isTablet,
+      selectedRecipeId,
+      navigation,
+      handleToggleFavorite,
+    ],
+  );
 
   const renderEmptyState = () => {
     if (loading) {

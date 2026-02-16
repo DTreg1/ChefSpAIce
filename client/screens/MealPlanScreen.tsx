@@ -139,25 +139,30 @@ export default function MealPlanScreen() {
     return recipes.find((r) => r.id === recipeId);
   };
 
-  const handleRemoveMeal = async (date: Date, slotId: string) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    const planIndex = mealPlans.findIndex((p) => p.date === dateStr);
-    if (planIndex === -1) return;
-
-    const updatedPlans = [...mealPlans];
-    const updatedPlan = { ...updatedPlans[planIndex] };
-    updatedPlan.meals = { ...updatedPlan.meals };
-    delete updatedPlan.meals[slotId];
-    updatedPlans[planIndex] = updatedPlan;
-    await storage.setMealPlans(updatedPlans);
-    setMealPlans(updatedPlans);
+  const removeMealFromPlans = useCallback(async (dateStr: string, slotId: string) => {
+    setMealPlans((prev) => {
+      const planIndex = prev.findIndex((p) => p.date === dateStr);
+      if (planIndex === -1) return prev;
+      const updatedPlans = [...prev];
+      const updatedPlan = { ...updatedPlans[planIndex] };
+      updatedPlan.meals = { ...updatedPlan.meals };
+      delete updatedPlan.meals[slotId];
+      updatedPlans[planIndex] = updatedPlan;
+      storage.setMealPlans(updatedPlans);
+      return updatedPlans;
+    });
     setActionSheet({
       visible: false,
       recipe: null,
       slotId: "",
       date: new Date(),
     });
-  };
+  }, []);
+
+  const handleRemoveMeal = useCallback(async (date: Date, slotId: string) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    await removeMealFromPlans(dateStr, slotId);
+  }, [removeMealFromPlans]);
 
   const handleMealPress = (date: Date, slotId: string, recipe: Recipe) => {
     setActionSheet({ visible: true, recipe, slotId, date });
@@ -177,9 +182,8 @@ export default function MealPlanScreen() {
   };
 
   const handleRemoveMealByDateStr = useCallback(async (dateStr: string, slotId: string) => {
-    const date = new Date(dateStr + "T00:00:00");
-    await handleRemoveMeal(date, slotId);
-  }, [mealPlans]);
+    await removeMealFromPlans(dateStr, slotId);
+  }, [removeMealFromPlans]);
 
   const handleSwapRecipeByDateStr = useCallback((dateStr: string, slotId: string) => {
     navigation.navigate("SelectRecipe", {
@@ -265,63 +269,66 @@ export default function MealPlanScreen() {
     [mealSlots, selectedDay, mealPlans, recipes],
   );
 
-  const renderDraggableSlot = ({
-    item,
-    drag,
-    isActive,
-  }: RenderItemParams<DraggableSlotItem>) => {
-    return (
-      <ScaleDecorator>
-        <View
-          style={[
-            styles.draggableSlotWrapper,
-            isActive && styles.draggableSlotActive,
-          ]}
-        >
-          <View style={styles.slotRow}>
-            <Pressable
-              onLongPress={drag}
-              delayLongPress={150}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              style={[
-                styles.dragHandle,
-                {
-                  backgroundColor: themeStyle.glass.background,
-                  borderColor: themeStyle.glass.border,
-                  borderRadius: themeStyle.glassEffect.borderRadius.md,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Drag to reorder ${item.slotName}`}
-              accessibilityHint="Long press and drag to move this meal to a different slot"
-              testID={`drag-handle-${item.slotId}`}
-            >
-              <Feather
-                name="menu"
-                size={16}
-                color={theme.textSecondary}
-              />
-            </Pressable>
-            <View style={styles.slotCardContent}>
-              <MealPlanSlotCard
-                slot={{
-                  id: item.slotId,
-                  name: item.slotName,
-                  icon: item.slotIcon,
-                }}
-                recipe={item.recipe}
-                selectedDay={selectedDay}
-                onMealPress={handleMealPress}
-                onAddMeal={handleAddMeal}
-                onRemoveMeal={handleRemoveMealByDateStr}
-                onSwapRecipe={handleSwapRecipeByDateStr}
-              />
+  const renderDraggableSlot = useCallback(
+    ({
+      item,
+      drag,
+      isActive,
+    }: RenderItemParams<DraggableSlotItem>) => {
+      return (
+        <ScaleDecorator>
+          <View
+            style={[
+              styles.draggableSlotWrapper,
+              isActive && styles.draggableSlotActive,
+            ]}
+          >
+            <View style={styles.slotRow}>
+              <Pressable
+                onLongPress={drag}
+                delayLongPress={150}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                style={[
+                  styles.dragHandle,
+                  {
+                    backgroundColor: themeStyle.glass.background,
+                    borderColor: themeStyle.glass.border,
+                    borderRadius: themeStyle.glassEffect.borderRadius.md,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Drag to reorder ${item.slotName}`}
+                accessibilityHint="Long press and drag to move this meal to a different slot"
+                testID={`drag-handle-${item.slotId}`}
+              >
+                <Feather
+                  name="menu"
+                  size={16}
+                  color={theme.textSecondary}
+                />
+              </Pressable>
+              <View style={styles.slotCardContent}>
+                <MealPlanSlotCard
+                  slot={{
+                    id: item.slotId,
+                    name: item.slotName,
+                    icon: item.slotIcon,
+                  }}
+                  recipe={item.recipe}
+                  selectedDay={selectedDay}
+                  onMealPress={handleMealPress}
+                  onAddMeal={handleAddMeal}
+                  onRemoveMeal={handleRemoveMealByDateStr}
+                  onSwapRecipe={handleSwapRecipeByDateStr}
+                />
+              </View>
             </View>
           </View>
-        </View>
-      </ScaleDecorator>
-    );
-  };
+        </ScaleDecorator>
+      );
+    },
+    [themeStyle, theme, selectedDay, handleMealPress, handleAddMeal, handleRemoveMealByDateStr, handleSwapRecipeByDateStr],
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>

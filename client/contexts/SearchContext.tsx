@@ -13,7 +13,6 @@ interface SearchContextType {
   closeSearch: (screenKey: string) => void;
   collapseSearch: (screenKey: string) => void;
   clearSearch: (screenKey: string) => void;
-  clearAllSearches: () => void;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -89,10 +88,6 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  const clearAllSearches = useCallback(() => {
-    setSearchStates({});
-  }, []);
-
   const value = useMemo(() => ({
     getSearchQuery,
     setSearchQuery,
@@ -101,8 +96,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     closeSearch,
     collapseSearch,
     clearSearch,
-    clearAllSearches,
-  }), [getSearchQuery, setSearchQuery, isSearchOpen, openSearch, closeSearch, collapseSearch, clearSearch, clearAllSearches]);
+  }), [getSearchQuery, setSearchQuery, isSearchOpen, openSearch, closeSearch, collapseSearch, clearSearch]);
 
   return (
     <SearchContext.Provider value={value}>
