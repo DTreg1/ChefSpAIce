@@ -1,5 +1,5 @@
 import { View, StyleSheet, Dimensions } from "react-native";
-import { SkeletonBox } from "@/components/SkeletonBox";
+import { SkeletonBox } from "@/components/Skeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
@@ -7,7 +7,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 function InventoryItemSkeleton() {
-  const { theme, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
   return (
@@ -40,7 +40,7 @@ function InventoryItemSkeleton() {
 }
 
 function InventorySectionSkeleton() {
-  const { theme, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
 
   return (
     <View

@@ -114,7 +114,6 @@
     "helmet": "^8.1.0",
     "http-proxy-middleware": "^3.0.5",
     "ioredis": "^5.9.2",
-    "moti": "^0.30.0",
     "openai": "^6.10.0",
     "pg": "^8.16.3",
     "react": "^19.1.0",

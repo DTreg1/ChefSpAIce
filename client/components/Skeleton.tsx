@@ -1,16 +1,66 @@
-import React from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
-import { Skeleton as MotiSkeleton } from "@/components/AccessibleSkeleton";
+import Animated, {
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  useSharedValue,
+  useReducedMotion,
+} from "react-native-reanimated";
+import { useEffect } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+
+interface SkeletonBoxProps {
+  width: number | string;
+  height: number;
+  borderRadius?: number;
+  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
+}
+
+export function SkeletonBox({
+  width,
+  height,
+  borderRadius = 8,
+  style: extraStyle,
+}: SkeletonBoxProps) {
+  const { style: themeStyle } = useTheme();
+  const reduceMotion = useReducedMotion();
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    if (!reduceMotion) {
+      opacity.value = withRepeat(
+        withTiming(0.7, { duration: 800 }),
+        -1,
+        true,
+      );
+    }
+  }, [reduceMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const base = {
+    width: width as import("react-native").DimensionValue,
+    height,
+    borderRadius,
+    backgroundColor: themeStyle.glass.border,
+  };
+
+  if (reduceMotion) {
+    return <View style={[base, { opacity: 0.5 }, extraStyle]} />;
+  }
+
+  return <Animated.View style={[base, animatedStyle, extraStyle]} />;
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - Spacing.lg * 3) / 2;
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 function RecipeCardSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
 
   return (
@@ -24,40 +74,15 @@ function RecipeCardSkeleton() {
         },
       ]}
     >
-      <MotiSkeleton
-        colorMode={colorMode}
-        width={CARD_WIDTH}
-        height={100}
-        radius={0}
-      />
+      <SkeletonBox width={CARD_WIDTH} height={100} borderRadius={0} />
       <View style={styles.recipeCardContent}>
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={cardContentWidth * 0.9}
-          height={16}
-          radius={6}
-        />
+        <SkeletonBox width={cardContentWidth * 0.9} height={16} borderRadius={6} />
         <View style={{ height: Spacing.sm }} />
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={cardContentWidth * 0.6}
-          height={14}
-          radius={6}
-        />
+        <SkeletonBox width={cardContentWidth * 0.6} height={14} borderRadius={6} />
         <View style={{ height: Spacing.sm }} />
         <View style={styles.recipeCardFooter}>
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={60}
-            height={20}
-            radius={BorderRadius.sm}
-          />
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={24}
-            height={24}
-            radius={12}
-          />
+          <SkeletonBox width={60} height={20} borderRadius={BorderRadius.sm} />
+          <SkeletonBox width={24} height={24} borderRadius={12} />
         </View>
       </View>
     </View>
@@ -77,8 +102,7 @@ export function RecipeGridSkeleton({ count = 4 }: { count?: number }) {
 }
 
 function InventoryItemSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
   return (
@@ -95,40 +119,15 @@ function InventoryItemSkeleton() {
       <View style={styles.inventoryItemContent}>
         <View style={styles.inventoryItemHeader}>
           <View style={{ flex: 1 }}>
-            <MotiSkeleton
-              colorMode={colorMode}
-              width={itemWidth * 0.5}
-              height={18}
-              radius={6}
-            />
+            <SkeletonBox width={itemWidth * 0.5} height={18} borderRadius={6} />
             <View style={{ height: Spacing.xs }} />
-            <MotiSkeleton
-              colorMode={colorMode}
-              width={itemWidth * 0.35}
-              height={14}
-              radius={6}
-            />
+            <SkeletonBox width={itemWidth * 0.35} height={14} borderRadius={6} />
           </View>
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={60}
-            height={24}
-            radius={BorderRadius.sm}
-          />
+          <SkeletonBox width={60} height={24} borderRadius={BorderRadius.sm} />
         </View>
         <View style={styles.inventoryItemFooter}>
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={100}
-            height={12}
-            radius={6}
-          />
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={80}
-            height={20}
-            radius={BorderRadius.sm}
-          />
+          <SkeletonBox width={100} height={12} borderRadius={6} />
+          <SkeletonBox width={80} height={20} borderRadius={BorderRadius.sm} />
         </View>
       </View>
     </View>
@@ -136,8 +135,7 @@ function InventoryItemSkeleton() {
 }
 
 function InventorySectionSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
 
   return (
     <View
@@ -152,31 +150,11 @@ function InventorySectionSkeleton() {
     >
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderLeft}>
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={24}
-            height={24}
-            radius={12}
-          />
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={80}
-            height={20}
-            radius={6}
-          />
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={24}
-            height={20}
-            radius={BorderRadius.sm}
-          />
+          <SkeletonBox width={24} height={24} borderRadius={12} />
+          <SkeletonBox width={80} height={20} borderRadius={6} />
+          <SkeletonBox width={24} height={20} borderRadius={BorderRadius.sm} />
         </View>
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={20}
-          height={20}
-          radius={10}
-        />
+        <SkeletonBox width={20} height={20} borderRadius={10} />
       </View>
       <View style={styles.sectionItems}>
         <InventoryItemSkeleton />
@@ -201,60 +179,28 @@ export function InventoryListSkeleton({
 }
 
 export function RecipeDetailSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
   const sectionWidth = CONTENT_WIDTH - Spacing.lg * 2;
 
   return (
     <View style={styles.recipeDetailContainer}>
-      <MotiSkeleton
-        colorMode={colorMode}
+      <SkeletonBox
         width={CONTENT_WIDTH}
         height={200}
-        radius={BorderRadius.lg}
+        borderRadius={BorderRadius.lg}
       />
 
       <View style={styles.recipeDetailHeader}>
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={CONTENT_WIDTH * 0.8}
-          height={28}
-          radius={8}
-        />
+        <SkeletonBox width={CONTENT_WIDTH * 0.8} height={28} borderRadius={8} />
         <View style={{ height: Spacing.md }} />
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={CONTENT_WIDTH}
-          height={16}
-          radius={6}
-        />
+        <SkeletonBox width={CONTENT_WIDTH} height={16} borderRadius={6} />
         <View style={{ height: Spacing.xs }} />
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={CONTENT_WIDTH * 0.6}
-          height={16}
-          radius={6}
-        />
+        <SkeletonBox width={CONTENT_WIDTH * 0.6} height={16} borderRadius={6} />
 
         <View style={styles.metaRow}>
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={80}
-            height={20}
-            radius={6}
-          />
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={80}
-            height={20}
-            radius={6}
-          />
-          <MotiSkeleton
-            colorMode={colorMode}
-            width={80}
-            height={20}
-            radius={6}
-          />
+          <SkeletonBox width={80} height={20} borderRadius={6} />
+          <SkeletonBox width={80} height={20} borderRadius={6} />
+          <SkeletonBox width={80} height={20} borderRadius={6} />
         </View>
       </View>
 
@@ -268,27 +214,12 @@ export function RecipeDetailSkeleton() {
           },
         ]}
       >
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={100}
-          height={22}
-          radius={6}
-        />
+        <SkeletonBox width={100} height={22} borderRadius={6} />
         <View style={{ height: Spacing.md }} />
         {Array.from({ length: 5 }).map((_, i) => (
           <View key={i} style={styles.ingredientRow}>
-            <MotiSkeleton
-              colorMode={colorMode}
-              width={20}
-              height={20}
-              radius={10}
-            />
-            <MotiSkeleton
-              colorMode={colorMode}
-              width={sectionWidth * 0.8}
-              height={16}
-              radius={6}
-            />
+            <SkeletonBox width={20} height={20} borderRadius={10} />
+            <SkeletonBox width={sectionWidth * 0.8} height={16} borderRadius={6} />
           </View>
         ))}
       </View>
@@ -303,35 +234,15 @@ export function RecipeDetailSkeleton() {
           },
         ]}
       >
-        <MotiSkeleton
-          colorMode={colorMode}
-          width={100}
-          height={22}
-          radius={6}
-        />
+        <SkeletonBox width={100} height={22} borderRadius={6} />
         <View style={{ height: Spacing.md }} />
         {Array.from({ length: 4 }).map((_, i) => (
           <View key={i} style={styles.instructionRow}>
-            <MotiSkeleton
-              colorMode={colorMode}
-              width={24}
-              height={24}
-              radius={12}
-            />
+            <SkeletonBox width={24} height={24} borderRadius={12} />
             <View style={{ flex: 1 }}>
-              <MotiSkeleton
-                colorMode={colorMode}
-                width={sectionWidth * 0.85}
-                height={16}
-                radius={6}
-              />
+              <SkeletonBox width={sectionWidth * 0.85} height={16} borderRadius={6} />
               <View style={{ height: Spacing.xs }} />
-              <MotiSkeleton
-                colorMode={colorMode}
-                width={sectionWidth * 0.6}
-                height={16}
-                radius={6}
-              />
+              <SkeletonBox width={sectionWidth * 0.6} height={16} borderRadius={6} />
             </View>
           </View>
         ))}

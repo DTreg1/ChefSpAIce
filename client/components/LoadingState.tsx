@@ -1,5 +1,5 @@
 import { View, StyleSheet, Dimensions } from "react-native";
-import { Skeleton as MotiSkeleton } from "@/components/AccessibleSkeleton";
+import { SkeletonBox } from "@/components/Skeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
@@ -30,8 +30,7 @@ export function LoadingState({ variant, count }: LoadingStateProps) {
 }
 
 function ListItemSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
   return (
@@ -47,12 +46,12 @@ function ListItemSkeleton() {
       testID="skeleton-list-item"
     >
       <View style={styles.listItemRow}>
-        <MotiSkeleton colorMode={colorMode} width={40} height={40} radius={20} />
+        <SkeletonBox width={40} height={40} borderRadius={20} />
         <View style={{ flex: 1, gap: Spacing.xs }}>
-          <MotiSkeleton colorMode={colorMode} width={itemWidth * 0.5} height={16} radius={6} />
-          <MotiSkeleton colorMode={colorMode} width={itemWidth * 0.35} height={13} radius={6} />
+          <SkeletonBox width={itemWidth * 0.5} height={16} borderRadius={6} />
+          <SkeletonBox width={itemWidth * 0.35} height={13} borderRadius={6} />
         </View>
-        <MotiSkeleton colorMode={colorMode} width={60} height={24} radius={BorderRadius.sm} />
+        <SkeletonBox width={60} height={24} borderRadius={BorderRadius.sm} />
       </View>
     </View>
   );
@@ -69,8 +68,7 @@ function ListSkeleton({ count }: { count: number }) {
 }
 
 function CardSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
 
   return (
@@ -85,15 +83,15 @@ function CardSkeleton() {
       ]}
       testID="skeleton-card"
     >
-      <MotiSkeleton colorMode={colorMode} width={CARD_WIDTH} height={100} radius={0} />
+      <SkeletonBox width={CARD_WIDTH} height={100} borderRadius={0} />
       <View style={styles.cardContent}>
-        <MotiSkeleton colorMode={colorMode} width={cardContentWidth * 0.9} height={16} radius={6} />
+        <SkeletonBox width={cardContentWidth * 0.9} height={16} borderRadius={6} />
         <View style={{ height: Spacing.sm }} />
-        <MotiSkeleton colorMode={colorMode} width={cardContentWidth * 0.6} height={14} radius={6} />
+        <SkeletonBox width={cardContentWidth * 0.6} height={14} borderRadius={6} />
         <View style={{ height: Spacing.sm }} />
         <View style={styles.cardFooter}>
-          <MotiSkeleton colorMode={colorMode} width={60} height={20} radius={BorderRadius.sm} />
-          <MotiSkeleton colorMode={colorMode} width={24} height={24} radius={12} />
+          <SkeletonBox width={60} height={20} borderRadius={BorderRadius.sm} />
+          <SkeletonBox width={24} height={24} borderRadius={12} />
         </View>
       </View>
     </View>
@@ -113,12 +111,11 @@ function CardGridSkeleton({ count }: { count: number }) {
 }
 
 function DetailSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
 
   return (
     <View style={styles.detailContainer} testID="loading-detail">
-      <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.6} height={22} radius={8} />
+      <SkeletonBox width={CONTENT_WIDTH * 0.6} height={22} borderRadius={8} />
       <View style={{ height: Spacing.lg }} />
 
       <View
@@ -131,14 +128,14 @@ function DetailSkeleton() {
           },
         ]}
       >
-        <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.4} height={18} radius={6} />
+        <SkeletonBox width={CONTENT_WIDTH * 0.4} height={18} borderRadius={6} />
         <View style={{ height: Spacing.md }} />
         {Array.from({ length: 3 }).map((_, i) => (
           <View key={i} style={styles.detailRow}>
-            <MotiSkeleton colorMode={colorMode} width={36} height={36} radius={18} />
+            <SkeletonBox width={36} height={36} borderRadius={18} />
             <View style={{ flex: 1, gap: Spacing.xs }}>
-              <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.5} height={15} radius={6} />
-              <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.3} height={13} radius={6} />
+              <SkeletonBox width={CONTENT_WIDTH * 0.5} height={15} borderRadius={6} />
+              <SkeletonBox width={CONTENT_WIDTH * 0.3} height={13} borderRadius={6} />
             </View>
           </View>
         ))}
@@ -156,13 +153,13 @@ function DetailSkeleton() {
           },
         ]}
       >
-        <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.35} height={18} radius={6} />
+        <SkeletonBox width={CONTENT_WIDTH * 0.35} height={18} borderRadius={6} />
         <View style={{ height: Spacing.md }} />
         {Array.from({ length: 4 }).map((_, i) => (
           <View key={i} style={styles.detailRow}>
-            <MotiSkeleton colorMode={colorMode} width={24} height={24} radius={12} />
+            <SkeletonBox width={24} height={24} borderRadius={12} />
             <View style={{ flex: 1 }}>
-              <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.7} height={14} radius={6} />
+              <SkeletonBox width={CONTENT_WIDTH * 0.7} height={14} borderRadius={6} />
             </View>
           </View>
         ))}
@@ -172,18 +169,17 @@ function DetailSkeleton() {
 }
 
 function FullPageSkeleton() {
-  const { isDark, style: themeStyle } = useTheme();
-  const colorMode = isDark ? "dark" : "light";
+  const { style: themeStyle } = useTheme();
 
   return (
     <View style={styles.fullPageContainer} testID="loading-full-page">
-      <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH} height={180} radius={BorderRadius.lg} />
+      <SkeletonBox width={CONTENT_WIDTH} height={180} borderRadius={BorderRadius.lg} />
       <View style={{ height: Spacing.lg }} />
-      <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.7} height={24} radius={8} />
+      <SkeletonBox width={CONTENT_WIDTH * 0.7} height={24} borderRadius={8} />
       <View style={{ height: Spacing.md }} />
-      <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH} height={16} radius={6} />
+      <SkeletonBox width={CONTENT_WIDTH} height={16} borderRadius={6} />
       <View style={{ height: Spacing.xs }} />
-      <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.8} height={16} radius={6} />
+      <SkeletonBox width={CONTENT_WIDTH * 0.8} height={16} borderRadius={6} />
       <View style={{ height: Spacing.xl }} />
 
       <View
@@ -198,10 +194,10 @@ function FullPageSkeleton() {
       >
         {Array.from({ length: 4 }).map((_, i) => (
           <View key={i} style={styles.detailRow}>
-            <MotiSkeleton colorMode={colorMode} width={40} height={40} radius={20} />
+            <SkeletonBox width={40} height={40} borderRadius={20} />
             <View style={{ flex: 1, gap: Spacing.xs }}>
-              <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.5} height={16} radius={6} />
-              <MotiSkeleton colorMode={colorMode} width={CONTENT_WIDTH * 0.35} height={13} radius={6} />
+              <SkeletonBox width={CONTENT_WIDTH * 0.5} height={16} borderRadius={6} />
+              <SkeletonBox width={CONTENT_WIDTH * 0.35} height={13} borderRadius={6} />
             </View>
           </View>
         ))}

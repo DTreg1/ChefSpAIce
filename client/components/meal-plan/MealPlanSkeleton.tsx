@@ -1,5 +1,5 @@
 import { View, StyleSheet, Dimensions } from "react-native";
-import { SkeletonBox } from "@/components/SkeletonBox";
+import { SkeletonBox } from "@/components/Skeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
@@ -33,7 +33,7 @@ function DaySelectorSkeleton() {
 }
 
 function MealSlotSkeleton() {
-  const { theme, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
 
   return (
     <View style={styles.mealSlot}>
@@ -76,7 +76,7 @@ function HintRowSkeleton() {
 }
 
 function SelectedDayCardSkeleton() {
-  const { theme, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
 
   return (
     <View
@@ -98,7 +98,7 @@ function SelectedDayCardSkeleton() {
 }
 
 function StatsCardSkeleton() {
-  const { theme, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
 
   return (
     <View
