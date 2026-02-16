@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChefSpAIce - Complete User Journey & Navigation UML</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    overflow: auto;
+  }
+  .diagram-title {
+    text-align: center;
+    padding: 32px 24px 8px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+  }
+  .diagram-subtitle {
+    text-align: center;
+    padding: 0 24px 24px;
+    font-size: 14px;
+    color: #666;
+  }
+  .canvas {
+    position: relative;
+    width: 3800px;
+    height: 3200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+  }
+  svg.connections {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  svg.connections line, svg.connections path, svg.connections polyline {
+    stroke-width: 2;
+    fill: none;
+  }
+  .entity {
+    position: absolute;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    z-index: 2;
+    min-width: 200px;
+  }
+  .entity-header {
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .entity-body {
+    padding: 12px 16px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #333;
+  }
+  .entity-body .section-title {
+    font-weight: 700;
+    font-size: 12px;
+    margin-top: 8px;
+    margin-bottom: 2px;
+    color: #1a1a2e;
+  }
+  .entity-body .section-title:first-child { margin-top: 0; }
+  .entity-body .item { padding-left: 4px; }
+  .entity-body .item::before { content: ''; }
+
+  /* Color themes */
+  .header-yellow { background: #FFD166; color: #333; }
+  .header-green { background: #06D6A0; color: #fff; }
+  .header-blue { background: #4EA8DE; color: #fff; }
+  .header-purple { background: #7B68EE; color: #fff; }
+  .header-orange { background: #F78C6B; color: #fff; }
+  .header-pink { background: #EF476F; color: #fff; }
+  .header-teal { background: #118AB2; color: #fff; }
+  .header-dark { background: #073B4C; color: #fff; }
+  .header-coral { background: #FF6B6B; color: #fff; }
+  .header-lime { background: #A8E06C; color: #333; }
+  .header-sky { background: #8ECAE6; color: #333; }
+  .header-gold { background: #E6AC00; color: #fff; }
+  .header-lavender { background: #B39DDB; color: #fff; }
+  .header-mint { background: #26C6DA; color: #fff; }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 3;
+  }
+  .legend h3 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #333;
+  }
+  .legend-line {
+    width: 50px;
+    height: 2px;
+    position: relative;
+  }
+  .legend-line.solid { background: #333; }
+  .legend-line.dashed { border-top: 2px dashed #333; background: none; }
+  .legend-line.dotted { border-top: 2px dotted #999; background: none; }
+  .legend-line::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 6px solid #333;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+  }
+  .legend-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  /* Section labels */
+  .section-label {
+    position: absolute;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #aaa;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+<div class="diagram-title">ChefSpAIce - Complete User Journey & Navigation Flow</div>
+<div class="diagram-subtitle">Combined UML Diagram &mdash; February 2026</div>
+
+<div style="overflow: auto; padding: 20px;">
+<div class="canvas">
+
+  <!-- Section Labels -->
+  <div class="section-label" style="top:20px; left:40px;">Entry Points</div>
+  <div class="section-label" style="top:20px; left:540px;">Authentication & Subscription</div>
+  <div class="section-label" style="top:20px; left:1140px;">Onboarding</div>
+  <div class="section-label" style="top:20px; left:1640px;">Main App</div>
+  <div class="section-label" style="top:20px; left:2540px;">Features</div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <h3>Relationships</h3>
+    <div class="legend-item"><div class="legend-line solid"></div> Navigation Flow</div>
+    <div class="legend-item"><div class="legend-line dashed"></div> Modal Presentation</div>
+    <div class="legend-item"><div class="legend-line dotted"></div> Contains / Inherits</div>
+    <h3 style="margin-top:20px;">Entity Types</h3>
+    <div class="legend-item"><div class="legend-swatch" style="background:#FFD166;"></div> Entry Point</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#EF476F;"></div> Decision Gate</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#06D6A0;"></div> Auth Method</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7B68EE;"></div> Subscription</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#118AB2;"></div> Tab Navigator</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#073B4C;"></div> Screen Stack</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#F78C6B;"></div> Profile / Settings</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#FF6B6B;"></div> Modal / Scanner</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8ECAE6;"></div> Web Page</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#B39DDB;"></div> Voice / External Service</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#E6AC00;"></div> API System</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#A8E06C;"></div> Referral / Deep Link</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#26C6DA;"></div> Integration</div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- ENTRY POINTS -->
+  <!-- ============================================= -->
+
+  <!-- AppLaunch -->
+  <div class="entity" style="top:70px; left:40px; width:220px;">
+    <div class="entity-header header-yellow">AppLaunch</div>
+    <div class="entity-body">
+      <div class="section-title">Platforms</div>
+      <div class="item">&bull; iOS (React Native)</div>
+      <div class="item">&bull; Android (React Native)</div>
+      <div class="item">&bull; Web (React)</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ checkPlatform(): Platform</div>
+      <div class="item">+ initialize(): void</div>
+    </div>
+  </div>
+
+  <!-- WebLaunch -->
+  <div class="entity" style="top:340px; left:40px; width:220px;">
+    <div class="entity-header header-sky">WebLaunch</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- platform: string = &quot;web&quot;</div>
+      <div class="item">- isAuthenticated: boolean = false</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ redirectToLanding(): void</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- ONBOARDING & AUTH -->
+  <!-- ============================================= -->
+
+  <!-- OnboardingScreen -->
+  <div class="entity" style="top:70px; left:960px; width:240px;">
+    <div class="entity-header header-pink">OnboardingScreen</div>
+    <div class="entity-body">
+      <div class="section-title">Post-Subscription Setup</div>
+      <div class="item">Shown after subscription activation</div>
+      <div class="section-title">Steps (6 components)</div>
+      <div class="item">&bull; WelcomeStep</div>
+      <div class="item">&bull; PreferencesStep (servings, meals)</div>
+      <div class="item">&bull; StorageStep (locations)</div>
+      <div class="item">&bull; FoodsStep (starter inventory)</div>
+      <div class="item">&bull; CookwareStep (appliances)</div>
+      <div class="item">&bull; CompleteStep (finish &amp; save)</div>
+      <div class="section-title">Attributes</div>
+      <div class="item">- step: OnboardingStep</div>
+      <div class="item">- appliances: Appliance[] = []</div>
+      <div class="item">- selectedFoodIds: Set</div>
+      <div class="item">- servingSize: number = 2</div>
+      <div class="item">- dailyMeals: number = 3</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ nextStep(): void</div>
+      <div class="item">+ skipOnboarding(): void</div>
+      <div class="item">+ completeOnboarding(): void</div>
+    </div>
+  </div>
+
+
+  <!-- AuthScreen / AuthContext -->
+  <div class="entity" style="top:70px; left:340px; width:260px;">
+    <div class="entity-header header-green">AuthScreen / AuthContext</div>
+    <div class="entity-body">
+      <div class="section-title">Architecture (split modules)</div>
+      <div class="item">&bull; AuthContext.tsx (state &amp; providers)</div>
+      <div class="item">&bull; auth-api.ts (API calls)</div>
+      <div class="item">&bull; auth-storage.ts (token persistence)</div>
+      <div class="section-title">Sign-In Methods</div>
+      <div class="item">+ signInWithEmail(email, password)</div>
+      <div class="item">+ signInWithApple(): void</div>
+      <div class="item">+ signInWithGoogle(): void</div>
+      <div class="item">+ authenticateWithBiometrics(): void</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ signUp(): void</div>
+      <div class="item">+ forgotPassword(): void</div>
+      <div class="section-title">Post-Auth Hooks</div>
+      <div class="item">+ registerForPushNotifications()</div>
+      <div class="item">+ isBiometricEnabled(): boolean</div>
+    </div>
+  </div>
+
+  <!-- EmailAuth -->
+  <div class="entity" style="top:500px; left:340px; width:180px;">
+    <div class="entity-header header-green">EmailPassword</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- email: string = &quot;&quot;</div>
+      <div class="item">- password: string = &quot;&quot;</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ validate(): boolean</div>
+      <div class="item">+ authenticate(): Token</div>
+    </div>
+  </div>
+
+  <!-- AppleAuth -->
+  <div class="entity" style="top:500px; left:540px; width:180px;">
+    <div class="entity-header header-green">AppleSignIn</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- appleId: string = null</div>
+      <div class="item">- identityToken: string = null</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ requestAuth(): Token</div>
+    </div>
+  </div>
+
+  <!-- GoogleAuth -->
+  <div class="entity" style="top:680px; left:440px; width:180px;">
+    <div class="entity-header header-green">GoogleSignIn</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- googleId: string = null</div>
+      <div class="item">- accessToken: string = null</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ requestAuth(): Token</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SUBSCRIPTION -->
+  <!-- ============================================= -->
+
+  <!-- SubscriptionGate -->
+  <div class="entity" style="top:70px; left:680px; width:240px;">
+    <div class="entity-header header-purple">SubscriptionGate</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- isActive: boolean = false <em>(includes trialing)</em></div>
+      <div class="item">- isLoading: boolean = true</div>
+      <div class="item">- isTrialing: boolean = false</div>
+      <div class="item">- trialDaysRemaining: number = 0</div>
+      <div class="item">- plan: string = &quot;STANDARD&quot;</div>
+      <div class="item">- needsOnboarding: boolean = false</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ checkSubscription(): boolean</div>
+      <div class="item">+ checkTrialExpiry(): boolean</div>
+      <div class="item">+ checkOnboardingStatus(): boolean</div>
+      <div class="item">+ redirectToPaywall(): void</div>
+      <div class="item">+ redirectToOnboarding(): void</div>
+      <div class="item">+ redirectToMain(): void</div>
+    </div>
+  </div>
+
+  <!-- SubscriptionScreen -->
+  <div class="entity" style="top:380px; left:960px; width:240px;">
+    <div class="entity-header header-purple">SubscriptionScreen</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- plan: string = &quot;STANDARD&quot;</div>
+      <div class="item">- reason: string = &quot;expired&quot;</div>
+      <div class="item">- trialEnd: Date = null</div>
+      <div class="item">- trialDaysRemaining: number = 0</div>
+      <div class="item">- isTrialing: boolean = false</div>
+      <div class="section-title">Payment Methods</div>
+      <div class="item">+ payWithStripe(): Subscription</div>
+      <div class="item">+ payWithRevenueCat(): Subscription</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ showPaywall(): void</div>
+      <div class="item">+ applyRetentionOffer(): void</div>
+    </div>
+  </div>
+
+  <!-- StripePayment -->
+  <div class="entity" style="top:620px; left:960px; width:200px;">
+    <div class="entity-header header-purple">StripePayment</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- subscriptionId: string = null</div>
+      <div class="item">- status: SubscriptionStatus = &quot;inactive&quot;</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ createCheckout(): Session</div>
+      <div class="item">+ handleWebhook(): void</div>
+    </div>
+  </div>
+
+  <!-- RevenueCat -->
+  <div class="entity" style="top:830px; left:960px; width:200px;">
+    <div class="entity-header header-purple">RevenueCat</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- entitlementId: string = &quot;standard&quot;</div>
+      <div class="item">- platform: string = &quot;ios&quot; | &quot;android&quot;</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ purchasePackage(pkg): CustomerInfo</div>
+      <div class="item">+ restorePurchases(): CustomerInfo</div>
+      <div class="item">+ getCustomerInfo(): CustomerInfo</div>
+      <div class="item">+ presentPaywall(): PaywallResult</div>
+      <div class="item">+ syncPendingPurchases(): boolean</div>
+    </div>
+  </div>
+
+  <!-- SubscriptionStatusFlow -->
+  <div class="entity" style="top:1060px; left:960px; width:280px;">
+    <div class="entity-header header-purple">SubscriptionStatusFlow</div>
+    <div class="entity-body">
+      <div class="section-title">States</div>
+      <div class="item">&bull; trialing</div>
+      <div class="item">&bull; active</div>
+      <div class="item">&bull; past_due</div>
+      <div class="item">&bull; canceled</div>
+      <div class="item">&bull; expired</div>
+      <div class="section-title">Transitions</div>
+      <div class="item">&bull; trialing &rarr; active (payment confirmed)</div>
+      <div class="item">&bull; trialing &rarr; expired (trial ends, no payment)</div>
+      <div class="item">&bull; active &rarr; past_due (payment failed)</div>
+      <div class="item">&bull; active &rarr; canceled (user cancels)</div>
+      <div class="item">&bull; past_due &rarr; active (payment retry succeeds)</div>
+      <div class="item">&bull; past_due &rarr; canceled (grace period ends)</div>
+      <div class="item">&bull; canceled &rarr; expired (subscription period ends)</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- MAIN APP -->
+  <!-- ============================================= -->
+
+  <!-- DrawerNavigator -->
+  <div class="entity" style="top:70px; left:1340px; width:260px;">
+    <div class="entity-header header-teal">DrawerNavigator</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- drawerType: string = &quot;front&quot;</div>
+      <div class="item">- width: number = 280</div>
+      <div class="item">- swipeEnabled: boolean = true</div>
+      <div class="section-title">Contains</div>
+      <div class="item">+ TabNavigator</div>
+      <div class="item">+ DrawerContent (sidebar menu)</div>
+    </div>
+  </div>
+
+  <!-- TabNavigator -->
+  <div class="entity" style="top:310px; left:1340px; width:260px;">
+    <div class="entity-header header-teal">TabNavigator</div>
+    <div class="entity-body">
+      <div class="section-title">Tabs</div>
+      <div class="item">&bull; KitchenTab &rarr; InventoryStack</div>
+      <div class="item">&bull; CookwareTab &rarr; CookwareStack</div>
+      <div class="item">&bull; AddTab (hidden, opens ScanHub)</div>
+      <div class="item">&bull; RecipesTab &rarr; RecipesStack</div>
+      <div class="item">&bull; MealPlanTab &rarr; MealPlanStack</div>
+      <div class="item">&bull; ProfileTab &rarr; ProfileStack (via drawer)</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ switchTab(tab): void</div>
+      <div class="item">+ openDrawer(): void</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FEATURE STACKS -->
+  <!-- ============================================= -->
+
+  <!-- InventoryStack -->
+  <div class="entity" style="top:70px; left:1740px; width:240px;">
+    <div class="entity-header header-dark">KitchenStack</div>
+    <div class="entity-body">
+      <div class="section-title">Screens</div>
+      <div class="item">&bull; InventoryScreen (root)</div>
+      <div class="item">&bull; ItemDetailScreen</div>
+      <div class="section-title">Attributes</div>
+      <div class="item">- items: InventoryItem[] = []</div>
+      <div class="item">- categories: string[] = []</div>
+      <div class="item">- storageLocations: Location[] = []</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ viewItem(itemId): void</div>
+      <div class="item">+ addItem(): void &rarr; AddItem modal</div>
+      <div class="item">+ scanItem(): void &rarr; ScanHub modal</div>
+      <div class="item">+ deleteItem(itemId): void</div>
+    </div>
+  </div>
+
+  <!-- CookwareStack -->
+  <div class="entity" style="top:410px; left:1740px; width:240px;">
+    <div class="entity-header header-dark">CookwareStack</div>
+    <div class="entity-body">
+      <div class="section-title">Screens</div>
+      <div class="item">&bull; CookwareScreen (root)</div>
+      <div class="section-title">Attributes</div>
+      <div class="item">- appliances: Appliance[] = []</div>
+      <div class="item">- cookware: CookwareItem[] = []</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ addAppliance(): void</div>
+      <div class="item">+ removeAppliance(id): void</div>
+    </div>
+  </div>
+
+  <!-- RecipesStack -->
+  <div class="entity" style="top:670px; left:1740px; width:260px;">
+    <div class="entity-header header-dark">RecipesStack</div>
+    <div class="entity-body">
+      <div class="section-title">Screens</div>
+      <div class="item">&bull; RecipesScreen (root)</div>
+      <div class="item">&bull; RecipeDetailScreen</div>
+      <div class="item">&bull; GenerateRecipeScreen (modal)</div>
+      <div class="section-title">Attributes</div>
+      <div class="item">- recipes: Recipe[] = []</div>
+      <div class="item">- servings: number = 4</div>
+      <div class="item">- maxTime: number = 60</div>
+      <div class="item">- mealType: MealType = &quot;breakfast&quot; | &quot;lunch&quot; | &quot;dinner&quot; | &quot;snack&quot; | &quot;late night snack&quot;</div>
+      <div class="item">- cuisine: string = &quot;any&quot;</div>
+      <div class="item">- ingredientCount: { min, max }</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ viewRecipe(recipeId): void</div>
+      <div class="item">+ generateRecipe(settings): Recipe</div>
+      <div class="item">+ generateRecipeImage(recipeId): Image</div>
+      <div class="item">+ getRecipeImage(recipeId): Image</div>
+      <div class="item">+ getRecipeThumbnail(recipeId): Image</div>
+      <div class="item">+ scanRecipe(): void &rarr; RecipeScanner</div>
+      <div class="item">+ shareRecipe(recipeId): void</div>
+    </div>
+  </div>
+
+  <!-- MealPlanStack -->
+  <div class="entity" style="top:1060px; left:1740px; width:260px;">
+    <div class="entity-header header-dark">MealPlanStack</div>
+    <div class="entity-body">
+      <div class="section-title">Screens</div>
+      <div class="item">&bull; MealPlanScreen (root)</div>
+      <div class="item">&bull; ShoppingListScreen</div>
+      <div class="item">&bull; SelectRecipeScreen</div>
+      <div class="section-title">Attributes</div>
+      <div class="item">- weekPlan: MealSlot[] = []</div>
+      <div class="item">- shoppingItems: ShoppingItem[] = []</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ assignRecipe(date, mealType): void</div>
+      <div class="item">+ generateShoppingList(): void</div>
+      <div class="item">+ selectRecipe(date, type): Recipe</div>
+      <div class="item">+ sendToInstacart(): void &rarr; InstacartIntegration</div>
+    </div>
+  </div>
+
+  <!-- ProfileStack -->
+  <div class="entity" style="top:1370px; left:1740px; width:260px;">
+    <div class="entity-header header-orange">ProfileStack</div>
+    <div class="entity-body">
+      <div class="section-title">Screens</div>
+      <div class="item">&bull; ProfileScreen (root)</div>
+      <div class="item">&bull; SettingsScreen</div>
+      <div class="item">&bull; AnalyticsScreen</div>
+      <div class="item">&bull; CookingTermsScreen</div>
+      <div class="item">&bull; CookwareScreen</div>
+      <div class="item">&bull; StorageLocationsScreen</div>
+      <div class="item">&bull; SubscriptionScreen</div>
+      <div class="item">&bull; PrivacyPolicyScreen</div>
+      <div class="item">&bull; TermsOfServiceScreen</div>
+      <div class="item">&bull; SiriShortcutsGuideScreen</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ editProfile(): void</div>
+      <div class="item">+ manageSubscription(): void</div>
+      <div class="item">+ viewAnalytics(): void</div>
+      <div class="item">+ signOut(): void</div>
+      <div class="item">+ deleteAccount(): void</div>
+      <div class="item">+ exportData(): void &rarr; DataExport</div>
+      <div class="item">+ shareReferralCode(): void &rarr; ReferralSystem</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- GLOBAL MODALS -->
+  <!-- ============================================= -->
+
+  <!-- ScanHub -->
+  <div class="entity" style="top:70px; left:2150px; width:240px;">
+    <div class="entity-header header-coral">ScanHub</div>
+    <div class="entity-body">
+      <div class="section-title">Presentation</div>
+      <div class="item">- type: string = &quot;fullScreenModal&quot;</div>
+      <div class="section-title">Scanner Options</div>
+      <div class="item">&bull; BarcodeScanner</div>
+      <div class="item">&bull; FoodCamera (AI)</div>
+      <div class="item">&bull; IngredientScanner</div>
+      <div class="item">&bull; RecipeScanner</div>
+      <div class="item">&bull; ReceiptScan</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ selectScanner(type): void</div>
+    </div>
+  </div>
+
+  <!-- BarcodeScanner -->
+  <div class="entity" style="top:380px; left:2100px; width:190px;">
+    <div class="entity-header header-coral">BarcodeScanner</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- barcode: string = null</div>
+      <div class="item">- productName: string = null</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ scan(): BarcodeResult</div>
+      <div class="item">+ lookup(barcode): Product</div>
+      <div class="item">&rarr; navigates to AddItem</div>
+    </div>
+  </div>
+
+  <!-- FoodCamera -->
+  <div class="entity" style="top:380px; left:2310px; width:190px;">
+    <div class="entity-header header-coral">FoodCamera</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- identifiedFoods: Food[] = []</div>
+      <div class="item">- aiModel: string = &quot;OpenAI Vision&quot;</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ capture(): Image</div>
+      <div class="item">+ analyze(): Food[]</div>
+      <div class="item">&rarr; navigates to AddFoodBatch</div>
+    </div>
+  </div>
+
+  <!-- ChatModal (AI Assistant) -->
+  <div class="entity" style="top:1500px; left:2150px; width:240px;">
+    <div class="entity-header header-coral">ChatModal (AI Assistant)</div>
+    <div class="entity-body">
+      <div class="section-title">Presentation</div>
+      <div class="item">- type: string = &quot;bottomSheet&quot;</div>
+      <div class="item">- aiModel: string = &quot;OpenAI GPT&quot;</div>
+      <div class="section-title">Attributes</div>
+      <div class="item">- messages: Message[] = []</div>
+      <div class="item">- isStreaming: boolean = false</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ sendMessage(text): Response</div>
+      <div class="item">+ clearChat(): void</div>
+      <div class="item">+ useSuggestion(recipe): void</div>
+    </div>
+  </div>
+
+  <!-- FloatingChatButton -->
+  <div class="entity" style="top:1500px; left:2420px; width:160px;">
+    <div class="entity-header header-coral">FloatingChatButton</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- isVisible: boolean = true</div>
+      <div class="item">- position: string = &quot;bottom-right&quot;</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ openChat(): void &rarr; ChatModal</div>
+    </div>
+  </div>
+
+  <!-- IngredientScanner -->
+  <div class="entity" style="top:620px; left:2100px; width:190px;">
+    <div class="entity-header header-coral">IngredientScanner</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- mode: string = &quot;nutrition&quot;</div>
+      <div class="item">- scannedNutrition: NutritionData = null</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ scan(): NutritionLabel</div>
+      <div class="item">&rarr; navigates to AddItem</div>
+    </div>
+  </div>
+
+  <!-- RecipeScanner -->
+  <div class="entity" style="top:620px; left:2310px; width:190px;">
+    <div class="entity-header header-coral">RecipeScanner</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- mode: string = &quot;recipe&quot;</div>
+      <div class="item">- scannedRecipe: Recipe = null</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ scan(): RecipeCard</div>
+      <div class="item">+ importRecipe(): Recipe</div>
+    </div>
+  </div>
+
+  <!-- ReceiptScan -->
+  <div class="entity" style="top:840px; left:2200px; width:190px;">
+    <div class="entity-header header-coral">ReceiptScan</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- receiptImage: Image = null</div>
+      <div class="item">- extractedItems: Item[] = []</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ scan(): ReceiptData</div>
+      <div class="item">+ extractItems(): Item[]</div>
+    </div>
+  </div>
+
+  <!-- AddItem -->
+  <div class="entity" style="top:1040px; left:2100px; width:190px;">
+    <div class="entity-header header-coral">AddItem</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- barcode: string = null</div>
+      <div class="item">- productName: string = null</div>
+      <div class="item">- nutrition: NutritionData = null</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ save(): InventoryItem</div>
+      <div class="item">+ setExpiry(date): void</div>
+      <div class="item">+ setLocation(loc): void</div>
+    </div>
+  </div>
+
+  <!-- AddFoodBatch -->
+  <div class="entity" style="top:1040px; left:2310px; width:190px;">
+    <div class="entity-header header-coral">AddFoodBatch</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- items: IdentifiedFood[] = []</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ reviewItems(): void</div>
+      <div class="item">+ saveAll(): InventoryItem[]</div>
+      <div class="item">+ removeItem(idx): void</div>
+    </div>
+  </div>
+
+  <!-- GrocerySearch -->
+  <div class="entity" style="top:1260px; left:2200px; width:190px;">
+    <div class="entity-header header-coral">GrocerySearch</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- query: string = &quot;&quot;</div>
+      <div class="item">- source: string = &quot;USDA FoodData&quot;</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ search(query): Food[]</div>
+      <div class="item">+ selectFood(food): void</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- WEB PAGES -->
+  <!-- ============================================= -->
+
+  <!-- LandingPage -->
+  <div class="entity" style="top:580px; left:40px; width:220px;">
+    <div class="entity-header header-sky">LandingPage</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- platform: string = &quot;web&quot;</div>
+      <div class="section-title">Navigation</div>
+      <div class="item">&bull; About</div>
+      <div class="item">&bull; Privacy</div>
+      <div class="item">&bull; Terms</div>
+      <div class="item">&bull; Support</div>
+      <div class="item">&bull; Attributions</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ navigateToAuth(): void</div>
+      <div class="item">+ viewPage(page): void</div>
+    </div>
+  </div>
+
+  <!-- WebPages Enum -->
+  <div class="entity" style="top:900px; left:40px; width:220px;">
+    <div class="entity-header header-gold">WebPages</div>
+    <div class="entity-body">
+      <div class="section-title">Pages</div>
+      <div class="item">&bull; AboutScreen</div>
+      <div class="item">&bull; PrivacyScreen</div>
+      <div class="item">&bull; TermsScreen</div>
+      <div class="item">&bull; SupportScreen</div>
+      <div class="item">&bull; AttributionsScreen</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- EXTERNAL SERVICES -->
+  <!-- ============================================= -->
+
+  <div class="entity" style="top:1260px; left:2550px; width:220px;">
+    <div class="entity-header header-lavender">ExternalServices</div>
+    <div class="entity-body">
+      <div class="section-title">AI Services</div>
+      <div class="item">&bull; OpenAI API (recipes, chat, vision)</div>
+      <div class="section-title">Payments</div>
+      <div class="item">&bull; Stripe (web payments)</div>
+      <div class="item">&bull; RevenueCat (StoreKit/IAP)</div>
+      <div class="item">&bull; RevenueCat Webhooks</div>
+      <div class="section-title">Data Sources</div>
+      <div class="item">&bull; USDA FoodData Central</div>
+      <div class="item">&bull; Instacart Connect API</div>
+      <div class="section-title">Notifications</div>
+      <div class="item">&bull; Expo Push Notifications</div>
+      <div class="section-title">Infrastructure</div>
+      <div class="item">&bull; PostgreSQL (Neon)</div>
+      <div class="item">&bull; Replit Object Storage</div>
+      <div class="item">&bull; Sentry (monitoring)</div>
+    </div>
+  </div>
+
+  <!-- RecipeModals -->
+  <div class="entity" style="top:1720px; left:2150px; width:220px;">
+    <div class="entity-header header-coral">RecipeModals</div>
+    <div class="entity-body">
+      <div class="section-title">Modals</div>
+      <div class="item">&bull; IngredientSwapModal</div>
+      <div class="item">&bull; NutritionCorrectionModal</div>
+      <div class="item">&bull; RecipeSettingsModal</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ swapIngredient(old, new): void</div>
+      <div class="item">+ correctNutrition(item): void</div>
+      <div class="item">+ updateSettings(prefs): void</div>
+    </div>
+  </div>
+
+  <!-- TrialComponents -->
+  <div class="entity" style="top:1430px; left:960px; width:280px;">
+    <div class="entity-header header-purple">TrialComponents</div>
+    <div class="entity-body">
+      <div class="section-title">Modals</div>
+      <div class="item">&bull; TrialExpiringModal (days remaining)</div>
+      <div class="section-title">Triggers</div>
+      <div class="item">&bull; trialDaysRemaining &le; 3 &rarr; TrialExpiringModal</div>
+    </div>
+  </div>
+
+  <!-- StatusIndicators (Offline & Sync) -->
+  <div class="entity" style="top:1700px; left:40px; width:260px;">
+    <div class="entity-header header-gold">StatusIndicators</div>
+    <div class="entity-body">
+      <div class="section-title">Components</div>
+      <div class="item">&bull; OfflineIndicator (no connection)</div>
+      <div class="item">&bull; PendingSyncBanner (queued mutations)</div>
+      <div class="item">&bull; SyncStatusIndicator (sync state)</div>
+      <div class="item">&bull; UpdateBanner (OTA updates)</div>
+      <div class="section-title">Providers</div>
+      <div class="item">&bull; NetworkStatusProvider (useNetworkStatus)</div>
+      <div class="item">&bull; useAppUpdate hook (expo-updates)</div>
+    </div>
+  </div>
+
+  <!-- WebSubscriptionComponents -->
+  <div class="entity" style="top:1700px; left:960px; width:260px;">
+    <div class="entity-header header-purple">WebSubscriptionComponents</div>
+    <div class="entity-body">
+      <div class="section-title">Platform</div>
+      <div class="item">- platform: string = &quot;web-only&quot;</div>
+      <div class="section-title">Components</div>
+      <div class="item">&bull; CancellationFlowModal (.web.tsx)</div>
+      <div class="item">&bull; WebPaymentFlow (.web.tsx)</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ startCancellation(): void</div>
+      <div class="item">+ applyRetentionOffer(): void</div>
+    </div>
+  </div>
+
+  <!-- Deep Link Entry -->
+  <div class="entity" style="top:1810px; left:1740px; width:260px;">
+    <div class="entity-header header-lime">DeepLinking</div>
+    <div class="entity-body">
+      <div class="section-title">Supported Paths</div>
+      <div class="item">&bull; recipe/{recipeId} &rarr; RecipeDetail</div>
+      <div class="item">&bull; inventory &rarr; KitchenTab</div>
+      <div class="item">&bull; scan &rarr; ScanHub</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ consumePendingDeepLink(): Link</div>
+      <div class="item">+ navigate(path): void</div>
+    </div>
+  </div>
+
+  <!-- Navigation Priority -->
+  <div class="entity" style="top:1960px; left:2100px; width:280px;">
+    <div class="entity-header header-mint">NavigationPriority</div>
+    <div class="entity-body">
+      <div class="section-title">Resolution Order</div>
+      <div class="item">1. Web + unauthenticated &rarr; Landing</div>
+      <div class="item">2. Not authenticated &rarr; Auth</div>
+      <div class="item">3. Authenticated + needsOnboarding &rarr; Onboarding</div>
+      <div class="item">4. Authenticated + subscription inactive &rarr; Subscription</div>
+      <div class="item">5. Otherwise &rarr; Main</div>
+    </div>
+  </div>
+
+  <!-- PushNotificationSystem -->
+  <div class="entity" style="top:2020px; left:1740px; width:280px;">
+    <div class="entity-header header-lavender">PushNotificationSystem</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- expoPushToken: string = null</div>
+      <div class="item">- platform: string = &quot;ios&quot; | &quot;android&quot;</div>
+      <div class="section-title">Client Operations</div>
+      <div class="item">+ registerForPushNotifications(): void</div>
+      <div class="item">+ registerDevice(): void</div>
+      <div class="item">+ handleNotificationReceived(): void</div>
+      <div class="item">+ getNotifications(): Notification[]</div>
+      <div class="item">+ markRead(notificationId): void</div>
+      <div class="item">+ markAllRead(): void</div>
+      <div class="section-title">Server Operations</div>
+      <div class="item">+ sendPushNotification(userId, body): void</div>
+      <div class="item">+ queueNotification(type, userId): void</div>
+      <div class="section-title">Deep Link Support</div>
+      <div class="item">&bull; Notification tap &rarr; deep link navigation</div>
+      <div class="item">&bull; recipe/{id}, inventory, scan paths</div>
+      <div class="section-title">Triggers</div>
+      <div class="item">&bull; Winback campaign (weekly job)</div>
+      <div class="item">&bull; Expiring items alert</div>
+      <div class="item">&bull; Meal plan reminder</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- NEW ENTITIES -->
+  <!-- ============================================= -->
+
+  <!-- Section Label for new areas -->
+  <div class="section-label" style="top:20px; left:3100px;">Extended Systems</div>
+  <div class="section-label" style="top:2500px; left:40px;">Admin & Reporting</div>
+
+  <!-- VoiceSystem -->
+  <div class="entity" style="top:1600px; left:2550px; width:220px;">
+    <div class="entity-header header-lavender">VoiceSystem</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; Voice transcription (speech-to-text)</div>
+      <div class="item">&bull; Text-to-speech</div>
+      <div class="item">&bull; Voice command parsing</div>
+      <div class="item">&bull; Voice chat</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ transcribe(): string</div>
+      <div class="item">+ speak(text): void</div>
+      <div class="item">+ parseCommand(input): Command</div>
+      <div class="item">+ voiceChat(): Response</div>
+    </div>
+  </div>
+
+  <!-- ExternalAPISystem -->
+  <div class="entity" style="top:2500px; left:2550px; width:220px;">
+    <div class="entity-header header-gold">ExternalAPISystem</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; API key generation</div>
+      <div class="item">&bull; API key revocation</div>
+      <div class="item">&bull; Inventory actions via external API</div>
+      <div class="item">&bull; Server-side only (external-api.router.ts)</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ generateKey(): APIKey</div>
+      <div class="item">+ revokeKey(keyId): void</div>
+      <div class="item">+ executeAction(action): Result</div>
+    </div>
+  </div>
+
+  <!-- ReferralSystem -->
+  <div class="entity" style="top:1840px; left:1340px; width:220px;">
+    <div class="entity-header header-lime">ReferralSystem</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- referralCode: string</div>
+      <div class="item">- referralStats: { totalReferred, trialExtensions }</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ getCode(): string</div>
+      <div class="item">+ validateCode(code): boolean</div>
+      <div class="item">+ applyReferral(code): void</div>
+    </div>
+  </div>
+
+  <!-- InstacartIntegration -->
+  <div class="entity" style="top:1300px; left:1340px; width:240px;">
+    <div class="entity-header header-mint">InstacartIntegration</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; Retailers lookup</div>
+      <div class="item">&bull; Products linking</div>
+      <div class="item">&bull; Recipe ingredients ordering</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ checkStatus(): InstacartStatus</div>
+      <div class="item">+ createShoppingLink(products): URL</div>
+      <div class="item">+ createRecipeLink(ingredients): URL</div>
+      <div class="item">+ openInstacartLink(url): void</div>
+    </div>
+  </div>
+
+  <!-- ErrorReporting -->
+  <div class="entity" style="top:2700px; left:960px; width:240px;">
+    <div class="entity-header header-coral">ErrorReporting</div>
+    <div class="entity-body">
+      <div class="section-title">Attributes</div>
+      <div class="item">- userId: string</div>
+      <div class="item">- errorMessage: string</div>
+      <div class="item">- stackTrace: string</div>
+      <div class="item">- componentStack: string</div>
+      <div class="item">- screenName: string</div>
+      <div class="item">- platform: string</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ submitReport(): void</div>
+    </div>
+  </div>
+
+  <!-- DataExport -->
+  <div class="entity" style="top:2100px; left:1340px; width:220px;">
+    <div class="entity-header header-sky">DataExport</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; User data export (personal data)</div>
+      <div class="item">&bull; Admin data export (system-wide)</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ exportUserData(): File</div>
+      <div class="item">+ exportAdminData(): File</div>
+    </div>
+  </div>
+
+  <!-- AdminPanel -->
+  <div class="entity" style="top:2500px; left:40px; width:280px;">
+    <div class="entity-header header-dark">AdminPanel</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; Analytics dashboard</div>
+      <div class="item">&bull; Subscription management</div>
+      <div class="item">&bull; Feedback management</div>
+      <div class="item">&bull; Data export</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ viewAnalytics(): Dashboard</div>
+      <div class="item">+ manageSubscriptions(): void</div>
+      <div class="item">+ manageFeedback(): void</div>
+      <div class="item">+ exportData(): File</div>
+      <div class="section-title">Sub-Metrics</div>
+      <div class="item">&bull; subscriptionMetrics</div>
+      <div class="item">&bull; trialConversion</div>
+      <div class="item">&bull; churnRate</div>
+      <div class="item">&bull; conversionFunnel</div>
+      <div class="item">&bull; advancedMetrics</div>
+    </div>
+  </div>
+
+  <!-- ShelfLifeSuggestions -->
+  <div class="entity" style="top:310px; left:2550px; width:220px;">
+    <div class="entity-header header-green">ShelfLifeSuggestions</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; AI-powered shelf life estimation</div>
+      <div class="item">&bull; Storage location tips</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ getShelfLife(item): Duration</div>
+      <div class="item">+ getShelfLifeForFood(name, location): Duration</div>
+      <div class="item">+ getShelfLifeEntry(category): ShelfLifeData</div>
+    </div>
+  </div>
+
+  <!-- NutritionLookup -->
+  <div class="entity" style="top:620px; left:2550px; width:220px;">
+    <div class="entity-header header-teal">NutritionLookup</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; USDA FoodData Central lookup</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ search(query): FoodItem[]</div>
+      <div class="item">+ getByFdcId(fdcId): NutritionData</div>
+    </div>
+  </div>
+
+  <!-- DonationSystem -->
+  <div class="entity" style="top:1960px; left:960px; width:240px;">
+    <div class="entity-header header-purple">DonationSystem</div>
+    <div class="entity-body">
+      <div class="section-title">Features</div>
+      <div class="item">&bull; Stripe checkout for donations</div>
+      <div class="item">&bull; Part of LandingScreen</div>
+      <div class="section-title">Operations</div>
+      <div class="item">+ createDonationCheckout(amount): Session</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SVG CONNECTIONS -->
+  <!-- ============================================= -->
+  <svg class="connections">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+      </marker>
+      <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#7B68EE"/>
+      </marker>
+      <marker id="arrow-teal" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#118AB2"/>
+      </marker>
+      <marker id="arrow-coral" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B"/>
+      </marker>
+      <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#06D6A0"/>
+      </marker>
+      <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#F78C6B"/>
+      </marker>
+      <marker id="diamond" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+        <polygon points="6 0, 12 6, 6 12, 0 6" fill="#333"/>
+      </marker>
+    </defs>
+
+    <!-- AppLaunch -> AuthScreen -->
+    <line x1="260" y1="130" x2="340" y2="130" stroke="#333" marker-end="url(#arrow)"/>
+
+    <!-- AppLaunch -> WebLaunch/Landing (web platform) -->
+    <path d="M 150 240 L 150 340" stroke="#8ECAE6" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="158" y="295" font-size="11" fill="#8ECAE6" font-weight="600">Web</text>
+
+    <!-- WebLaunch -> LandingPage -->
+    <line x1="150" y1="440" x2="150" y2="580" stroke="#8ECAE6" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- AuthScreen -> SubscriptionGate (Authenticated) -->
+    <line x1="600" y1="130" x2="680" y2="130" stroke="#7B68EE" marker-end="url(#arrow-purple)"/>
+    <text x="605" y="120" font-size="11" fill="#7B68EE" font-weight="600">Authenticated</text>
+
+    <!-- SubscriptionGate -> OnboardingScreen (Needs Onboarding) -->
+    <line x1="920" y1="130" x2="960" y2="130" stroke="#EF476F" marker-end="url(#arrow)"/>
+    <text x="910" y="120" font-size="11" fill="#EF476F" font-weight="600">Needs Onboarding</text>
+
+    <!-- AuthScreen -> EmailPassword -->
+    <path d="M 430 450 L 430 500" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+
+    <!-- AuthScreen -> AppleSignIn -->
+    <path d="M 530 450 L 630 500" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+
+    <!-- AuthScreen -> GoogleSignIn -->
+    <path d="M 470 450 L 530 680" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+
+    <!-- OnboardingScreen -> DrawerNavigator (Complete) -->
+    <line x1="1200" y1="150" x2="1340" y2="150" stroke="#118AB2" stroke-width="2.5" marker-end="url(#arrow-teal)"/>
+    <text x="1230" y="140" font-size="11" fill="#118AB2" font-weight="600">Complete</text>
+
+    <!-- SubscriptionGate -> DrawerNavigator (Active + Onboarded) -->
+    <path d="M 920 100 Q 1100 50 1340 120" stroke="#118AB2" stroke-width="2.5" marker-end="url(#arrow-teal)"/>
+    <text x="1050" y="55" font-size="11" fill="#118AB2" font-weight="600">Active + Onboarded</text>
+
+    <!-- SubscriptionGate -> SubscriptionScreen (Inactive) -->
+    <path d="M 800 280 Q 800 330 1080 380" stroke="#7B68EE" marker-end="url(#arrow-purple)"/>
+    <text x="850" y="320" font-size="11" fill="#7B68EE" font-weight="600">Inactive</text>
+
+    <!-- SubscriptionScreen -> Stripe -->
+    <line x1="1060" y1="610" x2="1060" y2="620" stroke="#7B68EE" stroke-dasharray="4,3" marker-end="url(#arrow-purple)"/>
+
+    <!-- SubscriptionScreen -> RevenueCat -->
+    <line x1="1100" y1="610" x2="1100" y2="830" stroke="#7B68EE" stroke-dasharray="4,3" marker-end="url(#arrow-purple)"/>
+
+    <!-- Stripe -> Main (success) -->
+    <path d="M 1060 770 Q 1060 800 1200 800 Q 1300 800 1420 480" stroke="#118AB2" stroke-dasharray="6,3" marker-end="url(#arrow-teal)"/>
+
+    <!-- DrawerNavigator -> TabNavigator -->
+    <line x1="1470" y1="230" x2="1470" y2="310" stroke="#118AB2" stroke-dasharray="4,3" marker-end="url(#arrow-teal)"/>
+
+    <!-- TabNavigator -> KitchenStack -->
+    <line x1="1600" y1="370" x2="1740" y2="140" stroke="#073B4C" marker-end="url(#arrow)"/>
+
+    <!-- TabNavigator -> CookwareStack -->
+    <line x1="1600" y1="400" x2="1740" y2="470" stroke="#073B4C" marker-end="url(#arrow)"/>
+
+    <!-- TabNavigator -> RecipesStack -->
+    <line x1="1600" y1="430" x2="1740" y2="750" stroke="#073B4C" marker-end="url(#arrow)"/>
+
+    <!-- TabNavigator -> MealPlanStack -->
+    <line x1="1600" y1="460" x2="1740" y2="1130" stroke="#073B4C" marker-end="url(#arrow)"/>
+
+    <!-- DrawerNavigator -> ProfileStack -->
+    <path d="M 1470 230 Q 1470 1500 1740 1500" stroke="#F78C6B" stroke-dasharray="6,3" marker-end="url(#arrow-orange)"/>
+
+    <!-- Main -> ScanHub (modal) -->
+    <path d="M 1600 180 Q 1900 100 2150 150" stroke="#FF6B6B" stroke-dasharray="6,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- ScanHub -> Scanners -->
+    <line x1="2220" y1="310" x2="2180" y2="380" stroke="#FF6B6B" marker-end="url(#arrow-coral)"/>
+    <line x1="2300" y1="310" x2="2380" y2="380" stroke="#FF6B6B" marker-end="url(#arrow-coral)"/>
+    <line x1="2180" y1="540" x2="2180" y2="620" stroke="#FF6B6B" marker-end="url(#arrow-coral)"/>
+    <line x1="2380" y1="540" x2="2380" y2="620" stroke="#FF6B6B" marker-end="url(#arrow-coral)"/>
+    <path d="M 2270 310 Q 2270 560 2290 840" stroke="#FF6B6B" marker-end="url(#arrow-coral)"/>
+
+    <!-- Barcode -> AddItem -->
+    <path d="M 2180 540 Q 2180 990 2180 1040" stroke="#FF6B6B" stroke-dasharray="4,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- FoodCamera -> AddFoodBatch -->
+    <path d="M 2400 540 Q 2400 990 2400 1040" stroke="#FF6B6B" stroke-dasharray="4,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- LandingPage -> AuthScreen -->
+    <path d="M 260 680 Q 350 500 470 450" stroke="#06D6A0" marker-end="url(#arrow-green)"/>
+    <text x="300" y="560" font-size="11" fill="#06D6A0" font-weight="600">Sign In</text>
+
+    <!-- SubscriptionGate -> SubscriptionStatusFlow (containment) -->
+    <path d="M 800 300 Q 800 700 1100 1060" stroke="#999" stroke-dasharray="2,3" stroke-width="1.5"/>
+
+    <!-- LandingPage -> WebPages -->
+    <line x1="150" y1="870" x2="150" y2="900" stroke="#E6AC00" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+    <!-- FloatingChatButton -> ChatModal -->
+    <line x1="2420" y1="1560" x2="2390" y2="1560" stroke="#FF6B6B" stroke-dasharray="4,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- RecipesStack -> RecipeModals (modal presentation) -->
+    <path d="M 2000 900 Q 2100 1300 2200 1720" stroke="#FF6B6B" stroke-dasharray="6,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- SubscriptionScreen -> TrialComponents (dotted containment) -->
+    <path d="M 1100 610 Q 1100 1000 1100 1430" stroke="#999" stroke-dasharray="2,3" marker-end="url(#arrow)"/>
+
+    <!-- SubscriptionScreen -> WebSubscriptionComponents (web-only) -->
+    <path d="M 1080 610 Q 1050 1200 1080 1700" stroke="#7B68EE" stroke-dasharray="4,3" marker-end="url(#arrow-purple)"/>
+
+    <!-- Main app area -> FloatingChatButton -->
+    <path d="M 1600 200 Q 2100 800 2490 1500" stroke="#FF6B6B" stroke-dasharray="6,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- ============================================= -->
+    <!-- NEW CONNECTIONS -->
+    <!-- ============================================= -->
+
+    <!-- Arrow markers for new entity colors -->
+    <defs>
+      <marker id="arrow-lavender" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#B39DDB"/>
+      </marker>
+      <marker id="arrow-gold" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#E6AC00"/>
+      </marker>
+      <marker id="arrow-lime" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#A8E06C"/>
+      </marker>
+      <marker id="arrow-mint" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#26C6DA"/>
+      </marker>
+      <marker id="arrow-sky" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#8ECAE6"/>
+      </marker>
+      <marker id="arrow-dark" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#073B4C"/>
+      </marker>
+    </defs>
+
+    <!-- VoiceSystem -> TabNavigator (voice commands feed into main app) -->
+    <path d="M 2550 1700 Q 2000 1000 1600 460" stroke="#B39DDB" stroke-dasharray="6,3" marker-end="url(#arrow-teal)"/>
+    <text x="2050" y="1100" font-size="11" fill="#B39DDB" font-weight="600">Voice Commands</text>
+
+    <!-- VoiceSystem -> ChatModal (voice chat) -->
+    <line x1="2550" y1="1680" x2="2390" y2="1600" stroke="#B39DDB" stroke-dasharray="4,3" marker-end="url(#arrow-lavender)"/>
+
+    <!-- VoiceSystem -> ExternalServices (uses OpenAI for transcription) -->
+    <line x1="2660" y1="1600" x2="2660" y2="1530" stroke="#999" stroke-dasharray="2,3" stroke-width="1.5"/>
+
+    <!-- MealPlanStack -> InstacartIntegration -->
+    <path d="M 1740 1160 Q 1540 1250 1580 1340" stroke="#26C6DA" marker-end="url(#arrow-mint)"/>
+    <text x="1560" y="1280" font-size="11" fill="#26C6DA" font-weight="600">Instacart</text>
+
+    <!-- InstacartIntegration -> ExternalServices (Instacart Connect API) -->
+    <path d="M 1580 1490 Q 2000 1500 2550 1400" stroke="#999" stroke-dasharray="2,3" stroke-width="1.5"/>
+
+    <!-- ProfileStack -> ReferralSystem -->
+    <path d="M 1740 1700 Q 1540 1780 1560 1840" stroke="#A8E06C" stroke-dasharray="4,3" marker-end="url(#arrow-lime)"/>
+
+    <!-- ProfileStack -> DataExport -->
+    <path d="M 1740 1750 Q 1540 1950 1460 2100" stroke="#8ECAE6" stroke-dasharray="4,3" marker-end="url(#arrow-sky)"/>
+
+    <!-- KitchenStack -> ShelfLifeSuggestions -->
+    <path d="M 1980 200 Q 2300 250 2550 370" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+    <text x="2200" y="260" font-size="11" fill="#06D6A0" font-weight="600">Shelf Life</text>
+
+    <!-- ScanHub area -> NutritionLookup -->
+    <path d="M 2500 640 Q 2530 640 2550 640" stroke="#118AB2" stroke-dasharray="4,3" marker-end="url(#arrow-teal)"/>
+
+    <!-- LandingPage -> DonationSystem -->
+    <path d="M 260 750 Q 600 1000 960 1960" stroke="#8ECAE6" stroke-dasharray="4,3" marker-end="url(#arrow-sky)"/>
+    <text x="500" y="1200" font-size="11" fill="#8ECAE6" font-weight="600">Donate</text>
+
+    <!-- AdminPanel -> DataExport -->
+    <path d="M 320 2530 Q 700 2300 1340 2180" stroke="#8ECAE6" stroke-dasharray="4,3" marker-end="url(#arrow-sky)"/>
+    <text x="700" y="2340" font-size="11" fill="#8ECAE6" font-weight="600">Export Data</text>
+
+    <!-- AdminPanel -> ErrorReporting -->
+    <path d="M 320 2780 Q 600 2770 960 2760" stroke="#FF6B6B" stroke-dasharray="4,3" marker-end="url(#arrow-coral)"/>
+
+    <!-- PushNotificationSystem -> DeepLinking -->
+    <line x1="1880" y1="2020" x2="1880" y2="1960" stroke="#999" stroke-dasharray="2,3" stroke-width="1.5"/>
+
+  </svg>
+
+</div>
+</div>
+
+</body>
+</html>

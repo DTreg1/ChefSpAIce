@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChefSpAIce - Database Schema Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #16213e;
+    border-bottom: 1px solid #2a2a4a;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .toolbar h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+    margin-right: 16px;
+  }
+  .toolbar .stats {
+    font-size: 12px;
+    color: #8888aa;
+  }
+  .toolbar .filter-btn {
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid #3a3a5a;
+    background: transparent;
+    color: #ccc;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .toolbar .filter-btn:hover { border-color: #6a6a8a; color: #fff; }
+  .toolbar .filter-btn.active { background: var(--btn-color, #555); color: #fff; border-color: var(--btn-color, #555); }
+  .toolbar .filter-btn.all-btn.active { background: #555; border-color: #777; }
+
+  .toolbar .zoom-controls {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .toolbar .zoom-controls button {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    border: 1px solid #3a3a5a;
+    background: transparent;
+    color: #ccc;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .toolbar .zoom-controls button:hover { background: #2a2a4a; color: #fff; }
+  .toolbar .zoom-label { font-size: 11px; color: #888; min-width: 36px; text-align: center; }
+
+  .canvas-wrapper {
+    overflow: auto;
+    padding: 20px;
+    height: calc(100vh - 52px);
+  }
+  .canvas {
+    position: relative;
+    background: #0f0f23;
+    border-radius: 8px;
+    transform-origin: 0 0;
+  }
+
+  svg.connections {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  svg.connections g.rel-group { pointer-events: stroke; cursor: pointer; }
+  svg.connections g.rel-group path { transition: stroke-width 0.15s, opacity 0.15s; }
+  svg.connections.has-selection g.rel-group:not(.selected) path { opacity: 0.08; }
+  svg.connections.has-selection g.rel-group:not(.selected) text { opacity: 0.08; }
+  svg.connections g.rel-group:hover path.visible-line { stroke-width: 4; }
+  svg.connections g.rel-group.selected path.visible-line { stroke-width: 5; opacity: 1 !important; }
+  svg.connections g.rel-group.selected text { opacity: 1 !important; font-weight: 700; }
+
+  .entity {
+    position: absolute;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    background: #1e1e3a;
+    border: 1px solid #2a2a4a;
+    z-index: 2;
+    font-size: 12px;
+    transition: box-shadow 0.15s, opacity 0.15s;
+  }
+  .canvas.has-domain-filter .entity.dimmed { opacity: 0.15; }
+  .canvas.has-domain-filter .entity:not(.dimmed) { box-shadow: 0 0 20px rgba(255,255,255,0.05); }
+
+  .entity-header {
+    padding: 7px 12px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+  }
+  .entity-header .tbl-icon {
+    width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+
+  table.cols {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  table.cols tr {
+    border-top: 1px solid #2a2a4a;
+  }
+  table.cols tr:hover { background: rgba(255,255,255,0.03); }
+  table.cols td {
+    padding: 3px 8px;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  table.cols td.col-icon {
+    width: 20px;
+    text-align: center;
+    padding: 3px 4px;
+    color: #888;
+    font-size: 10px;
+  }
+  table.cols td.col-icon .pk { color: #f0c040; font-weight: 700; }
+  table.cols td.col-icon .fk { color: #6ea8fe; }
+  table.cols td.col-name {
+    color: #e0e0e0;
+    font-weight: 500;
+  }
+  table.cols td.col-type {
+    color: #8888bb;
+    font-size: 10px;
+  }
+  table.cols td.col-extra {
+    color: #666688;
+    font-size: 10px;
+    font-style: italic;
+  }
+
+  .rel-tooltip {
+    position: fixed;
+    background: #fff;
+    color: #1a1a2e;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.12s;
+    white-space: nowrap;
+  }
+  .rel-tooltip.visible { opacity: 1; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80vh;
+    font-size: 18px;
+    color: #6a6a8a;
+  }
+  .loading .spinner {
+    width: 24px; height: 24px;
+    border: 3px solid #3a3a5a;
+    border-top-color: #7B68EE;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .section-label {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #3a3a5a;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>ChefSpAIce Schema</h1>
+  <span class="stats" id="stats"></span>
+  <div id="domain-filters"></div>
+  <div class="zoom-controls">
+    <button id="zoom-out" title="Zoom out">&minus;</button>
+    <span class="zoom-label" id="zoom-label">100%</span>
+    <button id="zoom-in" title="Zoom in">+</button>
+    <button id="zoom-fit" title="Fit to screen" style="font-size:11px;">Fit</button>
+  </div>
+</div>
+
+<div class="canvas-wrapper" id="canvas-wrapper">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    Loading schema&hellip;
+  </div>
+  <div class="canvas" id="canvas" style="display:none;"></div>
+</div>
+
+<div class="rel-tooltip" id="tooltip"></div>
+
+<script>
+/*__SCHEMA_DATA__*/
+(function() {
+  const ENTITY_WIDTH = 280;
+  const COL_GAP = 60;
+  const ROW_GAP = 40;
+  const TOP_OFFSET = 50;
+  const LEFT_OFFSET = 40;
+
+  let currentZoom = 1;
+  let schemaData = null;
+  let activeDomain = null;
+  let canvasNaturalW = 0;
+  let canvasNaturalH = 0;
+
+  async function init() {
+    try {
+      if (window.__SCHEMA_DATA__) {
+        schemaData = window.__SCHEMA_DATA__;
+      } else {
+        const res = await fetch('/api/schema');
+        schemaData = await res.json();
+      }
+      render(schemaData);
+    } catch (err) {
+      document.getElementById('loading').innerHTML = '<span style="color:#ff6b6b;">Failed to load schema: ' + err.message + '</span>';
+    }
+  }
+
+  function render(data) {
+    document.getElementById('loading').style.display = 'none';
+    const canvas = document.getElementById('canvas');
+    canvas.style.display = 'block';
+
+    const { tables, relationships } = data;
+    document.getElementById('stats').textContent = tables.length + ' tables \u00b7 ' + relationships.length + ' relationships';
+
+    const domains = {};
+    tables.forEach(t => {
+      if (!domains[t.domain]) domains[t.domain] = { color: t.domainColor, tables: [] };
+      domains[t.domain].tables.push(t);
+    });
+
+    buildFilters(domains);
+
+    const positions = layoutTables(domains);
+
+    let maxX = 0, maxY = 0;
+    for (const pos of Object.values(positions)) {
+      maxX = Math.max(maxX, pos.x + pos.w + LEFT_OFFSET);
+      maxY = Math.max(maxY, pos.y + pos.h + ROW_GAP);
+    }
+    canvasNaturalW = maxX + 60;
+    canvasNaturalH = maxY + 60;
+    canvas.style.width = canvasNaturalW + 'px';
+    canvas.style.height = canvasNaturalH + 'px';
+
+    let html = '';
+
+    let domainX = LEFT_OFFSET;
+    for (const [domainName, domainData] of Object.entries(domains)) {
+      const domTables = domainData.tables;
+      const firstPos = positions[domTables[0].name];
+      if (firstPos) {
+        html += '<div class="section-label" style="top:10px; left:' + firstPos.x + 'px; color:' + domainData.color + ';">' + domainName + '</div>';
+      }
+    }
+
+    for (const table of tables) {
+      const pos = positions[table.name];
+      if (!pos) continue;
+      html += buildEntity(table, pos, domains);
+    }
+
+    canvas.innerHTML = html;
+
+    const svg = buildSVG(relationships, positions, tables);
+    canvas.insertAdjacentElement('afterbegin', svg);
+
+    setupInteractivity(svg);
+  }
+
+  function layoutTables(domains) {
+    const positions = {};
+    let colX = LEFT_OFFSET;
+
+    const domainOrder = [
+      'User & Auth', 'Sync & Data', 'Tracking',
+      'Subscriptions', 'Feedback', 'Reference',
+      'Notifications', 'System'
+    ];
+
+    for (const domainName of domainOrder) {
+      const domainData = domains[domainName];
+      if (!domainData) continue;
+      const domTables = domainData.tables;
+
+      const maxPerCol = 4;
+      const subCols = [];
+      for (let i = 0; i < domTables.length; i += maxPerCol) {
+        subCols.push(domTables.slice(i, i + maxPerCol));
+      }
+
+      for (const subCol of subCols) {
+        let y = TOP_OFFSET;
+        for (const table of subCol) {
+          const h = estimateHeight(table);
+          positions[table.name] = { x: colX, y, w: ENTITY_WIDTH, h };
+          y += h + ROW_GAP;
+        }
+        colX += ENTITY_WIDTH + COL_GAP;
+      }
+    }
+
+    return positions;
+  }
+
+  function estimateHeight(table) {
+    const headerH = 32;
+    const rowH = 22;
+    return headerH + table.columns.length * rowH + 4;
+  }
+
+  function buildEntity(table, pos, domains) {
+    const domColor = table.domainColor;
+    let rows = '';
+    for (const col of table.columns) {
+      let icon = '';
+      if (col.isPrimaryKey) icon = '<span class="pk">PK</span>';
+      else if (col.isForeignKey) icon = '<span class="fk">FK</span>';
+
+      let extra = '';
+      const parts = [];
+      if (col.isNotNull && !col.isPrimaryKey) parts.push('NN');
+      if (col.isUnique && !col.isPrimaryKey) parts.push('UQ');
+      if (col.defaultValue) parts.push('= ' + col.defaultValue);
+      extra = parts.join(' ');
+
+      rows += '<tr>' +
+        '<td class="col-icon">' + icon + '</td>' +
+        '<td class="col-name">' + escHtml(col.name) + '</td>' +
+        '<td class="col-type">' + escHtml(col.type) + '</td>' +
+        '<td class="col-extra">' + escHtml(extra) + '</td>' +
+        '</tr>';
+    }
+
+    return '<div class="entity" data-domain="' + escHtml(table.domain) + '" data-table="' + escHtml(table.name) + '" style="top:' + pos.y + 'px; left:' + pos.x + 'px; width:' + pos.w + 'px;">' +
+      '<div class="entity-header" style="background:' + domColor + ';">' +
+        '<span class="tbl-icon">T</span>' +
+        escHtml(table.name) +
+      '</div>' +
+      '<table class="cols">' + rows + '</table>' +
+    '</div>';
+  }
+
+  function buildSVG(relationships, positions, tables) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('connections');
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const colors = new Set();
+    relationships.forEach(r => {
+      const t = tables.find(t => t.name === r.fromTable);
+      if (t) colors.add(t.domainColor);
+    });
+    colors.forEach(color => {
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+      marker.setAttribute('id', 'arrow-' + color.replace('#',''));
+      marker.setAttribute('markerWidth', '10');
+      marker.setAttribute('markerHeight', '7');
+      marker.setAttribute('refX', '10');
+      marker.setAttribute('refY', '3.5');
+      marker.setAttribute('orient', 'auto');
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      poly.setAttribute('points', '0 0, 10 3.5, 0 7');
+      poly.setAttribute('fill', color);
+      marker.appendChild(poly);
+      defs.appendChild(marker);
+    });
+    svg.appendChild(defs);
+
+    for (const rel of relationships) {
+      const fromPos = positions[rel.fromTable];
+      const toPos = positions[rel.toTable];
+      if (!fromPos || !toPos) continue;
+
+      const fromTable = tables.find(t => t.name === rel.fromTable);
+      const color = fromTable ? fromTable.domainColor : '#555';
+      const markerId = 'arrow-' + color.replace('#','');
+
+      const fromColIdx = fromTable ? fromTable.columns.findIndex(c => c.name === rel.fromColumn) : 0;
+      const fromY = fromPos.y + 32 + Math.max(0, fromColIdx) * 22 + 11;
+      const toColIdx = tables.find(t => t.name === rel.toTable)?.columns.findIndex(c => c.name === rel.toColumn) ?? 0;
+      const toY = toPos.y + 32 + Math.max(0, toColIdx) * 22 + 11;
+
+      let path;
+      const isDashed = rel.type === '1:1';
+
+      if (fromPos.x > toPos.x) {
+        const midX = toPos.x + toPos.w + Math.floor((fromPos.x - toPos.x - toPos.w) / 2);
+        path = 'M ' + fromPos.x + ' ' + fromY +
+               ' L ' + midX + ' ' + fromY +
+               ' L ' + midX + ' ' + toY +
+               ' L ' + (toPos.x + toPos.w) + ' ' + toY;
+      } else if (fromPos.x + fromPos.w < toPos.x) {
+        const midX = fromPos.x + fromPos.w + Math.floor((toPos.x - fromPos.x - fromPos.w) / 2);
+        path = 'M ' + (fromPos.x + fromPos.w) + ' ' + fromY +
+               ' L ' + midX + ' ' + fromY +
+               ' L ' + midX + ' ' + toY +
+               ' L ' + toPos.x + ' ' + toY;
+      } else {
+        const exitX = Math.min(fromPos.x, toPos.x) - 30;
+        path = 'M ' + fromPos.x + ' ' + fromY +
+               ' L ' + exitX + ' ' + fromY +
+               ' L ' + exitX + ' ' + toY +
+               ' L ' + toPos.x + ' ' + toY;
+      }
+
+      const label = rel.fromTable + '.' + rel.fromColumn + ' \u2192 ' + rel.toTable + '.' + rel.toColumn + ' (' + rel.type + ')';
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.classList.add('rel-group');
+      g.dataset.label = label;
+      g.dataset.from = rel.fromTable;
+      g.dataset.to = rel.toTable;
+
+      const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      hitPath.setAttribute('d', path);
+      hitPath.setAttribute('stroke', 'transparent');
+      hitPath.setAttribute('stroke-width', '16');
+      hitPath.setAttribute('fill', 'none');
+
+      const visPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      visPath.setAttribute('d', path);
+      visPath.setAttribute('stroke', color);
+      visPath.setAttribute('stroke-width', '2');
+      visPath.setAttribute('fill', 'none');
+      visPath.setAttribute('marker-end', 'url(#' + markerId + ')');
+      visPath.classList.add('visible-line');
+      if (isDashed) visPath.setAttribute('stroke-dasharray', '6,3');
+
+      g.appendChild(hitPath);
+      g.appendChild(visPath);
+      svg.appendChild(g);
+    }
+
+    return svg;
+  }
+
+  function setupInteractivity(svg) {
+    const tooltip = document.getElementById('tooltip');
+
+    svg.addEventListener('mousemove', function(e) {
+      const group = e.target.closest('.rel-group');
+      if (group) {
+        tooltip.textContent = group.dataset.label;
+        tooltip.classList.add('visible');
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY - 32) + 'px';
+
+        document.querySelectorAll('.entity').forEach(el => el.style.removeProperty('box-shadow'));
+        const from = document.querySelector('[data-table="' + group.dataset.from + '"]');
+        const to = document.querySelector('[data-table="' + group.dataset.to + '"]');
+        if (from) from.style.boxShadow = '0 0 16px ' + getComputedStyle(from.querySelector('.entity-header')).backgroundColor;
+        if (to) to.style.boxShadow = '0 0 16px ' + getComputedStyle(to.querySelector('.entity-header')).backgroundColor;
+      } else {
+        tooltip.classList.remove('visible');
+        document.querySelectorAll('.entity').forEach(el => el.style.removeProperty('box-shadow'));
+      }
+    });
+
+    svg.addEventListener('mouseleave', function() {
+      tooltip.classList.remove('visible');
+      document.querySelectorAll('.entity').forEach(el => el.style.removeProperty('box-shadow'));
+    });
+
+    svg.addEventListener('click', function(e) {
+      const group = e.target.closest('.rel-group');
+      if (group) {
+        const wasSelected = group.classList.contains('selected');
+        svg.querySelectorAll('.rel-group.selected').forEach(g => g.classList.remove('selected'));
+        if (!wasSelected) {
+          group.classList.add('selected');
+          svg.classList.add('has-selection');
+        } else {
+          svg.classList.remove('has-selection');
+        }
+      } else {
+        svg.querySelectorAll('.rel-group.selected').forEach(g => g.classList.remove('selected'));
+        svg.classList.remove('has-selection');
+      }
+    });
+  }
+
+  function buildFilters(domains) {
+    const container = document.getElementById('domain-filters');
+    const allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn all-btn active';
+    allBtn.textContent = 'All';
+    allBtn.onclick = () => filterDomain(null, allBtn);
+    container.appendChild(allBtn);
+
+    for (const [name, data] of Object.entries(domains)) {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = name;
+      btn.style.setProperty('--btn-color', data.color);
+      btn.onclick = () => filterDomain(name, btn);
+      container.appendChild(btn);
+    }
+  }
+
+  function filterDomain(domain, btn) {
+    activeDomain = domain;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const canvas = document.getElementById('canvas');
+    if (!domain) {
+      canvas.classList.remove('has-domain-filter');
+      document.querySelectorAll('.entity').forEach(el => el.classList.remove('dimmed'));
+    } else {
+      canvas.classList.add('has-domain-filter');
+      document.querySelectorAll('.entity').forEach(el => {
+        el.classList.toggle('dimmed', el.dataset.domain !== domain);
+      });
+    }
+  }
+
+  function applyZoom(level) {
+    currentZoom = Math.max(0.1, Math.min(3, level));
+    var canvas = document.getElementById('canvas');
+    canvas.style.transform = 'scale(' + currentZoom + ')';
+    canvas.style.width = canvasNaturalW + 'px';
+    canvas.style.height = canvasNaturalH + 'px';
+    var wrapper = document.getElementById('canvas-wrapper');
+    wrapper.style.overflow = 'auto';
+    var inner = wrapper.querySelector('.canvas-inner');
+    if (!inner) {
+      inner = document.createElement('div');
+      inner.className = 'canvas-inner';
+      inner.style.position = 'relative';
+      wrapper.insertBefore(inner, canvas);
+      inner.appendChild(canvas);
+    }
+    inner.style.width = Math.ceil(canvasNaturalW * currentZoom) + 'px';
+    inner.style.height = Math.ceil(canvasNaturalH * currentZoom) + 'px';
+    document.getElementById('zoom-label').textContent = Math.round(currentZoom * 100) + '%';
+  }
+
+  function zoom(delta, fit) {
+    if (fit) {
+      var wrapper = document.getElementById('canvas-wrapper');
+      var availW = wrapper.clientWidth - 40;
+      var availH = wrapper.clientHeight - 40;
+      var scaleW = availW / canvasNaturalW;
+      var scaleH = availH / canvasNaturalH;
+      applyZoom(Math.min(scaleW, scaleH, 1));
+      wrapper.scrollTop = 0;
+      wrapper.scrollLeft = 0;
+    } else {
+      applyZoom(currentZoom + delta);
+    }
+  };
+
+  function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('zoom-out').addEventListener('click', function() { zoom(-0.1); });
+  document.getElementById('zoom-in').addEventListener('click', function() { zoom(0.1); });
+  document.getElementById('zoom-fit').addEventListener('click', function() { zoom(0, true); });
+
+  init();
+})();
+</script>
+</body>
+</html>

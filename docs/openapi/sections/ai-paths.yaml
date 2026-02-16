@@ -1,0 +1,1336 @@
+/api/chat:
+  post:
+    operationId: chatWithAssistant
+    tags:
+      - Chat
+    summary: AI kitchen assistant chat
+    description: >
+      Send a message to the AI kitchen assistant (ChefSpAIce). The assistant can
+      answer cooking questions, manage inventory via function-calling, generate
+      recipes, create meal plans, and more. Authenticated users get actionable
+      capabilities through OpenAI tool calls; unauthenticated users receive
+      advice only.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: The user's chat message.
+                example: "What can I cook with chicken and rice?"
+              context:
+                type: string
+                description: Optional free-text context about the user's inventory.
+              history:
+                type: array
+                description: Previous conversation turns for multi-turn context.
+                items:
+                  type: object
+                  required:
+                    - role
+                    - content
+                  properties:
+                    role:
+                      type: string
+                      enum:
+                        - user
+                        - assistant
+                    content:
+                      type: string
+              inventory:
+                type: array
+                description: Client-supplied inventory items (used when the user is not authenticated).
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    quantity:
+                      type: number
+                    unit:
+                      type: string
+              preferences:
+                type: object
+                description: User dietary preferences (overridden by server-side data for authenticated users).
+                properties:
+                  dietaryRestrictions:
+                    type: array
+                    items:
+                      type: string
+                  cuisinePreferences:
+                    type: array
+                    items:
+                      type: string
+                  macroTargets:
+                    type: object
+                    properties:
+                      calories:
+                        type: number
+                      protein:
+                        type: number
+                      carbs:
+                        type: number
+                      fat:
+                        type: number
+              equipment:
+                type: array
+                description: IDs or objects representing kitchen equipment the user owns.
+                items:
+                  oneOf:
+                    - type: integer
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+    responses:
+      "200":
+        description: Successful chat response.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    reply:
+                      type: string
+                      description: The assistant's text reply.
+                    actions:
+                      type: array
+                      description: Results of function-calling actions executed on behalf of the user (only present when tool calls are made).
+                      items:
+                        type: object
+                    refreshData:
+                      type: boolean
+                      description: When true the client should refresh its local data caches.
+                    navigateTo:
+                      type: object
+                      description: Optional navigation instruction for the client.
+                      properties:
+                        screen:
+                          type: string
+                        params:
+                          type: object
+      "400":
+        description: Bad request – message is missing.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "Message is required"
+              errorCode: MISSING_MESSAGE
+      "403":
+        description: Feature not available – subscription required.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "Live AI Kitchen Assistant requires an active subscription."
+              errorCode: FEATURE_NOT_AVAILABLE
+      "429":
+        description: Rate limit exceeded.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+
+/api/suggestions/waste-reduction:
+  post:
+    operationId: getWasteReductionTips
+    tags:
+      - Suggestions
+    summary: AI waste-reduction tips for expiring items
+    description: >
+      Given a list of food items that are expiring soon, returns 3-5 actionable
+      tips (recipe ideas, storage advice, freezing recommendations) to reduce
+      food waste.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: query
+        name: refresh
+        schema:
+          type: string
+          enum:
+            - "true"
+            - "false"
+        description: Set to "true" to bypass the server-side cache.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              expiringItems:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    daysUntilExpiry:
+                      type: integer
+                    quantity:
+                      type: integer
+    responses:
+      "200":
+        description: Waste-reduction suggestions returned.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    suggestions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          text:
+                            type: string
+                          category:
+                            type: string
+                            enum:
+                              - recipe
+                              - storage
+                              - freeze
+                              - preserve
+                              - general
+                          searchQuery:
+                            type: string
+                            description: Present only for "recipe" category tips.
+                    expiringItems:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          name:
+                            type: string
+                          daysUntilExpiry:
+                            type: integer
+                          quantity:
+                            type: integer
+
+/api/suggestions/fun-fact:
+  post:
+    operationId: getInventoryFunFact
+    tags:
+      - Suggestions
+    summary: AI-generated fun fact about the user's inventory
+    description: >
+      Returns a short, fun, educational fact about the foods currently in the
+      user's inventory. Results are cached for 24 hours per unique item set.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+              nutritionTotals:
+                type: object
+                properties:
+                  calories:
+                    type: number
+                  protein:
+                    type: number
+                  carbs:
+                    type: number
+                  fat:
+                    type: number
+                  itemsWithNutrition:
+                    type: integer
+    responses:
+      "200":
+        description: Fun fact returned.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    fact:
+                      type: string
+                      example: "Your eggs could make 3 perfect French omelets!"
+
+/api/suggestions/shelf-life:
+  post:
+    operationId: estimateShelfLife
+    tags:
+      - Shelf Life
+      - Suggestions
+    summary: Shelf-life estimation with local database + AI fallback
+    description: >
+      Estimates the shelf life for a given food item. Two handlers serve this
+      path: the suggestions router (requires both foodName and storageLocation)
+      and the dedicated shelf-life router (requires foodName, storageLocation
+      defaults to "refrigerator"). Both return the same response shape. The
+      dedicated handler first checks a local database of known foods, then
+      falls back to AI estimation.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - foodName
+            properties:
+              foodName:
+                type: string
+                description: Name of the food item.
+                example: "cheddar cheese"
+              category:
+                type: string
+                description: Optional food category for improved matching.
+                example: "dairy"
+              storageLocation:
+                type: string
+                description: Where the item is stored. Defaults to "refrigerator".
+                enum:
+                  - refrigerator
+                  - fridge
+                  - freezer
+                  - pantry
+                  - counter
+                example: "refrigerator"
+    responses:
+      "200":
+        description: Shelf-life estimation returned.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: "#/components/schemas/ShelfLifeResult"
+      "400":
+        description: Validation error or missing required fields.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              validationError:
+                value:
+                  success: false
+                  error: "Invalid input: Food name is required"
+                  errorCode: VALIDATION_ERROR
+              missingFields:
+                value:
+                  success: false
+                  error: "foodName and storageLocation are required"
+                  errorCode: MISSING_REQUIRED_FIELDS
+
+/api/voice/transcribe:
+  post:
+    operationId: transcribeAudio
+    tags:
+      - Voice
+    summary: Transcribe audio to text
+    description: >
+      Accepts an audio file (via multipart/form-data or base64 JSON) and
+      returns the transcribed text using OpenAI Whisper.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+                description: Audio file (field name "file" or "audio").
+              language:
+                type: string
+                default: en
+                description: ISO 639-1 language code.
+        application/json:
+          schema:
+            type: object
+            required:
+              - audioBase64
+              - filename
+            properties:
+              audioBase64:
+                type: string
+                format: byte
+                description: Base64-encoded audio data.
+              filename:
+                type: string
+                description: Original filename with extension (used to determine MIME type).
+                example: "recording.m4a"
+              language:
+                type: string
+                default: en
+    responses:
+      "200":
+        description: Transcription result.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    transcript:
+                      type: string
+                      example: "Add two cups of flour"
+                    language:
+                      type: string
+                      example: en
+      "400":
+        description: Invalid request – missing audio, unsupported format, file too large, or empty.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              invalidFormat:
+                value:
+                  success: false
+                  error: "Supported formats: m4a, mp3, wav, webm, mp4, mpeg, mpga, oga, ogg"
+                  errorCode: INVALID_AUDIO_FORMAT
+              fileTooLarge:
+                value:
+                  success: false
+                  error: "Maximum file size is 25MB"
+                  errorCode: FILE_TOO_LARGE
+              emptyAudio:
+                value:
+                  success: false
+                  error: "The audio file appears to be empty"
+                  errorCode: EMPTY_AUDIO
+              missingFile:
+                value:
+                  success: false
+                  error: "Please upload an audio file with field name 'file' or 'audio'"
+                  errorCode: MISSING_AUDIO_FILE
+
+/api/voice/speak:
+  post:
+    operationId: textToSpeech
+    tags:
+      - Voice
+    summary: Convert text to speech
+    description: >
+      Generates an MP3 audio rendition of the supplied text using OpenAI's
+      audio model. Returns base64-encoded audio data.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - text
+            properties:
+              text:
+                type: string
+                minLength: 1
+                maxLength: 4096
+                description: Text to speak.
+                example: "Preheat your oven to 375 degrees."
+              voice:
+                type: string
+                enum:
+                  - alloy
+                  - echo
+                  - fable
+                  - onyx
+                  - nova
+                  - shimmer
+                default: alloy
+                description: Voice persona to use.
+    responses:
+      "200":
+        description: Speech audio generated.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    audio:
+                      type: string
+                      format: byte
+                      description: Base64-encoded MP3 audio.
+                    format:
+                      type: string
+                      example: mp3
+      "400":
+        description: Validation error.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              emptyText:
+                value:
+                  success: false
+                  error: "Text is required and cannot be empty"
+                  errorCode: EMPTY_TEXT
+              tooLong:
+                value:
+                  success: false
+                  error: "Text must be under 4096 characters"
+                  errorCode: TEXT_TOO_LONG
+      "500":
+        description: Speech generation failed.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "No audio was generated from the AI response"
+              errorCode: SPEECH_GENERATION_FAILED
+
+/api/voice/parse:
+  post:
+    operationId: parseVoiceCommand
+    tags:
+      - Voice
+    summary: Parse a voice command into a structured intent
+    description: >
+      Takes a transcript string and uses AI to classify the user's intent
+      (e.g., ADD_FOOD, SEARCH_INVENTORY, GENERATE_RECIPE) along with extracted
+      entities and a confidence score.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - text
+            properties:
+              text:
+                type: string
+                minLength: 1
+                description: Transcript text to parse.
+                example: "add 2 pounds of chicken breast"
+    responses:
+      "200":
+        description: Parsed command returned.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    intent:
+                      type: string
+                      enum:
+                        - ADD_FOOD
+                        - SEARCH_INVENTORY
+                        - GENERATE_RECIPE
+                        - READ_RECIPE
+                        - NEXT_STEP
+                        - PREVIOUS_STEP
+                        - REPEAT_STEP
+                        - WHAT_EXPIRES
+                        - HELP
+                        - UNKNOWN
+                      example: ADD_FOOD
+                    entities:
+                      type: object
+                      additionalProperties:
+                        oneOf:
+                          - type: string
+                          - type: number
+                      example:
+                        item: "chicken breast"
+                        quantity: 2
+                        unit: "lbs"
+                    confidence:
+                      type: number
+                      format: float
+                      minimum: 0
+                      maximum: 1
+                      example: 0.92
+                    rawText:
+                      type: string
+                      example: "add 2 pounds of chicken breast"
+      "400":
+        description: Validation error.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "Transcript text is required"
+              errorCode: INVALID_INPUT
+      "500":
+        description: AI parsing failed.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "No response from AI parser"
+              errorCode: PARSE_FAILED
+
+/api/voice/chat:
+  post:
+    operationId: voiceChat
+    tags:
+      - Voice
+    summary: Full voice conversation with Chef SpAIce
+    description: >
+      Accepts an audio file, transcribes it, sends the transcript to the AI
+      chef assistant, and returns both the text reply and a spoken audio
+      response (base64 MP3). Supports multi-turn conversations via the
+      conversationHistory field.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - file
+            properties:
+              file:
+                type: string
+                format: binary
+                description: Audio file (field name "file" or "audio").
+              conversationHistory:
+                type: string
+                description: >
+                  JSON-encoded array of previous conversation turns.
+                  Each element has "role" (user|assistant) and "content".
+                example: '[{"role":"user","content":"Hi"},{"role":"assistant","content":"Hello!"}]'
+    responses:
+      "200":
+        description: Voice chat response with transcript and audio.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    userTranscript:
+                      type: string
+                      description: Transcribed text of the user's audio.
+                    aiResponse:
+                      type: string
+                      description: The AI chef's text reply.
+                    audioResponse:
+                      type: string
+                      format: byte
+                      description: Base64-encoded MP3 audio of the AI reply.
+                    audioFormat:
+                      type: string
+                      example: mp3
+      "400":
+        description: Invalid request.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              notMultipart:
+                value:
+                  success: false
+                  error: "Expected multipart/form-data with audio file"
+                  errorCode: INVALID_REQUEST_FORMAT
+              missingFile:
+                value:
+                  success: false
+                  error: "Please upload an audio file with field name 'file' or 'audio'"
+                  errorCode: MISSING_AUDIO_FILE
+              invalidFormat:
+                value:
+                  success: false
+                  error: "Supported formats: m4a, mp3, wav, webm, mp4, mpeg, mpga, oga, ogg"
+                  errorCode: INVALID_AUDIO_FORMAT
+              emptyAudio:
+                value:
+                  success: false
+                  error: "The audio file appears to be empty"
+                  errorCode: EMPTY_AUDIO
+              fileTooLarge:
+                value:
+                  success: false
+                  error: "Maximum file size is 25MB"
+                  errorCode: FILE_TOO_LARGE
+      "500":
+        description: AI response or speech generation failed.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              aiResponseFailed:
+                value:
+                  success: false
+                  error: "No response generated from the AI chef"
+                  errorCode: AI_RESPONSE_FAILED
+              speechFailed:
+                value:
+                  success: false
+                  error: "No audio was generated for the AI response"
+                  errorCode: SPEECH_GENERATION_FAILED
+
+/api/voice/health:
+  get:
+    operationId: voiceHealthCheck
+    tags:
+      - Voice
+    summary: Voice service health check
+    description: Returns supported audio formats and max file size.
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Health status.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: ok
+                    supportedFormats:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                        - m4a
+                        - mp3
+                        - wav
+                        - webm
+                        - mp4
+                        - mpeg
+                        - mpga
+                        - oga
+                        - ogg
+                    maxFileSize:
+                      type: string
+                      example: "25MB"
+
+/api/ai/analyze-food:
+  post:
+    operationId: analyzeFoodImage
+    tags:
+      - Image Analysis
+    summary: Identify food items from an image
+    description: >
+      Upload a photo of food (groceries, fridge contents, etc.) and the AI will
+      identify each food item with its name, category, quantity, recommended
+      storage location, estimated shelf life, and confidence score.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - image
+            properties:
+              image:
+                type: string
+                format: binary
+                description: Image file (field name "image" or "file"). Max 20 MB. Supported formats – jpg, jpeg, png, gif, webp, bmp, tiff.
+    responses:
+      "200":
+        description: Food items identified.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/FoodAnalysisItem"
+                    notes:
+                      type: string
+                    error:
+                      type: string
+                      description: Present when no food items are detected.
+      "400":
+        description: Invalid request.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              invalidContentType:
+                value:
+                  success: false
+                  error: "Expected multipart/form-data with image file"
+                  errorCode: INVALID_CONTENT_TYPE
+              missingImage:
+                value:
+                  success: false
+                  error: "No image file provided. Please upload an image with field name 'image' or 'file'"
+                  errorCode: MISSING_IMAGE_FILE
+              emptyImage:
+                value:
+                  success: false
+                  error: "The uploaded image file appears to be empty"
+                  errorCode: EMPTY_IMAGE_FILE
+              fileTooLarge:
+                value:
+                  success: false
+                  error: "Image file too large. Maximum size is 20MB"
+                  errorCode: FILE_TOO_LARGE
+              invalidFormat:
+                value:
+                  success: false
+                  error: "Invalid image format."
+                  errorCode: INVALID_IMAGE_FORMAT
+      "500":
+        description: AI parse error.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "Failed to parse AI response"
+              errorCode: AI_PARSE_ERROR
+
+/api/ai/health:
+  get:
+    operationId: imageAnalysisHealthCheck
+    tags:
+      - Image Analysis
+    summary: Image analysis service health check
+    description: Returns supported image formats, max file size, and model information.
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Health status.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: ok
+                    supportedFormats:
+                      type: array
+                      items:
+                        type: string
+                    maxFileSize:
+                      type: string
+                      example: "20MB"
+                    model:
+                      type: string
+                      example: gpt-4o
+
+/api/receipt/analyze-receipt:
+  post:
+    operationId: analyzeReceiptImage
+    tags:
+      - Receipt Analysis
+    summary: Extract food items from a grocery receipt image
+    description: >
+      Upload a photo of a grocery receipt. The AI reads the receipt, expands
+      abbreviations, extracts food items with prices and UPC codes, and
+      enriches items with USDA nutrition data when barcodes are found.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - image
+            properties:
+              image:
+                type: string
+                format: binary
+                description: Receipt image file (field name "image" or "file"). Max 20 MB.
+    responses:
+      "200":
+        description: Receipt items extracted.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/ReceiptItem"
+                    storeName:
+                      type: string
+                      example: "Kroger"
+                    purchaseDate:
+                      type: string
+                      format: date
+                      example: "2025-01-19"
+                    totalAmount:
+                      type: number
+                      example: 87.42
+                    notes:
+                      type: string
+                    error:
+                      type: string
+                      description: Present when no food items are found on the receipt.
+      "400":
+        description: Invalid request.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            examples:
+              invalidContentType:
+                value:
+                  success: false
+                  error: "Expected multipart/form-data with image file"
+                  errorCode: INVALID_CONTENT_TYPE
+              missingImage:
+                value:
+                  success: false
+                  error: "No image file provided. Please upload an image with field name 'image' or 'file'"
+                  errorCode: MISSING_IMAGE_FILE
+              emptyImage:
+                value:
+                  success: false
+                  error: "The uploaded image file appears to be empty"
+                  errorCode: EMPTY_IMAGE_FILE
+              fileTooLarge:
+                value:
+                  success: false
+                  error: "Image file too large. Maximum size is 20MB"
+                  errorCode: FILE_TOO_LARGE
+              invalidFormat:
+                value:
+                  success: false
+                  error: "Invalid image format."
+                  errorCode: INVALID_IMAGE_FORMAT
+      "500":
+        description: AI parse error.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "Failed to parse AI response"
+              errorCode: AI_PARSE_ERROR
+
+/api/receipt/health:
+  get:
+    operationId: receiptAnalysisHealthCheck
+    tags:
+      - Receipt Analysis
+    summary: Receipt analysis service health check
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Health status.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: ok
+                    supportedFormats:
+                      type: array
+                      items:
+                        type: string
+                    maxFileSize:
+                      type: string
+                      example: "20MB"
+                    model:
+                      type: string
+                      example: gpt-4o
+
+/api/recipe-images/upload:
+  post:
+    operationId: uploadRecipeImage
+    tags:
+      - Recipe Images
+    summary: Upload a recipe image to cloud storage
+    description: >
+      Uploads a base64-encoded image for a recipe. Returns the display URL and
+      a thumbnail URL from object storage.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - recipeId
+              - base64Data
+            properties:
+              recipeId:
+                type: string
+                description: Unique identifier for the recipe.
+              base64Data:
+                type: string
+                format: byte
+                description: Base64-encoded image data (max ~10 MB payload).
+              contentType:
+                type: string
+                default: image/jpeg
+                description: MIME type of the image.
+                example: "image/jpeg"
+    responses:
+      "200":
+        description: Image uploaded successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    cloudImageUri:
+                      type: string
+                      format: uri
+                      description: Full-size image URL.
+                    thumbnailUri:
+                      type: string
+                      format: uri
+                      description: Thumbnail image URL.
+                    recipeId:
+                      type: string
+      "400":
+        description: Invalid request data.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorResponse"
+            example:
+              success: false
+              error: "Invalid request data"
+              errorCode: INVALID_REQUEST_DATA
+
+/api/recipe-images/{recipeId}:
+  delete:
+    operationId: deleteRecipeImage
+    tags:
+      - Recipe Images
+    summary: Delete a recipe image from cloud storage
+    description: Removes the stored image and thumbnail for the given recipe.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: recipeId
+        required: true
+        schema:
+          type: string
+        description: The recipe identifier whose image should be deleted.
+    responses:
+      "200":
+        description: Image deleted.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    recipeId:
+                      type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Session token obtained from /api/auth/login.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        errorCode:
+          type: string
+
+    ShelfLifeResult:
+      type: object
+      properties:
+        suggestedDays:
+          type: integer
+          description: Estimated shelf life in days.
+          example: 7
+        confidence:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+          example: medium
+        source:
+          type: string
+          enum:
+            - local
+            - ai
+          description: Whether the estimate came from the local database or AI.
+          example: ai
+        notes:
+          type: string
+          description: Brief storage tip.
+          example: "Store in the crisper drawer for best freshness."
+        signsOfSpoilage:
+          type: string
+          description: What to look for when the food goes bad.
+          example: "Mold, slimy texture, off smell."
+
+    FoodAnalysisItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Gala Apple"
+        category:
+          type: string
+          enum:
+            - produce
+            - dairy
+            - meat
+            - seafood
+            - bread
+            - canned
+            - frozen
+            - beverages
+            - condiments
+            - snacks
+            - grains
+            - spices
+            - other
+        quantity:
+          type: number
+          example: 3
+        quantityUnit:
+          type: string
+          enum:
+            - items
+            - lbs
+            - oz
+            - bunch
+            - container
+            - bag
+            - box
+            - bottle
+            - can
+        storageLocation:
+          type: string
+          enum:
+            - refrigerator
+            - freezer
+            - pantry
+            - counter
+        shelfLifeDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+          example: 7
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          example: 0.85
+
+    ReceiptItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Organic Bananas"
+        category:
+          type: string
+          enum:
+            - produce
+            - dairy
+            - meat
+            - seafood
+            - bread
+            - canned
+            - frozen
+            - beverages
+            - condiments
+            - snacks
+            - grains
+            - spices
+            - other
+        quantity:
+          type: number
+          example: 3
+        quantityUnit:
+          type: string
+          enum:
+            - items
+            - lbs
+            - oz
+            - kg
+            - g
+            - bunch
+            - container
+            - bag
+            - box
+            - bottle
+            - can
+            - pack
+        storageLocation:
+          type: string
+          enum:
+            - refrigerator
+            - freezer
+            - pantry
+            - counter
+        shelfLifeDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        price:
+          type: number
+          description: Item price (if visible on receipt).
+          example: 4.99
+        upc:
+          type: string
+          description: UPC/barcode if visible (12-13 digits).
+          example: "012345678901"
+        originalText:
+          type: string
+          description: Raw text from the receipt for this line item.
+          example: "ORG BAN 3LB @1.99/LB"
+        nutrition:
+          type: object
+          description: USDA nutrition data (populated when UPC lookup succeeds).

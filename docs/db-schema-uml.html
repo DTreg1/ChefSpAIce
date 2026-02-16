@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChefSpAIce - Database Entity-Relationship Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    overflow: auto;
+  }
+  .diagram-title {
+    text-align: center;
+    padding: 32px 24px 8px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+  }
+  .diagram-subtitle {
+    text-align: center;
+    padding: 0 24px 24px;
+    font-size: 14px;
+    color: #666;
+  }
+  .canvas {
+    position: relative;
+    width: 3450px;
+    height: 2200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+  }
+  svg.connections {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  svg.connections line, svg.connections path, svg.connections polyline {
+    stroke-width: 2;
+    fill: none;
+  }
+  .entity {
+    position: absolute;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    z-index: 2;
+    min-width: 200px;
+  }
+  .entity-header {
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .entity-body {
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #333;
+  }
+  .entity-body .section-title {
+    font-weight: 700;
+    font-size: 11px;
+    margin-top: 8px;
+    margin-bottom: 2px;
+    color: #1a1a2e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .entity-body .section-title:first-child { margin-top: 0; }
+  .entity-body .item { padding-left: 4px; }
+  .entity-body .item::before { content: ''; }
+  .entity-body .pk { color: #b8860b; font-weight: 600; }
+  .entity-body .fk { color: #4169e1; }
+  .entity-body .constraint { color: #888; font-style: italic; font-size: 11px; }
+
+  .header-blue { background: #4EA8DE; color: #fff; }
+  .header-green { background: #06D6A0; color: #fff; }
+  .header-purple { background: #7B68EE; color: #fff; }
+  .header-orange { background: #F78C6B; color: #fff; }
+  .header-teal { background: #118AB2; color: #fff; }
+  .header-dark { background: #073B4C; color: #fff; }
+  .header-coral { background: #FF6B6B; color: #fff; }
+  .header-gold { background: #E6AC00; color: #fff; }
+
+  .legend {
+    position: absolute;
+    top: 60px;
+    right: 40px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 3;
+  }
+  .legend h3 {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #333;
+  }
+  .legend-line {
+    width: 50px;
+    height: 2px;
+    position: relative;
+  }
+  .legend-line.solid { background: #555; }
+  .legend-line.dashed { border-top: 2px dashed #555; background: none; }
+  .legend-line::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 6px solid #555;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+  }
+  .legend-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .section-label {
+    position: absolute;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #bbb;
+    z-index: 2;
+  }
+
+  .rel-label {
+    position: absolute;
+    font-size: 10px;
+    color: #888;
+    background: #fff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    z-index: 2;
+  }
+
+  /* Interactive relationship lines */
+  svg.connections g.rel-group {
+    cursor: pointer;
+    pointer-events: stroke;
+  }
+  svg.connections g.rel-group path {
+    transition: stroke-width 0.2s, opacity 0.2s, filter 0.2s;
+  }
+  svg.connections g.rel-group text {
+    transition: font-size 0.2s, font-weight 0.2s;
+  }
+  /* Dim all lines when any line is selected */
+  svg.connections.has-selection g.rel-group:not(.selected) path {
+    opacity: 0.15;
+    stroke-width: 1.5;
+  }
+  svg.connections.has-selection g.rel-group:not(.selected) text {
+    opacity: 0.15;
+  }
+  /* Hover state */
+  svg.connections g.rel-group:hover path {
+    stroke-width: 4;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  svg.connections g.rel-group:hover text {
+    font-weight: 700;
+    font-size: 12px;
+  }
+  /* Selected state */
+  svg.connections g.rel-group.selected path {
+    stroke-width: 5;
+    filter: drop-shadow(0 0 6px currentColor);
+    opacity: 1 !important;
+  }
+  svg.connections g.rel-group.selected text {
+    font-weight: 700;
+    font-size: 13px;
+    opacity: 1 !important;
+  }
+
+  /* Tooltip for relationship info */
+  .rel-tooltip {
+    position: fixed;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .rel-tooltip.visible {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+<div class="diagram-title">ChefSpAIce - Database Entity-Relationship Diagram</div>
+<div class="diagram-subtitle">Complete ER Schema &mdash; February 2026 &mdash; 32 Tables</div>
+
+<div style="overflow: auto; padding: 20px;">
+<div class="canvas">
+
+  <!-- Section Labels -->
+  <div class="section-label" style="top:20px; left:40px;">User &amp; Auth</div>
+  <div class="section-label" style="top:20px; left:780px;">Sync &amp; Data</div>
+  <div class="section-label" style="top:20px; left:1550px;">Tracking</div>
+  <div class="section-label" style="top:20px; left:1920px;">Subscriptions</div>
+  <div class="section-label" style="top:20px; left:2310px;">Feedback</div>
+  <div class="section-label" style="top:20px; left:2700px;">Reference</div>
+  <div class="section-label" style="top:20px; left:3080px;">Notifications / System</div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <h3>Domain Colors</h3>
+    <div class="legend-item"><div class="legend-swatch" style="background:#4EA8DE;"></div> User &amp; Auth</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#118AB2;"></div> Sync &amp; Data</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#06D6A0;"></div> Tracking &amp; Analytics</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7B68EE;"></div> Subscription &amp; Payments</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#F78C6B;"></div> Feedback &amp; Support</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#073B4C;"></div> Reference Data</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#FF6B6B;"></div> Notifications</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#E6AC00;"></div> System</div>
+    <h3 style="margin-top:16px;">Relationships</h3>
+    <div class="legend-item"><div class="legend-line solid"></div> Foreign Key (1:many)</div>
+    <div class="legend-item"><div class="legend-line dashed"></div> Foreign Key (1:1)</div>
+    <div style="margin-top:12px; font-size:11px; color:#888; font-style:italic; border-top:1px solid #eee; padding-top:8px;">
+      Hover lines to highlight<br>Click to select &amp; isolate
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SVG RELATIONSHIP LINES -->
+  <!-- ============================================= -->
+  <svg class="connections">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+      </marker>
+      <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#4EA8DE" />
+      </marker>
+      <marker id="arrowhead-teal" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#118AB2" />
+      </marker>
+      <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#06D6A0" />
+      </marker>
+      <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#7B68EE" />
+      </marker>
+      <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#F78C6B" />
+      </marker>
+      <marker id="arrowhead-dark" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#073B4C" />
+      </marker>
+      <marker id="arrowhead-coral" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B" />
+      </marker>
+      <marker id="arrowhead-gold" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#E6AC00" />
+      </marker>
+    </defs>
+
+    <!-- authProviders -> users (1:many) -->
+    <g class="rel-group" data-label="authProviders.userId → users.id (1:N)">
+      <path d="M 420 100 L 350 100" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 420 100 L 350 100" stroke="#4EA8DE" stroke-width="2" marker-end="url(#arrowhead-blue)" />
+      <text x="370" y="92" fill="#4EA8DE" font-size="10">1:N</text>
+    </g>
+
+    <!-- userSessions -> users (1:many) -->
+    <g class="rel-group" data-label="userSessions.userId → users.id (1:N)">
+      <path d="M 420 580 L 380 580 L 380 400 L 350 400" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 420 580 L 380 580 L 380 400 L 350 400" stroke="#4EA8DE" stroke-width="2" marker-end="url(#arrowhead-blue)" />
+      <text x="385" y="490" fill="#4EA8DE" font-size="10">1:N</text>
+    </g>
+
+    <!-- passwordResetTokens -> users (1:many) -->
+    <g class="rel-group" data-label="passwordResetTokens.userId → users.id (1:N)">
+      <path d="M 420 960 L 370 960 L 370 450 L 350 450" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 420 960 L 370 960 L 370 450 L 350 450" stroke="#4EA8DE" stroke-width="2" marker-end="url(#arrowhead-blue)" />
+      <text x="375" y="700" fill="#4EA8DE" font-size="10">1:N</text>
+    </g>
+
+    <!-- userSyncData -> users (1:1) -->
+    <g class="rel-group" data-label="userSyncData.userId → users.id (1:1)">
+      <path d="M 780 100 L 350 100" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 780 100 L 350 100" stroke="#118AB2" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowhead-teal)" />
+      <text x="550" y="92" fill="#118AB2" font-size="10">1:1</text>
+    </g>
+
+    <!-- userInventoryItems -> users (1:many) -->
+    <g class="rel-group" data-label="userInventoryItems.userId → users.id (1:N)">
+      <path d="M 780 420 L 680 420 L 680 200 L 350 200" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 780 420 L 680 420 L 680 200 L 350 200" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="500" y="192" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userSavedRecipes -> users (1:many) -->
+    <g class="rel-group" data-label="userSavedRecipes.userId → users.id (1:N)">
+      <path d="M 780 1090 L 660 1090 L 660 250 L 350 250" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 780 1090 L 660 1090 L 660 250 L 350 250" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="490" y="242" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userMealPlans -> users (1:many) -->
+    <g class="rel-group" data-label="userMealPlans.userId → users.id (1:N)">
+      <path d="M 1160 100 L 640 100 L 640 300 L 350 300" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1160 100 L 640 100 L 640 300 L 350 300" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="480" y="292" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userShoppingItems -> users (1:many) -->
+    <g class="rel-group" data-label="userShoppingItems.userId → users.id (1:N)">
+      <path d="M 1160 500 L 620 500 L 620 350 L 350 350" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1160 500 L 620 500 L 620 350 L 350 350" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="470" y="342" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userCookwareItems -> users (1:many) -->
+    <g class="rel-group" data-label="userCookwareItems.userId → users.id (1:N)">
+      <path d="M 1160 1000 L 600 1000 L 600 380 L 350 380" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1160 1000 L 600 1000 L 600 380 L 350 380" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="460" y="372" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userStorageLocations -> users -->
+    <g class="rel-group" data-label="userStorageLocations.userId → users.id (1:N)">
+      <path d="M 1160 1400 L 580 1400 L 580 410 L 350 410" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1160 1400 L 580 1400 L 580 410 L 350 410" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="450" y="402" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userSyncKV -> users -->
+    <g class="rel-group" data-label="userSyncKV.userId → users.id (1:N)">
+      <path d="M 1160 1780 L 560 1780 L 560 440 L 350 440" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1160 1780 L 560 1780 L 560 440 L 350 440" stroke="#118AB2" stroke-width="2" marker-end="url(#arrowhead-teal)" />
+      <text x="440" y="432" fill="#118AB2" font-size="10">1:N</text>
+    </g>
+
+    <!-- userWasteLogs -> users (1:many) -->
+    <g class="rel-group" data-label="userWasteLogs.userId → users.id (1:N)">
+      <path d="M 1550 100 L 540 100 L 540 470 L 350 470" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1550 100 L 540 100 L 540 470 L 350 470" stroke="#06D6A0" stroke-width="2" marker-end="url(#arrowhead-green)" />
+      <text x="1000" y="92" fill="#06D6A0" font-size="10">1:N</text>
+    </g>
+
+    <!-- userConsumedLogs -> users -->
+    <g class="rel-group" data-label="userConsumedLogs.userId → users.id (1:N)">
+      <path d="M 1550 570 L 520 570 L 520 500 L 350 500" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1550 570 L 520 570 L 520 500 L 350 500" stroke="#06D6A0" stroke-width="2" marker-end="url(#arrowhead-green)" />
+      <text x="900" y="532" fill="#06D6A0" font-size="10">1:N</text>
+    </g>
+
+    <!-- monthlyLogSummaries -> users -->
+    <g class="rel-group" data-label="monthlyLogSummaries.userId → users.id (1:N)">
+      <path d="M 1550 1010 L 500 1010 L 500 530 L 350 530" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1550 1010 L 500 1010 L 500 530 L 350 530" stroke="#06D6A0" stroke-width="2" marker-end="url(#arrowhead-green)" />
+      <text x="900" y="952" fill="#06D6A0" font-size="10">1:N</text>
+    </g>
+
+    <!-- subscriptions -> users (1:1) -->
+    <g class="rel-group" data-label="subscriptions.userId → users.id (1:1)">
+      <path d="M 1920 100 L 480 100 L 480 560 L 350 560" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1920 100 L 480 100 L 480 560 L 350 560" stroke="#7B68EE" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowhead-purple)" />
+      <text x="1200" y="92" fill="#7B68EE" font-size="10">1:1</text>
+    </g>
+
+    <!-- conversionEvents -> users -->
+    <g class="rel-group" data-label="conversionEvents.userId → users.id (1:N)">
+      <path d="M 1920 590 L 460 590 L 460 580 L 350 580" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1920 590 L 460 590 L 460 580 L 350 580" stroke="#7B68EE" stroke-width="2" marker-end="url(#arrowhead-purple)" />
+      <text x="1100" y="582" fill="#7B68EE" font-size="10">1:N</text>
+    </g>
+
+    <!-- cancellationReasons -> users -->
+    <g class="rel-group" data-label="cancellationReasons.userId → users.id (1:N)">
+      <path d="M 1920 910 L 440 910 L 440 600 L 350 600" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1920 910 L 440 910 L 440 600 L 350 600" stroke="#7B68EE" stroke-width="2" marker-end="url(#arrowhead-purple)" />
+      <text x="1100" y="902" fill="#7B68EE" font-size="10">1:N</text>
+    </g>
+
+    <!-- winbackCampaigns -> users -->
+    <g class="rel-group" data-label="winbackCampaigns.userId → users.id (1:N)">
+      <path d="M 1920 1230 L 420 1230 L 420 620 L 350 620" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1920 1230 L 420 1230 L 420 620 L 350 620" stroke="#7B68EE" stroke-width="2" marker-end="url(#arrowhead-purple)" />
+      <text x="1100" y="1222" fill="#7B68EE" font-size="10">1:N</text>
+    </g>
+
+    <!-- winbackCampaigns -> subscriptions -->
+    <g class="rel-group" data-label="winbackCampaigns.subscriptionId → subscriptions.id (FK)">
+      <path d="M 2075 1190 L 2075 550" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2075 1190 L 2075 550" stroke="#7B68EE" stroke-width="2" marker-end="url(#arrowhead-purple)" />
+      <text x="2080" y="870" fill="#7B68EE" font-size="10">FK</text>
+    </g>
+
+    <!-- retentionOffers -> users -->
+    <g class="rel-group" data-label="retentionOffers.userId → users.id (1:N)">
+      <path d="M 1920 1680 L 400 1680 L 400 640 L 350 640" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 1920 1680 L 400 1680 L 400 640 L 350 640" stroke="#7B68EE" stroke-width="2" marker-end="url(#arrowhead-purple)" />
+      <text x="1100" y="1672" fill="#7B68EE" font-size="10">1:N</text>
+    </g>
+
+    <!-- feedback -> users -->
+    <g class="rel-group" data-label="feedback.userId → users.id (1:N)">
+      <path d="M 2310 200 L 390 200 L 390 150 L 350 150" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2310 200 L 390 200 L 390 150 L 350 150" stroke="#F78C6B" stroke-width="2" marker-end="url(#arrowhead-orange)" />
+      <text x="1300" y="192" fill="#F78C6B" font-size="10">1:N</text>
+    </g>
+
+    <!-- feedback -> feedbackBuckets -->
+    <g class="rel-group" data-label="feedback.bucketId → feedbackBuckets.id (FK)">
+      <path d="M 2460 620 L 2460 630" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2460 620 L 2460 630" stroke="#F78C6B" stroke-width="2" marker-end="url(#arrowhead-orange)" />
+      <text x="2470" y="628" fill="#F78C6B" font-size="10">FK</text>
+    </g>
+
+    <!-- nutritionCorrections -> users -->
+    <g class="rel-group" data-label="nutritionCorrections.userId → users.id (1:N)">
+      <path d="M 2310 1010 L 380 1010 L 380 170 L 350 170" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2310 1010 L 380 1010 L 380 170 L 350 170" stroke="#F78C6B" stroke-width="2" marker-end="url(#arrowhead-orange)" />
+      <text x="1300" y="1002" fill="#F78C6B" font-size="10">1:N</text>
+    </g>
+
+    <!-- userAppliances -> users -->
+    <g class="rel-group" data-label="userAppliances.userId → users.id (1:N)">
+      <path d="M 2700 890 L 370 890 L 370 190 L 350 190" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2700 890 L 370 890 L 370 190 L 350 190" stroke="#073B4C" stroke-width="2" marker-end="url(#arrowhead-dark)" />
+      <text x="1500" y="882" fill="#073B4C" font-size="10">1:N</text>
+    </g>
+
+    <!-- userAppliances -> appliances -->
+    <g class="rel-group" data-label="userAppliances.applianceId → appliances.id (FK)">
+      <path d="M 2850 850 L 2850 804" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2850 850 L 2850 804" stroke="#073B4C" stroke-width="2" marker-end="url(#arrowhead-dark)" />
+      <text x="2860" y="830" fill="#073B4C" font-size="10">FK</text>
+    </g>
+
+    <!-- notifications -> users -->
+    <g class="rel-group" data-label="notifications.userId → users.id (1:N)">
+      <path d="M 3080 100 L 360 100 L 360 210 L 350 210" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 3080 100 L 360 100 L 360 210 L 350 210" stroke="#FF6B6B" stroke-width="2" marker-end="url(#arrowhead-coral)" />
+      <text x="1700" y="92" fill="#FF6B6B" font-size="10">1:N</text>
+    </g>
+
+    <!-- userPushTokens -> users -->
+    <g class="rel-group" data-label="userPushTokens.userId → users.id (1:N)">
+      <path d="M 3080 460 L 355 460 L 355 230 L 350 230" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 3080 460 L 355 460 L 355 230 L 350 230" stroke="#FF6B6B" stroke-width="2" marker-end="url(#arrowhead-coral)" />
+      <text x="1700" y="452" fill="#FF6B6B" font-size="10">1:N</text>
+    </g>
+
+    <!-- errorReports -> users (optional, no formal FK) -->
+    <g class="rel-group" data-label="errorReports.userId → users.id (1:N, optional)">
+      <path d="M 2460 1500 L 365 1500 L 365 240 L 350 240" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 2460 1500 L 365 1500 L 365 240 L 350 240" stroke="#F78C6B" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrowhead-orange)" />
+      <text x="1400" y="1492" fill="#F78C6B" font-size="10">1:N (optional)</text>
+    </g>
+
+    <!-- referrals -> users (referrerId) -->
+    <g class="rel-group" data-label="referrals.referrerId → users.id (1:N)">
+      <path d="M 3080 1260 L 345 1260 L 345 490 L 350 490" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 3080 1260 L 345 1260 L 345 490 L 350 490" stroke="#E6AC00" stroke-width="2" marker-end="url(#arrowhead-gold)" />
+      <text x="1700" y="1252" fill="#E6AC00" font-size="10">referrerId 1:N</text>
+    </g>
+
+    <!-- referrals -> users (referredUserId) -->
+    <g class="rel-group" data-label="referrals.referredUserId → users.id (1:1)">
+      <path d="M 3080 1290 L 340 1290 L 340 510 L 350 510" stroke="transparent" stroke-width="16" fill="none" />
+      <path d="M 3080 1290 L 340 1290 L 340 510 L 350 510" stroke="#E6AC00" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowhead-gold)" />
+      <text x="1700" y="1282" fill="#E6AC00" font-size="10">referredUserId 1:1</text>
+    </g>
+
+  </svg>
+
+  <!-- ============================================= -->
+  <!-- USERS TABLE (Column 1 - x=40) -->
+  <!-- ============================================= -->
+  <div class="entity" style="top:60px; left:40px; width:310px;">
+    <div class="entity-header header-blue">users</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: varchar = gen_random_uuid()</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- password: varchar</div>
+      <div class="item">- displayName: varchar</div>
+      <div class="item">- email: varchar NOT NULL UNIQUE</div>
+      <div class="item">- profileImageUrl: varchar</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="item">- dietaryRestrictions: text[]</div>
+      <div class="item">- allergens: text[]</div>
+      <div class="item">- favoriteCategories: text[]</div>
+      <div class="item">- expirationAlertDays: integer NOT NULL = 3</div>
+      <div class="item">- storageAreasEnabled: text[]</div>
+      <div class="item">- householdSize: integer NOT NULL = 2</div>
+      <div class="item">- dailyMeals: integer NOT NULL = 3</div>
+      <div class="item">- cookingSkillLevel: text NOT NULL = "beginner"</div>
+      <div class="item">- preferredUnits: text NOT NULL = "imperial"</div>
+      <div class="item">- foodsToAvoid: text[]</div>
+      <div class="item">- hasCompletedOnboarding: boolean NOT NULL = false</div>
+      <div class="item">- isAdmin: boolean NOT NULL = false</div>
+      <div class="item">- subscriptionTier: text NOT NULL = "STANDARD"</div>
+      <div class="item">- subscriptionStatus: text NOT NULL = "trialing"</div>
+      <div class="item">- stripeCustomerId: text</div>
+      <div class="item">- referralCode: varchar(8) UNIQUE</div>
+      <div class="item">- isActivated: boolean NOT NULL = true</div>
+      <div class="item constraint">... + 16 more columns</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">idx_users_created_at</div>
+      <div class="item">idx_users_subscription_tier</div>
+      <div class="item">idx_users_subscription_status</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- AUTH (Column 2 - x=420) -->
+  <!-- ============================================= -->
+
+  <!-- authProviders -->
+  <div class="entity" style="top:60px; left:420px; width:290px;">
+    <div class="entity-header header-blue">authProviders</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: varchar = gen_random_uuid()</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- provider: varchar NOT NULL</div>
+      <div class="item">- providerId: varchar NOT NULL</div>
+      <div class="item">- providerEmail: varchar</div>
+      <div class="item">- accessToken: text</div>
+      <div class="item">- refreshToken: text</div>
+      <div class="item">- tokenExpiry: timestamp</div>
+      <div class="item">- isPrimary: boolean = false</div>
+      <div class="item">- metadata: jsonb</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(provider, providerId)</div>
+      <div class="item">idx_auth_providers_user</div>
+    </div>
+  </div>
+
+  <!-- userSessions -->
+  <div class="entity" style="top:540px; left:420px; width:290px;">
+    <div class="entity-header header-blue">userSessions</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: varchar = gen_random_uuid()</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- token: text NOT NULL UNIQUE</div>
+      <div class="item">- userAgent: text</div>
+      <div class="item">- ipAddress: varchar(45)</div>
+      <div class="item">- expiresAt: timestamp NOT NULL</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">idx_user_sessions_user</div>
+      <div class="item">idx_user_sessions_expires</div>
+    </div>
+  </div>
+
+  <!-- passwordResetTokens -->
+  <div class="entity" style="top:960px; left:420px; width:290px;">
+    <div class="entity-header header-blue">passwordResetTokens</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: varchar = gen_random_uuid()</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- tokenHash: text NOT NULL UNIQUE</div>
+      <div class="item">- expiresAt: timestamp NOT NULL</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">idx_password_reset_user</div>
+      <div class="item">idx_password_reset_expires</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SYNC PART 1 (Column 3 - x=780) -->
+  <!-- ============================================= -->
+
+  <!-- userSyncData -->
+  <div class="entity" style="top:60px; left:780px; width:310px;">
+    <div class="entity-header header-teal">userSyncData</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL UNIQUE</div>
+      <div class="item">- sectionUpdatedAt: jsonb</div>
+      <div class="item">- lastSyncedAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE (1:1)</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">idx_user_sync_data_last_synced</div>
+    </div>
+  </div>
+
+  <!-- userInventoryItems -->
+  <div class="entity" style="top:380px; left:780px; width:310px;">
+    <div class="entity-header header-teal">userInventoryItems</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- itemId: text NOT NULL</div>
+      <div class="item">- name: text NOT NULL</div>
+      <div class="item">- barcode: text</div>
+      <div class="item">- quantity: doublePrecision NOT NULL = 1</div>
+      <div class="item">- unit: text NOT NULL = "unit"</div>
+      <div class="item">- storageLocation: text NOT NULL = "pantry"</div>
+      <div class="item">- purchaseDate: text</div>
+      <div class="item">- expirationDate: text</div>
+      <div class="item">- category: text NOT NULL = "other"</div>
+      <div class="item">- usdaCategory: text</div>
+      <div class="item">- nutrition: jsonb</div>
+      <div class="item">- notes: text</div>
+      <div class="item">- imageUri: text</div>
+      <div class="item">- fdcId: integer</div>
+      <div class="item">- servingSize: text</div>
+      <div class="item">- addedAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="item">- deletedAt: timestamp</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, itemId)</div>
+      <div class="item">idx_user_inventory_user</div>
+      <div class="item">idx_user_inventory_user_category</div>
+      <div class="item">idx_user_inventory_user_expiration</div>
+    </div>
+  </div>
+
+  <!-- userSavedRecipes -->
+  <div class="entity" style="top:1050px; left:780px; width:310px;">
+    <div class="entity-header header-teal">userSavedRecipes</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- itemId: text NOT NULL</div>
+      <div class="item">- title: text NOT NULL</div>
+      <div class="item">- description: text</div>
+      <div class="item">- ingredients: jsonb</div>
+      <div class="item">- instructions: jsonb</div>
+      <div class="item">- prepTime: integer</div>
+      <div class="item">- cookTime: integer</div>
+      <div class="item">- servings: integer</div>
+      <div class="item">- imageUri: text</div>
+      <div class="item">- cloudImageUri: text</div>
+      <div class="item">- imageData: bytea</div>
+      <div class="item">- thumbnailData: bytea</div>
+      <div class="item">- nutrition: jsonb</div>
+      <div class="item">- isFavorite: boolean = false</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- savedAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, itemId)</div>
+      <div class="item">idx_user_recipes_user</div>
+      <div class="item">idx_user_recipes_user_favorite</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SYNC PART 2 (Column 4 - x=1160) -->
+  <!-- ============================================= -->
+
+  <!-- userMealPlans -->
+  <div class="entity" style="top:60px; left:1160px; width:310px;">
+    <div class="entity-header header-teal">userMealPlans</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- itemId: text NOT NULL</div>
+      <div class="item">- date: text NOT NULL</div>
+      <div class="item">- meals: jsonb</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, itemId)</div>
+      <div class="item">idx_user_meal_plans_user_date</div>
+    </div>
+  </div>
+
+  <!-- userShoppingItems -->
+  <div class="entity" style="top:500px; left:1160px; width:310px;">
+    <div class="entity-header header-teal">userShoppingItems</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- itemId: text NOT NULL</div>
+      <div class="item">- name: text NOT NULL</div>
+      <div class="item">- quantity: doublePrecision NOT NULL = 1</div>
+      <div class="item">- unit: text NOT NULL = "unit"</div>
+      <div class="item">- isChecked: boolean NOT NULL = false</div>
+      <div class="item">- category: text</div>
+      <div class="item">- recipeId: text</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- addedAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, itemId)</div>
+      <div class="item">idx_user_shopping_user_checked</div>
+    </div>
+  </div>
+
+  <!-- userCookwareItems -->
+  <div class="entity" style="top:1000px; left:1160px; width:310px;">
+    <div class="entity-header header-teal">userCookwareItems</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- itemId: text NOT NULL</div>
+      <div class="item">- name: text</div>
+      <div class="item">- category: text</div>
+      <div class="item">- alternatives: text[]</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- addedAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, itemId)</div>
+    </div>
+  </div>
+
+  <!-- userStorageLocations -->
+  <div class="entity" style="top:1400px; left:1160px; width:310px;">
+    <div class="entity-header header-teal">userStorageLocations</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- locationId: text NOT NULL</div>
+      <div class="item">- name: text NOT NULL</div>
+      <div class="item">- type: text</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, locationId)</div>
+    </div>
+  </div>
+
+  <!-- userSyncKV -->
+  <div class="entity" style="top:1780px; left:1160px; width:310px;">
+    <div class="entity-header header-teal">userSyncKV</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- section: text NOT NULL</div>
+      <div class="item">- data: jsonb</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, section)</div>
+      <div class="item">idx_user_sync_kv_user</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- TRACKING (Column 5 - x=1550) -->
+  <!-- ============================================= -->
+
+  <!-- userWasteLogs -->
+  <div class="entity" style="top:60px; left:1550px; width:290px;">
+    <div class="entity-header header-green">userWasteLogs</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- entryId: text NOT NULL</div>
+      <div class="item">- itemName: text NOT NULL</div>
+      <div class="item">- quantity: doublePrecision</div>
+      <div class="item">- unit: text</div>
+      <div class="item">- reason: text</div>
+      <div class="item">- date: text</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, entryId)</div>
+      <div class="item">idx_user_waste_logs_user_date</div>
+    </div>
+  </div>
+
+  <!-- userConsumedLogs -->
+  <div class="entity" style="top:530px; left:1550px; width:290px;">
+    <div class="entity-header header-green">userConsumedLogs</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- entryId: text NOT NULL</div>
+      <div class="item">- itemName: text NOT NULL</div>
+      <div class="item">- quantity: doublePrecision</div>
+      <div class="item">- unit: text</div>
+      <div class="item">- date: text</div>
+      <div class="item">- extraData: jsonb</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, entryId)</div>
+      <div class="item">idx_user_consumed_logs_user_date</div>
+    </div>
+  </div>
+
+  <!-- monthlyLogSummaries -->
+  <div class="entity" style="top:970px; left:1550px; width:290px;">
+    <div class="entity-header header-green">monthlyLogSummaries</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- month: text NOT NULL</div>
+      <div class="item">- logType: text NOT NULL</div>
+      <div class="item">- category: text NOT NULL</div>
+      <div class="item">- totalItems: integer NOT NULL = 0</div>
+      <div class="item">- totalQuantity: doublePrecision = 0</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, month, logType, category)</div>
+      <div class="item">idx_monthly_log_summaries_user_type</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SUBSCRIPTIONS (Column 6 - x=1920) -->
+  <!-- ============================================= -->
+
+  <!-- subscriptions -->
+  <div class="entity" style="top:60px; left:1920px; width:310px;">
+    <div class="entity-header header-purple">subscriptions</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: varchar = gen_random_uuid()</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL UNIQUE</div>
+      <div class="item">- stripeCustomerId: varchar</div>
+      <div class="item">- stripeSubscriptionId: varchar</div>
+      <div class="item">- stripePriceId: varchar</div>
+      <div class="item">- status: varchar(20) NOT NULL</div>
+      <div class="item">- planType: varchar(20) NOT NULL</div>
+      <div class="item">- currentPeriodStart: timestamp NOT NULL</div>
+      <div class="item">- currentPeriodEnd: timestamp NOT NULL</div>
+      <div class="item">- trialStart: timestamp</div>
+      <div class="item">- trialEnd: timestamp</div>
+      <div class="item">- cancelAtPeriodEnd: boolean NOT NULL = false</div>
+      <div class="item">- canceledAt: timestamp</div>
+      <div class="item">- paymentFailedAt: timestamp</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE (1:1)</div>
+    </div>
+  </div>
+
+  <!-- conversionEvents -->
+  <div class="entity" style="top:550px; left:1920px; width:310px;">
+    <div class="entity-header header-purple">conversionEvents</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- fromTier: varchar NOT NULL</div>
+      <div class="item">- toTier: varchar NOT NULL</div>
+      <div class="item">- source: varchar</div>
+      <div class="item">- stripeSessionId: varchar</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(stripeSessionId)</div>
+      <div class="item">idx_conversion_events_tiers</div>
+    </div>
+  </div>
+
+  <!-- cancellationReasons -->
+  <div class="entity" style="top:870px; left:1920px; width:310px;">
+    <div class="entity-header header-purple">cancellationReasons</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- reason: varchar NOT NULL</div>
+      <div class="item">- details: text</div>
+      <div class="item">- offerShown: varchar</div>
+      <div class="item">- offerAccepted: boolean NOT NULL = false</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id</div>
+    </div>
+  </div>
+
+  <!-- winbackCampaigns -->
+  <div class="entity" style="top:1190px; left:1920px; width:310px;">
+    <div class="entity-header header-purple">winbackCampaigns</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- subscriptionId: varchar</div>
+      <div class="item">- status: varchar(20) NOT NULL = "sent"</div>
+      <div class="item">- offerType: varchar(50) NOT NULL = "first_month_discount"</div>
+      <div class="item">- offerAmount: integer NOT NULL = 499</div>
+      <div class="item">- stripeCouponId: varchar</div>
+      <div class="item">- stripePromotionCodeId: varchar</div>
+      <div class="item">- notificationId: integer</div>
+      <div class="item">- sentAt: timestamp NOT NULL = now()</div>
+      <div class="item">- acceptedAt: timestamp</div>
+      <div class="item">- expiredAt: timestamp</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="item fk">FK subscriptionId &rarr; subscriptions.id</div>
+    </div>
+  </div>
+
+  <!-- retentionOffers -->
+  <div class="entity" style="top:1640px; left:1920px; width:310px;">
+    <div class="entity-header header-purple">retentionOffers</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- stripeSubscriptionId: varchar NOT NULL</div>
+      <div class="item">- stripeCouponId: varchar NOT NULL</div>
+      <div class="item">- discountPercent: integer NOT NULL</div>
+      <div class="item">- durationMonths: integer NOT NULL</div>
+      <div class="item">- status: varchar(20) NOT NULL = "applied"</div>
+      <div class="item">- appliedAt: timestamp NOT NULL = now()</div>
+      <div class="item">- expiresAt: timestamp</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FEEDBACK (Column 7 - x=2310) -->
+  <!-- ============================================= -->
+
+  <!-- feedback -->
+  <div class="entity" style="top:60px; left:2310px; width:310px;">
+    <div class="entity-header header-orange">feedback</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar</div>
+      <div class="item">- bucketId: integer</div>
+      <div class="item">- type: varchar(20) NOT NULL</div>
+      <div class="item">- category: varchar(50)</div>
+      <div class="item">- message: text NOT NULL</div>
+      <div class="item">- userEmail: varchar(255)</div>
+      <div class="item">- deviceInfo: text</div>
+      <div class="item">- screenContext: varchar(100)</div>
+      <div class="item">- stepsToReproduce: text</div>
+      <div class="item">- severity: varchar(20)</div>
+      <div class="item">- status: varchar(20) NOT NULL = "new"</div>
+      <div class="item">- adminNotes: text</div>
+      <div class="item">- priority: varchar(20) = "medium"</div>
+      <div class="item">- resolutionPrompt: text</div>
+      <div class="item">- assignedTo: varchar(100)</div>
+      <div class="item">- resolvedAt: timestamp</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="item fk">FK bucketId &rarr; feedbackBuckets.id SET NULL</div>
+    </div>
+  </div>
+
+  <!-- feedbackBuckets -->
+  <div class="entity" style="top:630px; left:2310px; width:310px;">
+    <div class="entity-header header-orange">feedbackBuckets</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- title: varchar(200) NOT NULL</div>
+      <div class="item">- description: text</div>
+      <div class="item">- bucketType: varchar(20) NOT NULL</div>
+      <div class="item">- status: varchar(20) NOT NULL = "open"</div>
+      <div class="item">- priority: varchar(20) = "medium"</div>
+      <div class="item">- generatedPrompt: text</div>
+      <div class="item">- completedAt: timestamp</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+    </div>
+  </div>
+
+  <!-- nutritionCorrections -->
+  <div class="entity" style="top:970px; left:2310px; width:310px;">
+    <div class="entity-header header-orange">nutritionCorrections</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar</div>
+      <div class="item">- productName: text NOT NULL</div>
+      <div class="item">- barcode: varchar(50)</div>
+      <div class="item">- brand: varchar(200)</div>
+      <div class="item">- originalSource: varchar(50)</div>
+      <div class="item">- originalSourceId: varchar(100)</div>
+      <div class="item">- originalNutrition: text</div>
+      <div class="item">- correctedNutrition: text</div>
+      <div class="item">- imageUrl: text</div>
+      <div class="item">- notes: text</div>
+      <div class="item">- status: varchar(20) NOT NULL = "pending"</div>
+      <div class="item">- reviewNotes: text</div>
+      <div class="item">- reviewedAt: timestamp</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+    </div>
+  </div>
+
+  <!-- errorReports -->
+  <div class="entity" style="top:1460px; left:2310px; width:310px;">
+    <div class="entity-header header-orange">errorReports</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar(255)</div>
+      <div class="item">- errorMessage: text NOT NULL</div>
+      <div class="item">- stackTrace: text</div>
+      <div class="item">- componentStack: text</div>
+      <div class="item">- screenName: varchar(255)</div>
+      <div class="item">- platform: varchar(50)</div>
+      <div class="item">- appVersion: varchar(50)</div>
+      <div class="item">- deviceInfo: text</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- REFERENCE DATA (Column 8 - x=2700) -->
+  <!-- ============================================= -->
+
+  <!-- cookingTerms -->
+  <div class="entity" style="top:60px; left:2700px; width:310px;">
+    <div class="entity-header header-dark">cookingTerms</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: varchar</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- term: text NOT NULL</div>
+      <div class="item">- category: text NOT NULL</div>
+      <div class="item">- shortDefinition: text</div>
+      <div class="item">- longDefinition: text</div>
+      <div class="item">- difficulty: text = "beginner"</div>
+      <div class="item">- timeEstimate: text</div>
+      <div class="item">- tools: text[]</div>
+      <div class="item">- tips: text[]</div>
+      <div class="item">- relatedTerms: text[]</div>
+      <div class="item">- imageUrl: text</div>
+      <div class="item">- videoUrl: text</div>
+      <div class="item">- searchTerms: text[]</div>
+      <div class="item">- example: text</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+    </div>
+  </div>
+
+  <!-- appliances -->
+  <div class="entity" style="top:510px; left:2700px; width:310px;">
+    <div class="entity-header header-dark">appliances</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- name: varchar(100) NOT NULL UNIQUE</div>
+      <div class="item">- category: varchar(50) NOT NULL</div>
+      <div class="item">- description: text</div>
+      <div class="item">- icon: varchar(50)</div>
+      <div class="item">- imageUrl: varchar(255)</div>
+      <div class="item">- isCommon: boolean = false</div>
+      <div class="item">- alternatives: text[]</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+    </div>
+  </div>
+
+  <!-- userAppliances -->
+  <div class="entity" style="top:850px; left:2700px; width:310px;">
+    <div class="entity-header header-dark">userAppliances</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- applianceId: integer NOT NULL</div>
+      <div class="item">- notes: text</div>
+      <div class="item">- brand: varchar(100)</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="item">- updatedAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+      <div class="item fk">FK applianceId &rarr; appliances.id CASCADE</div>
+      <div class="section-title">Indexes</div>
+      <div class="item">UNIQUE(userId, applianceId)</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- NOTIFICATIONS / SYSTEM (Column 9 - x=3080) -->
+  <!-- ============================================= -->
+
+  <!-- notifications -->
+  <div class="entity" style="top:60px; left:3080px; width:290px;">
+    <div class="entity-header header-coral">notifications</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- type: varchar(50) NOT NULL</div>
+      <div class="item">- title: text NOT NULL</div>
+      <div class="item">- body: text NOT NULL</div>
+      <div class="item">- data: jsonb</div>
+      <div class="item">- deepLink: text</div>
+      <div class="item">- isRead: boolean NOT NULL = false</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+    </div>
+  </div>
+
+  <!-- userPushTokens -->
+  <div class="entity" style="top:420px; left:3080px; width:290px;">
+    <div class="entity-header header-coral">userPushTokens</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: serial</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- userId: varchar NOT NULL</div>
+      <div class="item">- token: text NOT NULL UNIQUE</div>
+      <div class="item">- platform: varchar(20) NOT NULL</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+      <div class="item">- updatedAt: timestamp NOT NULL = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK userId &rarr; users.id CASCADE</div>
+    </div>
+  </div>
+
+  <!-- cronJobs -->
+  <div class="entity" style="top:720px; left:3080px; width:290px;">
+    <div class="entity-header header-gold">cronJobs</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK name: varchar(100)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- intervalMs: bigint NOT NULL</div>
+      <div class="item">- lastRunAt: timestamp</div>
+      <div class="item">- lastRunDurationMs: integer</div>
+      <div class="item">- lastError: text</div>
+      <div class="item">- enabled: boolean NOT NULL = true</div>
+      <div class="item">- createdAt: timestamp NOT NULL = now()</div>
+      <div class="item">- updatedAt: timestamp NOT NULL = now()</div>
+    </div>
+  </div>
+
+  <!-- apiCache -->
+  <div class="entity" style="top:1020px; left:3080px; width:260px;">
+    <div class="entity-header header-gold">apiCache</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK key: text</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- value: jsonb NOT NULL</div>
+      <div class="item">- expiresAt: timestamp NOT NULL</div>
+    </div>
+  </div>
+
+  <!-- referrals -->
+  <div class="entity" style="top:1220px; left:3080px; width:290px;">
+    <div class="entity-header header-gold">referrals</div>
+    <div class="entity-body">
+      <div class="section-title">Primary Key</div>
+      <div class="item pk">PK id: integer (identity)</div>
+      <div class="section-title">Columns</div>
+      <div class="item">- referrerId: varchar NOT NULL</div>
+      <div class="item">- referredUserId: varchar NOT NULL UNIQUE</div>
+      <div class="item">- codeUsed: varchar(8) NOT NULL</div>
+      <div class="item">- status: varchar(20) NOT NULL = "completed"</div>
+      <div class="item">- bonusGranted: boolean NOT NULL = false</div>
+      <div class="item">- createdAt: timestamp = now()</div>
+      <div class="section-title">Foreign Keys</div>
+      <div class="item fk">FK referrerId &rarr; users.id CASCADE</div>
+      <div class="item fk">FK referredUserId &rarr; users.id CASCADE</div>
+    </div>
+  </div>
+
+</div>
+</div>
+<script>
+(function() {
+  const svg = document.querySelector('svg.connections');
+  const tooltip = document.createElement('div');
+  tooltip.className = 'rel-tooltip';
+  document.body.appendChild(tooltip);
+
+  svg.addEventListener('mousemove', function(e) {
+    const group = e.target.closest('.rel-group');
+    if (group) {
+      tooltip.textContent = group.dataset.label;
+      tooltip.classList.add('visible');
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY - 30) + 'px';
+    } else {
+      tooltip.classList.remove('visible');
+    }
+  });
+
+  svg.addEventListener('mouseleave', function() {
+    tooltip.classList.remove('visible');
+  });
+
+  svg.addEventListener('click', function(e) {
+    const group = e.target.closest('.rel-group');
+    if (group) {
+      const wasSelected = group.classList.contains('selected');
+      svg.querySelectorAll('.rel-group.selected').forEach(g => g.classList.remove('selected'));
+      if (!wasSelected) {
+        group.classList.add('selected');
+        svg.classList.add('has-selection');
+      } else {
+        svg.classList.remove('has-selection');
+      }
+    } else {
+      svg.querySelectorAll('.rel-group.selected').forEach(g => g.classList.remove('selected'));
+      svg.classList.remove('has-selection');
+    }
+  });
+})();
+</script>
+</body>
+</html>

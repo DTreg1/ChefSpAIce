@@ -1,0 +1,3097 @@
+# ==============================================================================
+# ChefSpAIce API – Platform, Admin, Billing & Integrations Paths
+# OpenAPI 3.0.3 path definitions
+# ==============================================================================
+
+/api/health:
+  get:
+    operationId: getHealthCheck
+    tags: [Health]
+    summary: Health check with database pool status
+    security: []
+    responses:
+      "200":
+        description: System healthy
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      enum: [ok, degraded]
+                    timestamp:
+                      type: string
+                      format: date-time
+                    database:
+                      type: object
+                      properties:
+                        healthy:
+                          type: boolean
+                        responseTimeMs:
+                          type: number
+                        pool:
+                          type: object
+      "503":
+        description: System degraded
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuccessEnvelope"
+  head:
+    operationId: headHealthCheck
+    tags: [Health]
+    summary: Lightweight health probe (no body)
+    security: []
+    responses:
+      "200":
+        description: OK
+
+# ------------------------------------------------------------------------------
+# Static pages
+# ------------------------------------------------------------------------------
+/privacy-policy:
+  get:
+    operationId: getPrivacyPolicy
+    tags: [Health]
+    summary: Serve privacy-policy HTML page
+    security: []
+    responses:
+      "200":
+        description: HTML page
+        content:
+          text/html:
+            schema:
+              type: string
+
+/support:
+  get:
+    operationId: getSupportPage
+    tags: [Health]
+    summary: Serve support HTML page
+    security: []
+    responses:
+      "200":
+        description: HTML page
+        content:
+          text/html:
+            schema:
+              type: string
+
+/marketing:
+  get:
+    operationId: getMarketingPage
+    tags: [Health]
+    summary: Serve marketing landing page HTML
+    security: []
+    responses:
+      "200":
+        description: HTML page
+        content:
+          text/html:
+            schema:
+              type: string
+
+/feature-graphic:
+  get:
+    operationId: getFeatureGraphic
+    tags: [Health]
+    summary: Serve Google Play feature-graphic HTML template
+    security: []
+    responses:
+      "200":
+        description: HTML page
+        content:
+          text/html:
+            schema:
+              type: string
+
+# ==============================================================================
+# Version Check  (mounted inline in routes.ts)
+# ==============================================================================
+/api/version-check:
+  get:
+    operationId: getVersionCheck
+    tags: [Version Check]
+    summary: Check app version for OTA update decisions
+    description: >
+      Returns whether the client's current version requires a forced update.
+      Compares the provided `currentVersion` query parameter against the server's
+      minimum supported version and latest version using semver comparison.
+    security: []
+    parameters:
+      - name: currentVersion
+        in: query
+        required: false
+        schema:
+          type: string
+          default: "0.0.0"
+        description: The client's current app version (semver string)
+    responses:
+      "200":
+        description: Version check result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    forceUpdate:
+                      type: boolean
+                      description: Whether the client must update to continue
+                    latestVersion:
+                      type: string
+                      description: The latest available app version
+                      example: "1.0.0"
+                    message:
+                      type: string
+                      description: Present only when forceUpdate is true
+                      example: "This version is no longer supported. Please update to continue."
+
+# ==============================================================================
+# Analytics  (mounted at /api/analytics/waste-summary)
+# ==============================================================================
+/api/analytics/waste-summary:
+  get:
+    operationId: getWasteSummary
+    tags: [Analytics]
+    summary: Get food waste analytics summary with trends
+    description: >
+      Returns waste and consumption analytics for the authenticated user,
+      including current period stats, weekly trends, and streak data.
+      The period parameter controls whether current stats are calculated
+      for the current week or month. Trend data shows weekly breakdown
+      for the specified number of past weeks.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [week, month]
+          default: month
+        description: Time period for current stats calculation
+      - name: weeks
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 12
+        description: Number of past weeks to include in trend data
+    responses:
+      "200":
+        description: Waste analytics summary
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    currentPeriod:
+                      type: object
+                      properties:
+                        wasteCount:
+                          type: integer
+                        consumedCount:
+                          type: integer
+                        totalItems:
+                          type: integer
+                        wasteScore:
+                          type: integer
+                          description: Score from 0-100, higher is better (less waste)
+                        periodLabel:
+                          type: string
+                          example: "This Month"
+                    trends:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          weekStart:
+                            type: string
+                            description: ISO date of the Monday of the week
+                            example: "2026-02-09"
+                          wasteCount:
+                            type: integer
+                          consumedCount:
+                            type: integer
+                          wasteScore:
+                            type: integer
+                    streak:
+                      type: object
+                      properties:
+                        currentStreak:
+                          type: integer
+                          description: Consecutive weeks with wasteScore >= 80
+                        longestStreak:
+                          type: integer
+                        lastUpdated:
+                          type: string
+                          format: date-time
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Push Token (DEPRECATED – use /api/notifications/register-device instead)
+# ==============================================================================
+/api/user/push-token:
+  post:
+    operationId: registerPushToken
+    tags: [Notifications]
+    summary: "[DEPRECATED] Register push notification token"
+    deprecated: true
+    description: >
+      **Deprecated since v1.0.0.** Use `POST /api/notifications/register-device` instead.
+      Registers or updates an Expo push notification token for the authenticated user.
+      Validates token format using the Expo SDK. If the token already exists, updates
+      the associated user and platform.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token:
+                type: string
+                description: Expo push notification token
+              platform:
+                type: string
+                description: Device platform (defaults to "unknown" if omitted)
+    responses:
+      "200":
+        description: Token registered
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    registered:
+                      type: boolean
+                      enum: [true]
+      "400":
+        description: Invalid Expo push token format
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+  delete:
+    operationId: removePushToken
+    tags: [Notifications]
+    summary: "[DEPRECATED] Remove push notification token(s)"
+    deprecated: true
+    description: >
+      **Deprecated since v1.0.0.** Use `POST /api/notifications/register-device` for
+      token management. Removes a specific push token or all tokens for the
+      authenticated user. If `token` is provided in the request body, only that
+      token is removed; otherwise all tokens for the user are removed.
+    security:
+      - BearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: Specific token to remove (omit to remove all)
+    responses:
+      "200":
+        description: Token(s) removed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    removed:
+                      type: boolean
+                      enum: [true]
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Subscriptions  (mounted at /api/subscriptions)
+# ==============================================================================
+/api/subscriptions/prices:
+  get:
+    operationId: getSubscriptionPrices
+    tags: [Subscriptions]
+    summary: List active recurring Stripe prices (cached)
+    security: []
+    responses:
+      "200":
+        description: Tiered price info
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    proMonthly:
+                      $ref: "#/components/schemas/PriceInfo"
+                    proAnnual:
+                      $ref: "#/components/schemas/PriceInfo"
+                    monthly:
+                      $ref: "#/components/schemas/PriceInfo"
+                    annual:
+                      $ref: "#/components/schemas/PriceInfo"
+
+/api/subscriptions/publishable-key:
+  get:
+    operationId: getStripePublishableKey
+    tags: [Subscriptions]
+    summary: Return Stripe publishable key for client-side SDK
+    security: []
+    responses:
+      "200":
+        description: Publishable key
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    publishableKey:
+                      type: string
+
+/api/subscriptions/create-checkout-session:
+  post:
+    operationId: createCheckoutSession
+    tags: [Subscriptions]
+    summary: Create a Stripe Checkout session for a new subscription
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [priceId]
+            properties:
+              priceId:
+                type: string
+              successUrl:
+                type: string
+                format: uri
+              cancelUrl:
+                type: string
+                format: uri
+    responses:
+      "200":
+        description: Checkout session created
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    sessionId:
+                      type: string
+                    url:
+                      type: string
+                      format: uri
+      "400":
+        description: Platform not supported or missing priceId
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/create-portal-session:
+  post:
+    operationId: createPortalSession
+    tags: [Subscriptions]
+    summary: Create a Stripe Billing Portal session
+    security:
+      - BearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              returnUrl:
+                type: string
+                format: uri
+    responses:
+      "200":
+        description: Portal URL
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      format: uri
+      "400":
+        description: No subscription found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/session/{sessionId}:
+  get:
+    operationId: getCheckoutSession
+    tags: [Subscriptions]
+    summary: Retrieve a completed Checkout session's details
+    security: []
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Session details
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    customerEmail:
+                      type: string
+                      nullable: true
+                    subscriptionId:
+                      type: string
+                      nullable: true
+                    planType:
+                      type: string
+                      enum: [monthly, annual]
+                    trialEnd:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    amount:
+                      type: integer
+                    currency:
+                      type: string
+      "400":
+        description: Missing session ID
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: Session not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/upgrade:
+  post:
+    operationId: upgradeSubscription
+    tags: [Subscriptions]
+    summary: Upgrade or change subscription plan (in-place or new checkout)
+    security:
+      - BearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              billingPeriod:
+                type: string
+                enum: [monthly, annual]
+                default: monthly
+              priceId:
+                type: string
+              successUrl:
+                type: string
+                format: uri
+              cancelUrl:
+                type: string
+                format: uri
+    responses:
+      "200":
+        description: Upgrade result – either in-place or checkout URL
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  oneOf:
+                    - type: object
+                      properties:
+                        upgraded:
+                          type: boolean
+                        tier:
+                          type: string
+                        planType:
+                          type: string
+                        status:
+                          type: string
+                    - type: object
+                      properties:
+                        sessionId:
+                          type: string
+                        url:
+                          type: string
+                          format: uri
+      "400":
+        description: Platform not supported or invalid price
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/preview-proration:
+  post:
+    operationId: previewProration
+    tags: [Subscriptions]
+    summary: Preview proration amounts before plan change
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [newPriceId]
+            properties:
+              newPriceId:
+                type: string
+    responses:
+      "200":
+        description: Proration preview
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    proratedAmount:
+                      type: integer
+                    creditAmount:
+                      type: integer
+                    newAmount:
+                      type: integer
+                    currency:
+                      type: string
+                    immediatePayment:
+                      type: integer
+      "400":
+        description: No active subscription or invalid price
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/cancel:
+  post:
+    operationId: cancelSubscription
+    tags: [Subscriptions]
+    summary: Schedule subscription cancellation at period end
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [reason]
+            properties:
+              reason:
+                type: string
+                enum: [too_expensive, not_using, missing_features, other]
+              details:
+                type: string
+              offerShown:
+                type: string
+              offerAccepted:
+                type: boolean
+    responses:
+      "200":
+        description: Cancellation scheduled
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    canceled:
+                      type: boolean
+                    cancelAtPeriodEnd:
+                      type: boolean
+                    currentPeriodEnd:
+                      type: string
+                      format: date-time
+      "400":
+        description: No active subscription or missing reason
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/pause:
+  post:
+    operationId: pauseSubscription
+    tags: [Subscriptions]
+    summary: Pause subscription for 1-3 months
+    security:
+      - BearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              durationMonths:
+                type: integer
+                enum: [1, 2, 3]
+                default: 1
+    responses:
+      "200":
+        description: Subscription paused
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    paused:
+                      type: boolean
+                    resumesAt:
+                      type: string
+                      format: date-time
+                    durationMonths:
+                      type: integer
+      "400":
+        description: No active subscription or invalid duration
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/log-cancellation-flow:
+  post:
+    operationId: logCancellationFlow
+    tags: [Subscriptions]
+    summary: Log cancellation flow interaction (analytics)
+    security:
+      - BearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                enum: [too_expensive, not_using, missing_features, other]
+              details:
+                type: string
+              offerShown:
+                type: string
+              offerAccepted:
+                type: boolean
+    responses:
+      "200":
+        description: Interaction logged
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    logged:
+                      type: boolean
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/apply-retention-offer:
+  post:
+    operationId: applyRetentionOffer
+    tags: [Subscriptions]
+    summary: Apply 50 % off for 3 months retention coupon
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Retention offer applied
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    applied:
+                      type: boolean
+                    discountPercent:
+                      type: integer
+                      example: 50
+                    durationMonths:
+                      type: integer
+                      example: 3
+      "400":
+        description: No active subscription
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/sync-revenuecat:
+  post:
+    operationId: syncRevenueCatPurchase
+    tags: [Subscriptions]
+    summary: Sync RevenueCat in-app purchase status to server
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [tier, status]
+            properties:
+              tier:
+                type: string
+                enum: [PRO]
+              status:
+                type: string
+                enum: [active, trialing, canceled, expired, past_due]
+              expirationDate:
+                type: string
+                format: date-time
+    responses:
+      "200":
+        description: Sync successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    tier:
+                      type: string
+                    status:
+                      type: string
+      "400":
+        description: Missing or invalid fields
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/status:
+  get:
+    operationId: getSubscriptionStatus
+    tags: [Subscriptions]
+    summary: Get current user's Stripe subscription status
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Subscription status
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                    planType:
+                      type: string
+                      nullable: true
+                    currentPeriodStart:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    currentPeriodEnd:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    trialStart:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    trialEnd:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    cancelAtPeriodEnd:
+                      type: boolean
+                    canceledAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/me:
+  get:
+    operationId: getMyEntitlements
+    tags: [Subscriptions]
+    summary: Get full entitlements, usage, limits, and grace-period info
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Entitlements with usage
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    tier:
+                      type: string
+                    status:
+                      type: string
+                    planType:
+                      type: string
+                      nullable: true
+                    entitlements:
+                      type: object
+                    usage:
+                      type: object
+                    remaining:
+                      type: object
+                    trialEndsAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    currentPeriodEnd:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    cancelAtPeriodEnd:
+                      type: boolean
+                    paymentFailedAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    gracePeriodEnd:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    graceDaysRemaining:
+                      type: integer
+                      nullable: true
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/check-limit/{limitType}:
+  get:
+    operationId: checkSubscriptionLimit
+    tags: [Subscriptions]
+    summary: Check usage limit for a specific resource type
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limitType
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [pantryItems, aiRecipes, cookware]
+    responses:
+      "200":
+        description: Limit check result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    limit:
+                      type: integer
+                    used:
+                      type: integer
+                    remaining:
+                      type: integer
+      "400":
+        description: Invalid limit type
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/subscriptions/check-feature/{feature}:
+  get:
+    operationId: checkFeatureAccess
+    tags: [Subscriptions]
+    summary: Check whether the user has access to a gated feature
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: feature
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+            - recipeScanning
+            - bulkScanning
+            - aiKitchenAssistant
+            - weeklyMealPrepping
+            - customStorageAreas
+    responses:
+      "200":
+        description: Feature access check
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    allowed:
+                      type: boolean
+                    upgradeRequired:
+                      type: boolean
+      "400":
+        description: Invalid feature name
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Pre-Registration
+# ==============================================================================
+/api/pre-register:
+  post:
+    operationId: preRegisterEmail
+    tags: [Pre-Registration]
+    summary: Pre-register an email from the landing page
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, privacyConsent]
+            properties:
+              email:
+                type: string
+                format: email
+              privacyConsent:
+                type: boolean
+    responses:
+      "200":
+        description: Registration acknowledged
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  nullable: true
+                message:
+                  type: string
+      "400":
+        description: Validation error (missing email, invalid format, or no consent)
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Admin – Analytics  (mounted at /api/admin/analytics)
+# ==============================================================================
+/api/admin/analytics:
+  get:
+    operationId: getAdminDashboard
+    tags: [Admin - Analytics]
+    summary: Full admin analytics dashboard (users, subs, revenue, growth)
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Dashboard metrics
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    userMetrics:
+                      type: object
+                      properties:
+                        totalUsers:
+                          type: integer
+                        newUsersLast7Days:
+                          type: integer
+                        newUsersLast30Days:
+                          type: integer
+                        activeUsersLast7Days:
+                          type: integer
+                    subscriptionBreakdown:
+                      type: object
+                      properties:
+                        pro:
+                          type: integer
+                        trialing:
+                          type: integer
+                        active:
+                          type: integer
+                        canceled:
+                          type: integer
+                        expired:
+                          type: integer
+                    revenueMetrics:
+                      type: object
+                      properties:
+                        totalActiveSubscribers:
+                          type: integer
+                        monthlySubscribers:
+                          type: integer
+                        annualSubscribers:
+                          type: integer
+                        mrr:
+                          type: integer
+                        arr:
+                          type: integer
+                    aiUsage:
+                      type: object
+                      properties:
+                        totalRecipesThisMonth:
+                          type: integer
+                    topFoodItems:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          count:
+                            type: integer
+                    userGrowth:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          month:
+                            type: string
+                          count:
+                            type: integer
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/analytics/subscription-metrics:
+  get:
+    operationId: getAdminSubscriptionMetrics
+    tags: [Admin - Analytics]
+    summary: Tier counts, active counts, and MRR breakdown
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Subscription metrics
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    tierCounts:
+                      type: object
+                    tierActiveCounts:
+                      type: object
+                    activeCounts:
+                      type: object
+                      properties:
+                        proMonthly:
+                          type: integer
+                        proAnnual:
+                          type: integer
+                    mrrBreakdown:
+                      type: object
+                      properties:
+                        proMonthlyMRR:
+                          type: integer
+                        proAnnualMRR:
+                          type: integer
+                        totalMRR:
+                          type: integer
+                    arr:
+                      type: integer
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/analytics/trial-conversion:
+  get:
+    operationId: getAdminTrialConversion
+    tags: [Admin - Analytics]
+    summary: Trial-to-paid conversion statistics
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Trial conversion data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    trialsStarted:
+                      type: integer
+                    trialsConverted:
+                      type: integer
+                    conversionRate:
+                      type: number
+                    currentlyTrialing:
+                      type: integer
+                    averageTrialDurationDays:
+                      type: number
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/analytics/churn-rate:
+  get:
+    operationId: getAdminChurnRate
+    tags: [Admin - Analytics]
+    summary: Monthly churn rate over the past 12 months
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Churn data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    monthlyChurn:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          month:
+                            type: string
+                          cancellations:
+                            type: integer
+                          churnRate:
+                            type: number
+                    currentMonthChurnRate:
+                      type: number
+                    totalCanceledAllTime:
+                      type: integer
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/analytics/conversion-funnel:
+  get:
+    operationId: getAdminConversionFunnel
+    tags: [Admin - Analytics]
+    summary: Free → Trial → Paid conversion funnel
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Funnel data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    trialUsers:
+                      type: integer
+                    proUsers:
+                      type: integer
+                    freeToTrialRate:
+                      type: number
+                    trialToPaidRate:
+                      type: number
+                    freeToPaidRate:
+                      type: number
+                    totalConversions:
+                      type: integer
+                    conversionBreakdown:
+                      type: object
+                      additionalProperties:
+                        type: integer
+                    recentBreakdown:
+                      type: object
+                      additionalProperties:
+                        type: integer
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/analytics/advanced-metrics:
+  get:
+    operationId: getAdminAdvancedMetrics
+    tags: [Admin - Analytics]
+    summary: MRR trend, churn, conversion, ARPU, and cohort retention
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Advanced SaaS metrics
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    monthlyMRR:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          month:
+                            type: string
+                          mrr:
+                            type: integer
+                    monthlyChurn:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          month:
+                            type: string
+                          churnRate:
+                            type: number
+                          cancellations:
+                            type: integer
+                          activeAtStart:
+                            type: integer
+                    monthlyConversion:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          month:
+                            type: string
+                          conversionRate:
+                            type: number
+                          conversions:
+                            type: integer
+                          trialStarts:
+                            type: integer
+                    monthlyARPU:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          month:
+                            type: string
+                          arpu:
+                            type: integer
+                    cohortRetention:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          cohort:
+                            type: string
+                          retention:
+                            type: array
+                            items:
+                              type: number
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Admin – Subscriptions  (mounted at /api/admin/subscriptions)
+# ==============================================================================
+/api/admin/subscriptions:
+  get:
+    operationId: listAdminSubscriptions
+    tags: [Admin - Subscriptions]
+    summary: Paginated list of all subscriptions with user info
+    security:
+      - AdminAuth: []
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [all, active, trialing, past_due, canceled, expired]
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+    responses:
+      "200":
+        description: Subscription list
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    subscriptions:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/SubscriptionWithUser"
+                    pagination:
+                      type: object
+                      properties:
+                        page:
+                          type: integer
+                        limit:
+                          type: integer
+                        total:
+                          type: integer
+                        totalPages:
+                          type: integer
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/subscriptions/stats:
+  get:
+    operationId: getAdminSubscriptionStats
+    tags: [Admin - Subscriptions]
+    summary: Aggregate subscription statistics and MRR
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Subscription statistics
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    totalActive:
+                      type: integer
+                    totalTrialing:
+                      type: integer
+                    totalPastDue:
+                      type: integer
+                    totalCanceled:
+                      type: integer
+                    totalSubscriptions:
+                      type: integer
+                    monthlyActive:
+                      type: integer
+                    annualActive:
+                      type: integer
+                    mrr:
+                      type: integer
+                    trialConversionRate:
+                      type: integer
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/admin/subscriptions/{id}:
+  get:
+    operationId: getAdminSubscriptionById
+    tags: [Admin - Subscriptions]
+    summary: Get a single subscription with user details
+    security:
+      - AdminAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Subscription detail
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "#/components/schemas/SubscriptionWithUser"
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: Subscription not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Admin – Data Export  (mounted at /api/admin/export-all-data)
+# ==============================================================================
+/api/admin/export-all-data:
+  get:
+    operationId: adminExportAllData
+    tags: [Admin - Data Export]
+    summary: Stream a full JSON export of all application data
+    security:
+      - AdminAuth: []
+    responses:
+      "200":
+        description: Streamed JSON file download
+        headers:
+          Content-Disposition:
+            schema:
+              type: string
+              example: 'attachment; filename=chefspaice-export-2026-02-12.json'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                users:
+                  type: array
+                  items:
+                    type: object
+                subscriptions:
+                  type: array
+                  items:
+                    type: object
+                userSyncData:
+                  type: array
+                  items:
+                    type: object
+                userInventoryItems:
+                  type: array
+                  items:
+                    type: object
+                userSavedRecipes:
+                  type: array
+                  items:
+                    type: object
+                userMealPlans:
+                  type: array
+                  items:
+                    type: object
+                userShoppingItems:
+                  type: array
+                  items:
+                    type: object
+                userCookwareItems:
+                  type: array
+                  items:
+                    type: object
+                feedbackBuckets:
+                  type: array
+                  items:
+                    type: object
+                feedback:
+                  type: array
+                  items:
+                    type: object
+                referrals:
+                  type: array
+                  items:
+                    type: object
+                exportedAt:
+                  type: string
+                  format: date-time
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Instacart  (mounted at /api/instacart)
+# ==============================================================================
+/api/instacart/status:
+  get:
+    operationId: getInstacartStatus
+    tags: [Instacart]
+    summary: Check whether the Instacart integration is configured
+    security: []
+    responses:
+      "200":
+        description: Configuration status
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    configured:
+                      type: boolean
+                message:
+                  type: string
+
+/api/instacart/retailers:
+  get:
+    operationId: getInstacartRetailers
+    tags: [Instacart]
+    summary: Find nearby Instacart retailers by postal code
+    security: []
+    parameters:
+      - name: postal_code
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: country_code
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Retailer list from Instacart
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+      "400":
+        description: Missing params or Instacart not configured
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/instacart/products-link:
+  post:
+    operationId: createInstacartProductsLink
+    tags: [Instacart]
+    summary: Create an Instacart shopping-list link for products
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [products]
+            properties:
+              title:
+                type: string
+                default: Shopping List
+              products:
+                type: array
+                minItems: 1
+                items:
+                  $ref: "#/components/schemas/InstacartLineItemInput"
+              linkbackUrl:
+                type: string
+                format: uri
+              retailer_key:
+                type: string
+    responses:
+      "200":
+        description: Instacart link generated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+      "400":
+        description: Missing or invalid products
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/instacart/recipe:
+  post:
+    operationId: createInstacartRecipeLink
+    tags: [Instacart]
+    summary: Create an Instacart recipe shopping link
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [title, ingredients]
+            properties:
+              title:
+                type: string
+              ingredients:
+                type: array
+                minItems: 1
+                items:
+                  $ref: "#/components/schemas/InstacartLineItemInput"
+              servings:
+                type: integer
+                minimum: 1
+              cooking_time:
+                type: integer
+                minimum: 1
+              instructions:
+                type: array
+                items:
+                  type: string
+              imageUrl:
+                type: string
+                format: uri
+              linkbackUrl:
+                type: string
+                format: uri
+              enable_pantry_items:
+                type: boolean
+              retailer_key:
+                type: string
+    responses:
+      "200":
+        description: Recipe link generated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+      "400":
+        description: Missing title or invalid ingredients
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Feedback  (mounted at /api/feedback)
+# ==============================================================================
+/api/feedback:
+  post:
+    operationId: submitFeedback
+    tags: [Feedback]
+    summary: Submit user feedback or bug report (optionally authenticated)
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [type, message]
+            properties:
+              type:
+                type: string
+                enum: [feedback, bug]
+              category:
+                type: string
+              message:
+                type: string
+                minLength: 1
+              userEmail:
+                type: string
+                format: email
+                nullable: true
+              deviceInfo:
+                type: string
+              screenContext:
+                type: string
+              stepsToReproduce:
+                type: string
+              severity:
+                type: string
+                enum: [minor, major, critical]
+    responses:
+      "200":
+        description: Feedback submitted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                message:
+                  type: string
+      "400":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+  get:
+    operationId: listFeedback
+    tags: [Feedback]
+    summary: List all feedback items (admin only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [all, new, reviewed, in_progress, resolved, closed]
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [all, feedback, bug]
+      - name: priority
+        in: query
+        schema:
+          type: string
+          enum: [all, low, medium, high, urgent]
+    responses:
+      "200":
+        description: Feedback list
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    feedback:
+                      type: array
+                      items:
+                        type: object
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/feedback/stats:
+  get:
+    operationId: getFeedbackStats
+    tags: [Feedback]
+    summary: Feedback statistics by status, type, and buckets (admin only)
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Feedback stats
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    total:
+                      type: integer
+                    uncategorized:
+                      type: integer
+                    byStatus:
+                      type: object
+                    byType:
+                      type: object
+                    buckets:
+                      type: object
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/feedback/buckets:
+  get:
+    operationId: listFeedbackBuckets
+    tags: [Feedback]
+    summary: List feedback buckets with their items (admin only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [all, open, in_progress, completed]
+    responses:
+      "200":
+        description: Buckets with items
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    buckets:
+                      type: array
+                      items:
+                        type: object
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/feedback/buckets/{id}/generate-prompt:
+  post:
+    operationId: generateBucketPrompt
+    tags: [Feedback]
+    summary: Generate an AI implementation prompt for a feedback bucket (admin)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Generated prompt
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    prompt:
+                      type: string
+                    bucketId:
+                      type: integer
+      "400":
+        description: Invalid bucket ID or empty bucket
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: Bucket not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/feedback/buckets/{id}/complete:
+  post:
+    operationId: completeFeedbackBucket
+    tags: [Feedback]
+    summary: Mark a bucket and all its items as completed (admin)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Bucket completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+      "400":
+        description: Invalid bucket ID
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/feedback/categorize-uncategorized:
+  post:
+    operationId: categorizeUncategorizedFeedback
+    tags: [Feedback]
+    summary: Run AI categorization on all uncategorized feedback (admin)
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Categorization results
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/feedback/{id}:
+  get:
+    operationId: getFeedbackById
+    tags: [Feedback]
+    summary: Get a single feedback item (admin)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Feedback item
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+      "400":
+        description: Invalid feedback ID
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: Feedback not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+  patch:
+    operationId: updateFeedback
+    tags: [Feedback]
+    summary: Update a feedback item (status, priority, notes – admin)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [new, reviewed, in_progress, resolved, closed]
+              priority:
+                type: string
+                enum: [low, medium, high, urgent]
+              adminNotes:
+                type: string
+                nullable: true
+              resolutionPrompt:
+                type: string
+                nullable: true
+              assignedTo:
+                type: string
+                nullable: true
+              bucketId:
+                type: integer
+                nullable: true
+    responses:
+      "200":
+        description: Updated feedback item
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+      "400":
+        description: Invalid data
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Admin authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: Feedback not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Donations  (mounted at /api/donations)
+# ==============================================================================
+/api/donations/create-checkout-session:
+  post:
+    operationId: createDonationCheckoutSession
+    tags: [Donations]
+    summary: Create a Stripe one-time payment session for a donation
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [amount, successUrl, cancelUrl]
+            properties:
+              amount:
+                type: integer
+                minimum: 100
+                description: Amount in cents (USD)
+              anonymous:
+                type: boolean
+              successUrl:
+                type: string
+                format: uri
+              cancelUrl:
+                type: string
+                format: uri
+    responses:
+      "200":
+        description: Checkout session URL
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      format: uri
+      "400":
+        description: Invalid amount or redirect URLs
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# External API  (mounted at /api/external)
+# ==============================================================================
+/api/external/action:
+  post:
+    operationId: externalAction
+    tags: [External API]
+    summary: Execute an action via API key (Siri Shortcuts)
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [apiKey, action]
+            properties:
+              apiKey:
+                type: string
+              action:
+                type: string
+                enum: [add_item, check_inventory, what_expires, quick_recipe]
+              item:
+                type: string
+              quantity:
+                type: number
+              unit:
+                type: string
+    responses:
+      "200":
+        description: Action result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                message:
+                  type: string
+      "400":
+        description: Invalid request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Invalid API key
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "403":
+        description: Pantry limit reached
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/external/generate-key:
+  post:
+    operationId: generateExternalApiKey
+    tags: [External API]
+    summary: Generate a new external API key for the authenticated user
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: New API key (shown once)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    apiKey:
+                      type: string
+                message:
+                  type: string
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/external/revoke-key:
+  delete:
+    operationId: revokeExternalApiKey
+    tags: [External API]
+    summary: Revoke the current external API key
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Key revoked
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Referrals  (mounted at /api/referral)
+# ==============================================================================
+/api/referral/code:
+  get:
+    operationId: getReferralCode
+    tags: [Referrals]
+    summary: Get or generate the user's referral code and share link
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Referral code with stats
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    referralCode:
+                      type: string
+                    shareLink:
+                      type: string
+                      format: uri
+                    stats:
+                      type: object
+                      properties:
+                        successfulReferrals:
+                          type: integer
+                        creditsRemaining:
+                          type: integer
+                        rewardsEarned:
+                          type: integer
+                        creditsNeededForReward:
+                          type: integer
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+/api/referral/validate/{code}:
+  get:
+    operationId: validateReferralCode
+    tags: [Referrals]
+    summary: Validate a referral code (public)
+    security: []
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    valid:
+                      type: boolean
+                    referrerName:
+                      type: string
+                      description: Masked name of the referrer
+
+/api/referral/apply:
+  post:
+    operationId: applyReferralCode
+    tags: [Referrals]
+    summary: Apply a referral code for the authenticated user
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [referralCode]
+            properties:
+              referralCode:
+                type: string
+    responses:
+      "200":
+        description: Referral applied
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+      "400":
+        description: Missing code or self-referral
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "401":
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "404":
+        description: Invalid referral code
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+      "409":
+        description: Referral already used
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Error Reports  (mounted at /api/error-report)
+# ==============================================================================
+/api/error-report:
+  post:
+    operationId: submitErrorReport
+    tags: [Error Reports]
+    summary: Submit a client-side crash / error report
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [errorMessage]
+            properties:
+              errorMessage:
+                type: string
+                minLength: 1
+                maxLength: 10000
+              stackTrace:
+                type: string
+                maxLength: 50000
+              componentStack:
+                type: string
+                maxLength: 50000
+              screenName:
+                type: string
+                maxLength: 255
+              platform:
+                type: string
+                maxLength: 50
+              appVersion:
+                type: string
+                maxLength: 50
+              deviceInfo:
+                type: string
+                maxLength: 2000
+    responses:
+      "201":
+        description: Report persisted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    reportId:
+                      type: integer
+      "400":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Logo Export  (mounted at /api/logo)
+# ==============================================================================
+/api/logo:
+  get:
+    operationId: getLogoDownloadPage
+    tags: [Logo]
+    summary: Serve the logo downloads HTML page
+    security: []
+    responses:
+      "200":
+        description: HTML page with download links
+        content:
+          text/html:
+            schema:
+              type: string
+
+/api/logo/svg:
+  get:
+    operationId: getLogoSvg
+    tags: [Logo]
+    summary: Download logo as SVG
+    security: []
+    parameters:
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 512
+      - name: background
+        in: query
+        schema:
+          type: string
+          enum: ["true", "false"]
+          default: "true"
+    responses:
+      "200":
+        description: SVG file
+        content:
+          image/svg+xml:
+            schema:
+              type: string
+
+/api/logo/icon-svg:
+  get:
+    operationId: getIconOnlySvg
+    tags: [Logo]
+    summary: Download chef-hat icon SVG (no background)
+    security: []
+    parameters:
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 512
+    responses:
+      "200":
+        description: SVG file
+        content:
+          image/svg+xml:
+            schema:
+              type: string
+
+/api/logo/png:
+  get:
+    operationId: getLogoPng
+    tags: [Logo]
+    summary: Download logo as PNG
+    security: []
+    parameters:
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 512
+      - name: background
+        in: query
+        schema:
+          type: string
+          enum: ["true", "false"]
+          default: "true"
+    responses:
+      "200":
+        description: PNG file
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+
+/api/logo/favicon.ico:
+  get:
+    operationId: getFavicon
+    tags: [Logo]
+    summary: Download favicon.ico (32 × 32)
+    security: []
+    responses:
+      "200":
+        description: ICO file
+        content:
+          image/x-icon:
+            schema:
+              type: string
+              format: binary
+
+/api/logo/favicon-png:
+  get:
+    operationId: getFaviconPng
+    tags: [Logo]
+    summary: Download favicon as PNG at standard sizes
+    security: []
+    parameters:
+      - name: size
+        in: query
+        schema:
+          type: integer
+          enum: [16, 32, 48, 64, 128, 256]
+          default: 32
+    responses:
+      "200":
+        description: PNG file
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+
+/api/logo/apple-touch-icon:
+  get:
+    operationId: getAppleTouchIcon
+    tags: [Logo]
+    summary: Download Apple touch icon (180 × 180 PNG)
+    security: []
+    responses:
+      "200":
+        description: PNG file
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+
+# ==============================================================================
+# RevenueCat Webhooks  (mounted at /api/webhooks/revenuecat)
+# ==============================================================================
+/api/webhooks/revenuecat:
+  post:
+    operationId: handleRevenueCatWebhook
+    tags: [RevenueCat Webhooks]
+    summary: Handle RevenueCat subscription lifecycle events
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [api_version, event]
+            properties:
+              api_version:
+                type: string
+              event:
+                type: object
+                required: [type, app_user_id, product_id]
+                properties:
+                  type:
+                    type: string
+                    enum:
+                      - INITIAL_PURCHASE
+                      - RENEWAL
+                      - PRODUCT_CHANGE
+                      - UNCANCELLATION
+                      - CANCELLATION
+                      - BILLING_ISSUE
+                      - EXPIRATION
+                      - TEST
+                  app_user_id:
+                    type: string
+                  original_app_user_id:
+                    type: string
+                  aliases:
+                    type: array
+                    items:
+                      type: string
+                  product_id:
+                    type: string
+                  period_type:
+                    type: string
+                  purchased_at_ms:
+                    type: integer
+                  expiration_at_ms:
+                    type: integer
+                  environment:
+                    type: string
+                  entitlement_id:
+                    type: string
+                  entitlement_ids:
+                    type: array
+                    items:
+                      type: string
+                  transaction_id:
+                    type: string
+                  original_transaction_id:
+                    type: string
+                  store:
+                    type: string
+                  price:
+                    type: number
+                  currency:
+                    type: string
+                  country_code:
+                    type: string
+    responses:
+      "200":
+        description: Event processed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    received:
+                      type: boolean
+      "401":
+        description: Invalid webhook secret
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorEnvelope"
+
+# ==============================================================================
+# Shared component schemas (referenced above)
+# ==============================================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    AdminAuth:
+      type: http
+      scheme: bearer
+      description: Admin-level bearer token
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+        message:
+          type: string
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        errorCode:
+          type: string
+
+    PriceInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        interval:
+          type: string
+          enum: [month, year]
+        intervalCount:
+          type: integer
+        trialDays:
+          type: integer
+        productName:
+          type: string
+
+    SubscriptionWithUser:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        stripeCustomerId:
+          type: string
+          nullable: true
+        stripeSubscriptionId:
+          type: string
+          nullable: true
+        stripePriceId:
+          type: string
+          nullable: true
+        status:
+          type: string
+        planType:
+          type: string
+        currentPeriodStart:
+          type: string
+          format: date-time
+        currentPeriodEnd:
+          type: string
+          format: date-time
+        trialStart:
+          type: string
+          format: date-time
+          nullable: true
+        trialEnd:
+          type: string
+          format: date-time
+          nullable: true
+        cancelAtPeriodEnd:
+          type: boolean
+        canceledAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            displayName:
+              type: string
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+              nullable: true
+
+    InstacartLineItemInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        display_text:
+          type: string
+        upc:
+          type: string
+        upcs:
+          type: array
+          items:
+            type: string
+        product_ids:
+          type: array
+          items:
+            type: string
+        brand:
+          type: string
+        brand_filters:
+          type: array
+          items:
+            type: string
+        health_filters:
+          type: array
+          items:
+            type: string
+        line_item_measurements:
+          type: object
+          properties:
+            size:
+              type: number
+            unit:
+              type: string
+        image_url:
+          type: string
+          format: uri
+        instructions:
+          type: string
+        enable_pantry_items:
+          type: boolean

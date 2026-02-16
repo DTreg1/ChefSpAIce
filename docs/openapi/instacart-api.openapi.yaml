@@ -1,0 +1,754 @@
+openapi: 3.0.0
+info:
+  title: ChefSpAIce Instacart Integration API
+  version: 1.0.0
+  description: |
+    Integration API for Instacart Connect API. Provides endpoints for creating shopping links 
+    and recipe-based shopping lists. All requests are proxied through the server, which handles 
+    authentication, request transformation, error parsing, and retry logic for rate-limited requests.
+    
+    The Instacart API uses automatic retry with exponential backoff (max 3 retries) when receiving 
+    HTTP 429 responses with a backoff schedule of 1s, 2s, 4s (or Retry-After header value if present).
+  contact:
+    name: ChefSpAIce Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://connect.dev.instacart.tools
+    description: Development Server
+    variables:
+      basePath:
+        default: /api/instacart
+  - url: https://connect.instacart.com
+    description: Production Server
+    variables:
+      basePath:
+        default: /api/instacart
+
+components:
+  securitySchemes:
+    InstacartBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: INSTACART_API_KEY environment variable used as Bearer token
+
+  schemas:
+    SuccessResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          description: Response payload (structure varies by endpoint)
+        message:
+          type: string
+          description: Optional success message
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+        - errorCode
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          description: Human-readable error message
+        errorCode:
+          type: string
+          enum:
+            - INSTACART_NOT_CONFIGURED
+            - MISSING_PARAMS
+            - MISSING_PRODUCTS
+            - INVALID_PRODUCT
+            - MISSING_RECIPE_DATA
+            - INVALID_SERVINGS
+            - INVALID_COOKING_TIME
+            - INSTACART_RETAILERS_FAILED
+            - INSTACART_PRODUCTS_LINK_FAILED
+            - INSTACART_RECIPE_LINK_FAILED
+          description: Machine-readable error code
+        requestId:
+          type: string
+          format: uuid
+          description: Request ID for error tracking
+
+    InstacartStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - configured
+              properties:
+                configured:
+                  type: boolean
+                  description: Whether Instacart API key is configured
+
+    Retailer:
+      type: object
+      required:
+        - retailer_key
+        - name
+      properties:
+        retailer_key:
+          type: string
+          description: Unique identifier for the retailer
+          example: whole_foods
+        name:
+          type: string
+          description: Retailer display name
+          example: Whole Foods Market
+        logo_url:
+          type: string
+          format: uri
+          description: URL to retailer logo
+          example: https://example.com/logo.png
+
+    RetailersResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - retailers
+              properties:
+                retailers:
+                  type: array
+                  description: List of available retailers
+                  items:
+                    $ref: '#/components/schemas/Retailer'
+
+    InstacartProduct:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Product name
+          example: Organic Chicken Breast
+        quantity:
+          type: number
+          default: 1
+          description: Quantity of the product
+          example: 2
+        unit:
+          type: string
+          default: each
+          description: Unit of measurement (normalized via toInstacartUnit)
+          example: lb
+        display_text:
+          type: string
+          description: Display text override for the product
+          example: 2 lb Organic Chicken Breast
+        upc:
+          type: string
+          description: Single UPC code
+          example: "012345678905"
+        upcs:
+          type: array
+          items:
+            type: string
+          description: Array of UPC codes
+          example:
+            - "012345678905"
+            - "012345678906"
+        product_ids:
+          type: array
+          items:
+            type: string
+          description: Instacart product IDs
+          example:
+            - "product_123"
+            - "product_456"
+        brand:
+          type: string
+          description: Single brand filter
+          example: Boudin
+        brand_filters:
+          type: array
+          items:
+            type: string
+          description: Array of brand filters
+          example:
+            - Boudin
+            - Sourdough
+        health_filters:
+          type: array
+          items:
+            type: string
+            enum:
+              - ORGANIC
+              - GLUTEN_FREE
+              - FAT_FREE
+              - VEGAN
+              - KOSHER
+              - SUGAR_FREE
+              - LOW_FAT
+          description: Health/dietary filters
+          example:
+            - ORGANIC
+
+    InstacartMeasurement:
+      type: object
+      required:
+        - quantity
+        - unit
+      properties:
+        quantity:
+          type: number
+          description: Quantity value
+          example: 1
+        unit:
+          type: string
+          description: Unit of measurement
+          example: lb
+
+    InstacartFilters:
+      type: object
+      properties:
+        brand_filters:
+          type: array
+          items:
+            type: string
+          description: Array of brand filters
+          example:
+            - Parmigiano Reggiano
+        health_filters:
+          type: array
+          items:
+            type: string
+            enum:
+              - ORGANIC
+              - GLUTEN_FREE
+              - FAT_FREE
+              - VEGAN
+              - KOSHER
+              - SUGAR_FREE
+              - LOW_FAT
+          description: Health/dietary filters
+          example:
+            - ORGANIC
+
+    InstacartRecipeIngredient:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Ingredient name
+          example: Spaghetti
+        quantity:
+          type: number
+          default: 1
+          description: Quantity of the ingredient
+          example: 1
+        unit:
+          type: string
+          default: each
+          description: Unit of measurement
+          example: lb
+        display_text:
+          type: string
+          description: Display text override for the ingredient
+          example: 1 lb Spaghetti
+        upc:
+          type: string
+          description: Single UPC code
+          example: "012345678905"
+        upcs:
+          type: array
+          items:
+            type: string
+          description: Array of UPC codes
+        product_ids:
+          type: array
+          items:
+            type: string
+          description: Product IDs (converted to numbers)
+        brand:
+          type: string
+          description: Single brand filter
+          example: Parmigiano Reggiano
+        brand_filters:
+          type: array
+          items:
+            type: string
+          description: Array of brand filters
+        health_filters:
+          type: array
+          items:
+            type: string
+            enum:
+              - ORGANIC
+              - GLUTEN_FREE
+              - FAT_FREE
+              - VEGAN
+              - KOSHER
+              - SUGAR_FREE
+              - LOW_FAT
+          description: Health/dietary filters
+
+    ProductsLinkResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - products_link_url
+              properties:
+                products_link_url:
+                  type: string
+                  format: uri
+                  description: URL to the Instacart shopping list
+                  example: https://www.instacart.com/store/partner_recipe/...
+
+    RecipeLinkResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - products_link_url
+              properties:
+                products_link_url:
+                  type: string
+                  format: uri
+                  description: URL to the Instacart recipe shopping list
+                  example: https://www.instacart.com/store/partner_recipe/...
+
+paths:
+  /api/instacart/status:
+    get:
+      operationId: getInstacartStatus
+      summary: Check Instacart Configuration Status
+      description: Check if the Instacart integration is configured (API key present). No authentication required for this local check.
+      tags:
+        - Configuration
+      security: []
+      responses:
+        '200':
+          description: Configuration status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstacartStatusResponse'
+              examples:
+                configured:
+                  summary: Instacart API is configured
+                  value:
+                    success: true
+                    data:
+                      configured: true
+                    message: Instacart API is configured and ready
+                notConfigured:
+                  summary: Instacart API is not configured
+                  value:
+                    success: true
+                    data:
+                      configured: false
+                    message: Instacart API key not configured
+
+  /api/instacart/retailers:
+    get:
+      operationId: getRetailers
+      summary: Get Nearby Retailers
+      description: Find nearby Instacart retailers by postal code and country code
+      tags:
+        - Retailers
+      security:
+        - InstacartBearerAuth: []
+      parameters:
+        - name: postal_code
+          in: query
+          required: true
+          description: Postal/ZIP code to search
+          schema:
+            type: string
+          example: '90210'
+        - name: country_code
+          in: query
+          required: true
+          description: ISO country code (e.g., "US", "CA")
+          schema:
+            type: string
+          example: US
+      responses:
+        '200':
+          description: Retailers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetailersResponse'
+              examples:
+                success:
+                  summary: Successfully retrieved retailers
+                  value:
+                    success: true
+                    data:
+                      retailers:
+                        - retailer_key: whole_foods
+                          name: Whole Foods Market
+                          logo_url: https://example.com/whole_foods.png
+                        - retailer_key: kroger
+                          name: Kroger
+                          logo_url: https://example.com/kroger.png
+        '400':
+          description: Missing required query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: postal_code and country_code are required
+                errorCode: MISSING_PARAMS
+                requestId: 550e8400-e29b-41d4-a716-446655440000
+        '401':
+          description: Instacart API key is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Instacart API key is invalid or expired
+                errorCode: INSTACART_RETAILERS_FAILED
+                requestId: 550e8400-e29b-41d4-a716-446655440000
+        '429':
+          description: Rate limit exceeded (retries handled automatically)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Instacart service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/instacart/products-link:
+    post:
+      operationId: createProductsLink
+      summary: Create Shopping List Link
+      description: |
+        Create a shopping list link using the Instacart `/idp/v1/products/products_link` endpoint. 
+        Uses `line_items` with flat quantity/unit/brand_filters format.
+      tags:
+        - Shopping Links
+      security:
+        - InstacartBearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - products
+              properties:
+                title:
+                  type: string
+                  default: Shopping List
+                  description: Title for the shopping list
+                  example: Weekly Groceries
+                products:
+                  type: array
+                  minItems: 1
+                  description: Array of product objects
+                  items:
+                    $ref: '#/components/schemas/InstacartProduct'
+                retailer_key:
+                  type: string
+                  description: Preferred retailer key
+                  example: whole_foods
+                linkbackUrl:
+                  type: string
+                  format: uri
+                  description: Partner linkback URL
+                  example: https://example.com/callback
+            examples:
+              basic:
+                summary: Basic shopping list
+                value:
+                  title: Weekly Groceries
+                  products:
+                    - name: Organic Chicken Breast
+                      quantity: 2
+                      unit: lb
+                      health_filters:
+                        - ORGANIC
+                    - name: Whole Milk
+                      quantity: 1
+                      unit: gallon
+                    - name: Sourdough Bread
+                      quantity: 1
+                      unit: loaf
+                      brand: Boudin
+              withRetailer:
+                summary: Shopping list with specific retailer
+                value:
+                  title: Whole Foods Shopping
+                  products:
+                    - name: Organic Eggs
+                      quantity: 1
+                      unit: dozen
+                      health_filters:
+                        - ORGANIC
+                  retailer_key: whole_foods
+                  linkbackUrl: https://example.com/shopping/complete
+      responses:
+        '200':
+          description: Shopping list link created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsLinkResponse'
+              example:
+                success: true
+                data:
+                  products_link_url: https://www.instacart.com/store/partner_recipe/abc123...
+        '400':
+          description: Bad request (missing or invalid parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingProducts:
+                  summary: Products array is required
+                  value:
+                    success: false
+                    error: Products array is required and must be non-empty
+                    errorCode: MISSING_PRODUCTS
+                    requestId: 550e8400-e29b-41d4-a716-446655440000
+                invalidProduct:
+                  summary: Product missing name field
+                  value:
+                    success: false
+                    error: Product at index 0 must have a non-empty name
+                    errorCode: INVALID_PRODUCT
+                    requestId: 550e8400-e29b-41d4-a716-446655440000
+        '401':
+          description: Instacart not configured or API key invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded (retries handled automatically)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Instacart service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/instacart/recipe:
+    post:
+      operationId: createRecipeLink
+      summary: Create Recipe Shopping Link
+      description: |
+        Create a recipe shopping link using the Instacart `/idp/v1/products/recipe` endpoint. 
+        Uses `ingredients` array with `measurements` and `filters` objects (different from `products-link`).
+        Supports optional recipe metadata like servings and cooking time.
+      tags:
+        - Recipe Links
+      security:
+        - InstacartBearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - ingredients
+              properties:
+                title:
+                  type: string
+                  description: Recipe title (required)
+                  example: Pasta Carbonara
+                ingredients:
+                  type: array
+                  minItems: 1
+                  description: Array of ingredient objects
+                  items:
+                    $ref: '#/components/schemas/InstacartRecipeIngredient'
+                servings:
+                  type: integer
+                  minimum: 1
+                  description: Number of servings (must be positive integer if provided)
+                  example: 4
+                cooking_time:
+                  type: integer
+                  minimum: 1
+                  description: Cooking time in minutes (must be positive integer if provided)
+                  example: 30
+                instructions:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of recipe step instructions
+                  example:
+                    - Boil pasta
+                    - Fry pancetta
+                    - Mix eggs and cheese
+                    - Combine all
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: Recipe image URL
+                  example: https://example.com/carbonara.jpg
+                enable_pantry_items:
+                  type: boolean
+                  description: Enable pantry items in landing page
+                  example: true
+                linkbackUrl:
+                  type: string
+                  format: uri
+                  description: Partner linkback URL
+                  example: https://example.com/callback
+                retailer_key:
+                  type: string
+                  description: Preferred retailer key
+                  example: whole_foods
+            examples:
+              complete:
+                summary: Complete recipe with all fields
+                value:
+                  title: Pasta Carbonara
+                  servings: 4
+                  cooking_time: 30
+                  instructions:
+                    - Boil pasta
+                    - Fry pancetta
+                    - Mix eggs and cheese
+                    - Combine all
+                  imageUrl: https://example.com/carbonara.jpg
+                  ingredients:
+                    - name: Spaghetti
+                      quantity: 1
+                      unit: lb
+                    - name: Pancetta
+                      quantity: 8
+                      unit: oz
+                    - name: Eggs
+                      quantity: 4
+                      unit: each
+                    - name: Parmesan Cheese
+                      quantity: 1
+                      unit: cup
+                      brand: Parmigiano Reggiano
+                  retailer_key: whole_foods
+              minimal:
+                summary: Minimal recipe with required fields only
+                value:
+                  title: Simple Salad
+                  ingredients:
+                    - name: Lettuce
+                      quantity: 1
+                      unit: head
+                    - name: Tomato
+                      quantity: 2
+                      unit: each
+      responses:
+        '200':
+          description: Recipe link created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeLinkResponse'
+              example:
+                success: true
+                data:
+                  products_link_url: https://www.instacart.com/store/partner_recipe/xyz789...
+        '400':
+          description: Bad request (missing or invalid parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingTitle:
+                  summary: Recipe title is required
+                  value:
+                    success: false
+                    error: Recipe title is required
+                    errorCode: MISSING_RECIPE_DATA
+                    requestId: 550e8400-e29b-41d4-a716-446655440000
+                invalidServings:
+                  summary: Servings must be positive integer
+                  value:
+                    success: false
+                    error: servings must be a positive integer
+                    errorCode: INVALID_SERVINGS
+                    requestId: 550e8400-e29b-41d4-a716-446655440000
+                invalidCookingTime:
+                  summary: Cooking time must be positive integer
+                  value:
+                    success: false
+                    error: cooking_time must be a positive integer
+                    errorCode: INVALID_COOKING_TIME
+                    requestId: 550e8400-e29b-41d4-a716-446655440000
+                missingIngredients:
+                  summary: Ingredients array is required
+                  value:
+                    success: false
+                    error: Products array is required and must be non-empty
+                    errorCode: MISSING_PRODUCTS
+                    requestId: 550e8400-e29b-41d4-a716-446655440000
+        '401':
+          description: Instacart not configured or API key invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded (retries handled automatically)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Instacart service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Configuration
+    description: Configuration and status endpoints
+  - name: Retailers
+    description: Retailer discovery endpoints
+  - name: Shopping Links
+    description: Shopping list link creation endpoints
+  - name: Recipe Links
+    description: Recipe-based shopping link creation endpoints

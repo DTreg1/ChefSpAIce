@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChefSpAIce Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #242837;
+      --border: #2e3347;
+      --text: #e4e7f1;
+      --text-secondary: #8b91a8;
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --blue: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    .login-card p {
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.375rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9375rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.625rem 1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: var(--accent-light); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error-msg {
+      color: var(--red);
+      font-size: 0.8125rem;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+
+    .dashboard { display: none; }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .dash-header h1 { font-size: 1.25rem; }
+
+    .dash-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.8125rem;
+      border-radius: 6px;
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-sm:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .dash-body {
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .metric-card .label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-card .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .metric-card .sub {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .chart-card h3 {
+      font-size: 0.9375rem;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 260px;
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .food-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .food-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .food-item:last-child { border-bottom: none; }
+
+    .food-item .rank {
+      width: 1.5rem;
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+    }
+
+    .food-item .name { flex: 1; }
+
+    .food-item .count {
+      font-weight: 600;
+      color: var(--accent-light);
+    }
+
+    .bar-container {
+      flex: 1;
+      max-width: 200px;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .loading-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 2rem;
+      height: 2rem;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.75rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .updated-at {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .funnel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 0;
+    }
+
+    .funnel-step {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .funnel-bar-wrapper {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .funnel-bar {
+      height: 40px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #fff;
+      min-width: 60px;
+      transition: width 0.5s ease;
+    }
+
+    .funnel-label {
+      width: 100px;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .funnel-count {
+      width: 80px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .cohort-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+    }
+
+    .cohort-table th,
+    .cohort-table td {
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .cohort-table th {
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--surface-2);
+    }
+
+    .cohort-table td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .cohort-cell {
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      display: inline-block;
+      min-width: 3rem;
+    }
+
+    @media (max-width: 600px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .dash-body { padding: 1rem; }
+      .funnel-label { width: 70px; font-size: 0.75rem; }
+      .funnel-count { width: 60px; font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginView" class="login-container">
+    <div class="login-card">
+      <h1>Admin Dashboard</h1>
+      <p>Sign in with your admin account</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="admin@chefspaice.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn" id="loginBtn">Sign In</button>
+        <div id="loginError" class="error-msg" style="display:none;"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboardView" class="dashboard">
+    <div class="dash-header">
+      <h1>ChefSpAIce Admin</h1>
+      <div class="dash-header-actions">
+        <span id="updatedAt" class="updated-at"></span>
+        <button class="btn-sm" onclick="loadAnalytics()">Refresh</button>
+        <button class="btn-sm" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <span>Loading analytics...</span>
+      </div>
+
+      <div id="dashContent" style="display:none;">
+        <div class="metrics-grid" id="metricsGrid"></div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>User Growth (Last 12 Months)</h3>
+            <div class="chart-wrapper">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Subscription Distribution</h3>
+            <div class="chart-wrapper">
+              <canvas id="subChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Top Food Items in Inventories</h2>
+        <div class="food-list" id="foodList"></div>
+
+        <div id="sectionSubscriptionMetrics" data-testid="section-subscription-metrics" style="display:none;">
+          <h2 class="section-title">Subscription Metrics by Tier</h2>
+          <div class="metrics-grid" id="subscriptionMetricsGrid"></div>
+        </div>
+
+        <div id="sectionTrialConversion" data-testid="section-trial-conversion" style="display:none;">
+          <h2 class="section-title">Trial Conversion</h2>
+          <div class="metrics-grid" id="trialConversionGrid"></div>
+        </div>
+
+        <div id="sectionChurnAnalysis" data-testid="section-churn-analysis" style="display:none;">
+          <h2 class="section-title">Churn Analysis</h2>
+          <div class="metrics-grid" id="churnMetricsGrid"></div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3>Monthly Cancellations (Last 12 Months)</h3>
+              <div class="chart-wrapper">
+                <canvas id="churnChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="sectionConversionFunnel" data-testid="section-conversion-funnel" style="display:none;">
+          <h2 class="section-title">Trial to Paid Conversion Funnel</h2>
+          <div class="chart-card" style="margin-bottom:1rem;">
+            <div class="funnel-container" id="funnelVisualization"></div>
+          </div>
+          <div class="metrics-grid" id="conversionFunnelGrid"></div>
+        </div>
+
+        <div id="sectionAdvancedMetrics" data-testid="section-advanced-metrics" style="display:none;">
+          <h2 class="section-title">Advanced Revenue & Retention Metrics</h2>
+          <div class="metrics-grid" id="advancedSummaryGrid"></div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3>Monthly Recurring Revenue (MRR)</h3>
+              <div class="chart-wrapper">
+                <canvas id="mrrChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h3>Monthly ARPU (Avg Revenue Per User)</h3>
+              <div class="chart-wrapper">
+                <canvas id="arpuChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3>Monthly Churn Rate (%)</h3>
+              <div class="chart-wrapper">
+                <canvas id="advChurnChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h3>Trial-to-Paid Conversion Rate (%)</h3>
+              <div class="chart-wrapper">
+                <canvas id="convRateChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card" style="margin-bottom:1.5rem;">
+            <h3>Cohort Retention (% with active subscription)</h3>
+            <div class="cohort-table-wrapper" style="overflow-x:auto;">
+              <table id="cohortTable" class="cohort-table"></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = sessionStorage.getItem('adminToken');
+    let growthChartInstance = null;
+    let subChartInstance = null;
+    let churnChartInstance = null;
+    let funnelChartInstance = null;
+    let mrrChartInstance = null;
+    let arpuChartInstance = null;
+    let advChurnChartInstance = null;
+    let convRateChartInstance = null;
+
+    if (authToken) {
+      showDashboard();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('loginBtn');
+      const errorEl = document.getElementById('loginError');
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      errorEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+
+        authToken = data.token;
+        sessionStorage.setItem('adminToken', authToken);
+
+        const verifyRes = await fetch('/api/admin/analytics', {
+          headers: { 'Authorization': 'Bearer ' + authToken },
+        });
+
+        if (verifyRes.status === 403) {
+          sessionStorage.removeItem('adminToken');
+          authToken = null;
+          throw new Error('This account does not have admin access');
+        }
+
+        if (!verifyRes.ok) {
+          throw new Error('Failed to verify admin access');
+        }
+
+        showDashboard();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+
+    function showDashboard() {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('dashboardView').style.display = 'block';
+      loadAnalytics();
+    }
+
+    function logout() {
+      authToken = null;
+      sessionStorage.removeItem('adminToken');
+      document.getElementById('loginView').style.display = 'flex';
+      document.getElementById('dashboardView').style.display = 'none';
+    }
+
+    function formatCurrency(cents) {
+      return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatNumber(n) {
+      return Number(n).toLocaleString('en-US');
+    }
+
+    async function loadAnalytics() {
+      const loading = document.getElementById('loadingOverlay');
+      const content = document.getElementById('dashContent');
+      loading.style.display = 'flex';
+      content.style.display = 'none';
+
+      try {
+        const headers = { 'Authorization': 'Bearer ' + authToken };
+
+        const results = await Promise.allSettled([
+          fetch('/api/admin/analytics', { headers }).then(r => {
+            if (r.status === 401 || r.status === 403) { logout(); throw new Error('Unauthorized'); }
+            return r.json();
+          }),
+          fetch('/api/admin/analytics/subscription-metrics', { headers }).then(r => r.json()),
+          fetch('/api/admin/analytics/trial-conversion', { headers }).then(r => r.json()),
+          fetch('/api/admin/analytics/churn-rate', { headers }).then(r => r.json()),
+          fetch('/api/admin/analytics/conversion-funnel', { headers }).then(r => r.json()),
+          fetch('/api/admin/analytics/advanced-metrics', { headers }).then(r => r.json()),
+        ]);
+
+        if (results[0].status === 'rejected') {
+          throw new Error(results[0].reason?.message || 'Failed to load main analytics');
+        }
+
+        const mainData = results[0].value;
+        renderDashboard(mainData);
+
+        if (results[1].status === 'fulfilled' && results[1].value.data) {
+          renderSubscriptionMetrics(results[1].value.data);
+        }
+        if (results[2].status === 'fulfilled' && results[2].value.data) {
+          renderTrialConversion(results[2].value.data);
+        }
+        if (results[3].status === 'fulfilled' && results[3].value.data) {
+          renderChurnRate(results[3].value.data);
+        }
+        if (results[4].status === 'fulfilled' && results[4].value.data) {
+          renderConversionFunnel(results[4].value.data);
+        }
+        if (results[5].status === 'fulfilled' && results[5].value.data) {
+          renderAdvancedMetrics(results[5].value.data);
+        }
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+
+        document.getElementById('updatedAt').textContent =
+          'Updated: ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        if (err.message === 'Unauthorized') return;
+        loading.innerHTML = '<span style="color:var(--red)">Failed to load analytics: ' + err.message + '</span>';
+      }
+    }
+
+    function renderDashboard(data) {
+      const m = data.userMetrics;
+      const s = data.subscriptionBreakdown;
+      const r = data.revenueMetrics;
+      const ai = data.aiUsage;
+
+      const metrics = [
+        { label: 'Total Users', value: formatNumber(m.totalUsers), sub: '' },
+        { label: 'New (7 Days)', value: formatNumber(m.newUsersLast7Days), sub: '' },
+        { label: 'New (30 Days)', value: formatNumber(m.newUsersLast30Days), sub: '' },
+        { label: 'Active (7 Days)', value: formatNumber(m.activeUsersLast7Days), sub: 'Users who synced' },
+        { label: 'MRR', value: formatCurrency(r.mrr), sub: 'Monthly Recurring Revenue' },
+        { label: 'ARR', value: formatCurrency(r.arr), sub: 'Annual Run Rate' },
+        { label: 'Paid Subscribers', value: formatNumber(r.totalActiveSubscribers), sub: r.monthlySubscribers + ' monthly / ' + r.annualSubscribers + ' annual' },
+        { label: 'AI Recipes (Month)', value: formatNumber(ai.totalRecipesThisMonth), sub: 'Generated this month' },
+      ];
+
+      const grid = document.getElementById('metricsGrid');
+      grid.innerHTML = metrics.map(m => `
+        <div class="metric-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${m.value}</div>
+          ${m.sub ? '<div class="sub">' + m.sub + '</div>' : ''}
+        </div>
+      `).join('');
+
+      renderGrowthChart(data.userGrowth);
+      renderSubChart(s);
+      renderFoodItems(data.topFoodItems);
+    }
+
+    function renderGrowthChart(growth) {
+      const ctx = document.getElementById('growthChart').getContext('2d');
+
+      if (growthChartInstance) growthChartInstance.destroy();
+
+      const labels = growth.map(g => {
+        const [y, m] = g.month.split('-');
+        return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      });
+
+      growthChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'New Users',
+            data: growth.map(g => g.count),
+            backgroundColor: 'rgba(99, 102, 241, 0.6)',
+            borderColor: 'rgba(99, 102, 241, 1)',
+            borderWidth: 1,
+            borderRadius: 4,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#8b91a8', font: { size: 11 } },
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#8b91a8', font: { size: 11 }, precision: 0 },
+            },
+          },
+        },
+      });
+    }
+
+    function renderSubChart(s) {
+      const ctx = document.getElementById('subChart').getContext('2d');
+
+      if (subChartInstance) subChartInstance.destroy();
+
+      const labels = ['Basic', 'Standard', 'Active', 'Canceled', 'Expired'];
+      const values = [s.basic, s.standard, s.active, s.canceled, s.expired];
+      const colors = [
+        'rgba(59, 130, 246, 0.7)',
+        'rgba(99, 102, 241, 0.7)',
+        'rgba(234, 179, 8, 0.7)',
+        'rgba(34, 197, 94, 0.7)',
+        'rgba(239, 68, 68, 0.7)',
+        'rgba(107, 114, 128, 0.7)',
+      ];
+
+      subChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: colors,
+            borderColor: 'rgba(26, 29, 39, 1)',
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#8b91a8',
+                font: { size: 12 },
+                padding: 12,
+                usePointStyle: true,
+                pointStyleWidth: 8,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function renderFoodItems(items) {
+      const list = document.getElementById('foodList');
+
+      if (!items || items.length === 0) {
+        list.innerHTML = '<div class="food-item"><span class="name" style="color:var(--text-secondary)">No inventory data available</span></div>';
+        return;
+      }
+
+      const maxCount = Math.max(...items.map(i => i.count));
+
+      list.innerHTML = items.map((item, i) => `
+        <div class="food-item">
+          <span class="rank">${i + 1}</span>
+          <span class="name">${escapeHtml(item.name || 'Unknown')}</span>
+          <div class="bar-container">
+            <div class="bar-fill" style="width:${Math.round((item.count / maxCount) * 100)}%"></div>
+          </div>
+          <span class="count">${formatNumber(item.count)}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderSubscriptionMetrics(data) {
+      const section = document.getElementById('sectionSubscriptionMetrics');
+      const grid = document.getElementById('subscriptionMetricsGrid');
+      const tc = data.tierCounts || {};
+      const tac = data.tierActiveCounts || {};
+      const ac = data.activeCounts || {};
+      const mrr = data.mrrBreakdown || {};
+
+      const metrics = [
+        { label: 'Trial Users', value: formatNumber(tc.TRIAL || 0), sub: formatNumber(tac.TRIAL || 0) + ' active' },
+        { label: 'PRO Users', value: formatNumber(tc.PRO || 0), sub: formatNumber(tac.PRO || 0) + ' active (' + (ac.proMonthly || 0) + ' monthly / ' + (ac.proAnnual || 0) + ' annual)' },
+        { label: 'Pro Monthly MRR', value: formatCurrency(mrr.proMonthlyMRR || 0), sub: '' },
+        { label: 'Pro Annual MRR', value: formatCurrency(mrr.proAnnualMRR || 0), sub: '' },
+        { label: 'Total MRR', value: formatCurrency(mrr.totalMRR || 0), sub: 'ARR: ' + formatCurrency(data.arr || 0) },
+      ];
+
+      grid.innerHTML = metrics.map(m => `
+        <div class="metric-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${m.value}</div>
+          ${m.sub ? '<div class="sub">' + m.sub + '</div>' : ''}
+        </div>
+      `).join('');
+      section.style.display = 'block';
+    }
+
+    function renderTrialConversion(data) {
+      const section = document.getElementById('sectionTrialConversion');
+      const grid = document.getElementById('trialConversionGrid');
+
+      const metrics = [
+        { label: 'Trials Started', value: formatNumber(data.trialsStarted || 0), sub: '' },
+        { label: 'Trials Converted', value: formatNumber(data.trialsConverted || 0), sub: '' },
+        { label: 'Conversion Rate', value: (data.conversionRate || 0) + '%', sub: '' },
+        { label: 'Currently Trialing', value: formatNumber(data.currentlyTrialing || 0), sub: '' },
+        { label: 'Avg Trial Duration', value: (data.averageTrialDurationDays || 0) + ' days', sub: '' },
+      ];
+
+      grid.innerHTML = metrics.map(m => `
+        <div class="metric-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${m.value}</div>
+          ${m.sub ? '<div class="sub">' + m.sub + '</div>' : ''}
+        </div>
+      `).join('');
+      section.style.display = 'block';
+    }
+
+    function renderChurnRate(data) {
+      const section = document.getElementById('sectionChurnAnalysis');
+      const grid = document.getElementById('churnMetricsGrid');
+
+      const metrics = [
+        { label: 'Current Month Churn Rate', value: (data.currentMonthChurnRate || 0) + '%', sub: '' },
+        { label: 'Total Canceled (All Time)', value: formatNumber(data.totalCanceledAllTime || 0), sub: '' },
+      ];
+
+      grid.innerHTML = metrics.map(m => `
+        <div class="metric-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${m.value}</div>
+          ${m.sub ? '<div class="sub">' + m.sub + '</div>' : ''}
+        </div>
+      `).join('');
+
+      const churnData = data.monthlyChurn || [];
+      if (churnData.length > 0) {
+        const ctx = document.getElementById('churnChart').getContext('2d');
+        if (churnChartInstance) churnChartInstance.destroy();
+
+        const labels = churnData.map(g => {
+          const [y, m] = g.month.split('-');
+          return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        });
+
+        churnChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Cancellations',
+              data: churnData.map(g => g.cancellations),
+              backgroundColor: 'rgba(239, 68, 68, 0.6)',
+              borderColor: 'rgba(239, 68, 68, 1)',
+              borderWidth: 1,
+              borderRadius: 4,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#8b91a8', font: { size: 11 } },
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#8b91a8', font: { size: 11 }, precision: 0 },
+              },
+            },
+          },
+        });
+      }
+      section.style.display = 'block';
+    }
+
+    function renderConversionFunnel(data) {
+      const section = document.getElementById('sectionConversionFunnel');
+      const funnel = document.getElementById('funnelVisualization');
+      const grid = document.getElementById('conversionFunnelGrid');
+
+      const steps = [
+        { label: 'Trial Tier Users', count: data.freeUsers || 0, color: 'rgba(107, 114, 128, 0.8)' },
+        { label: 'Trialing Users', count: data.trialUsers || 0, color: 'rgba(234, 179, 8, 0.8)' },
+        { label: 'Basic Users', count: data.basicUsers || 0, color: 'rgba(59, 130, 246, 0.8)' },
+        { label: 'Pro Users', count: data.proUsers || 0, color: 'rgba(99, 102, 241, 0.8)' },
+      ];
+
+      const maxCount = Math.max(...steps.map(s => s.count), 1);
+
+      funnel.innerHTML = steps.map((step, i) => {
+        const widthPct = Math.max(Math.round((step.count / maxCount) * 100), 8);
+        return `
+          <div class="funnel-step">
+            <span class="funnel-label">${step.label}</span>
+            <div class="funnel-bar-wrapper">
+              <div class="funnel-bar" style="width:${widthPct}%;background:${step.color};">${formatNumber(step.count)}</div>
+            </div>
+            <span class="funnel-count">${formatNumber(step.count)}</span>
+          </div>
+        `;
+      }).join('');
+
+      const metrics = [
+        { label: 'Trial to Subscription Rate', value: (data.freeToTrialRate || 0) + '%', sub: '' },
+        { label: 'Trial to Paid Rate', value: (data.trialToPaidRate || 0) + '%', sub: '' },
+        { label: 'Trial to Paid Rate (Direct)', value: (data.freeToPaidRate || 0) + '%', sub: '' },
+        { label: 'Total Conversions', value: formatNumber(data.totalConversions || 0), sub: 'All time' },
+      ];
+
+      const breakdown = data.conversionBreakdown || {};
+      const recent = data.recentBreakdown || {};
+      const conversionPaths = [
+        { from: 'STANDARD', to: 'STANDARD', label: 'Standard Conversions' },
+      ];
+
+      for (const path of conversionPaths) {
+        const key = path.from + '_to_' + path.to;
+        const allTime = breakdown[key] || 0;
+        const last30 = recent[key] || 0;
+        if (allTime > 0 || last30 > 0) {
+          metrics.push({
+            label: path.label,
+            value: formatNumber(allTime),
+            sub: last30 + ' in last 30 days',
+          });
+        }
+      }
+
+      grid.innerHTML = metrics.map(m => `
+        <div class="metric-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${m.value}</div>
+          ${m.sub ? '<div class="sub">' + m.sub + '</div>' : ''}
+        </div>
+      `).join('');
+      section.style.display = 'block';
+    }
+
+    function renderAdvancedMetrics(data) {
+      const section = document.getElementById('sectionAdvancedMetrics');
+      const summaryGrid = document.getElementById('advancedSummaryGrid');
+
+      const mrrData = data.monthlyMRR || [];
+      const churnData = data.monthlyChurn || [];
+      const convData = data.monthlyConversion || [];
+      const arpuData = data.monthlyARPU || [];
+      const cohortData = data.cohortRetention || [];
+
+      const latestMRR = mrrData.length > 0 ? mrrData[mrrData.length - 1].mrr : 0;
+      const latestChurn = churnData.length > 0 ? churnData[churnData.length - 1].churnRate : 0;
+      const latestConv = convData.length > 0 ? convData[convData.length - 1].conversionRate : 0;
+      const latestARPU = arpuData.length > 0 ? arpuData[arpuData.length - 1].arpu : 0;
+
+      const avgChurn = churnData.length > 0
+        ? Math.round(churnData.reduce((s, c) => s + c.churnRate, 0) / churnData.length * 100) / 100
+        : 0;
+      const avgConv = convData.length > 0
+        ? Math.round(convData.reduce((s, c) => s + c.conversionRate, 0) / convData.length * 100) / 100
+        : 0;
+
+      const summaryMetrics = [
+        { label: 'Current MRR', value: formatCurrency(latestMRR), sub: 'Latest month' },
+        { label: 'Current ARPU', value: formatCurrency(latestARPU), sub: 'Per active subscriber' },
+        { label: 'Current Churn Rate', value: latestChurn + '%', sub: 'Avg: ' + avgChurn + '%' },
+        { label: 'Conversion Rate', value: latestConv + '%', sub: 'Avg: ' + avgConv + '%' },
+      ];
+
+      summaryGrid.innerHTML = summaryMetrics.map(m => `
+        <div class="metric-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${m.value}</div>
+          ${m.sub ? '<div class="sub">' + m.sub + '</div>' : ''}
+        </div>
+      `).join('');
+
+      const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b91a8', font: { size: 11 } } },
+          y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b91a8', font: { size: 11 } } },
+        },
+      };
+
+      function monthLabels(arr) {
+        return arr.map(g => {
+          const [y, m] = g.month.split('-');
+          return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        });
+      }
+
+      if (mrrData.length > 0) {
+        const ctx = document.getElementById('mrrChart').getContext('2d');
+        if (mrrChartInstance) mrrChartInstance.destroy();
+        mrrChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: monthLabels(mrrData),
+            datasets: [{
+              label: 'MRR',
+              data: mrrData.map(d => d.mrr / 100),
+              borderColor: 'rgba(34, 197, 94, 1)',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+            }],
+          },
+          options: {
+            ...chartDefaults,
+            scales: {
+              ...chartDefaults.scales,
+              y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v } },
+            },
+          },
+        });
+      }
+
+      if (arpuData.length > 0) {
+        const ctx = document.getElementById('arpuChart').getContext('2d');
+        if (arpuChartInstance) arpuChartInstance.destroy();
+        arpuChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: monthLabels(arpuData),
+            datasets: [{
+              label: 'ARPU',
+              data: arpuData.map(d => d.arpu / 100),
+              borderColor: 'rgba(99, 102, 241, 1)',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+            }],
+          },
+          options: {
+            ...chartDefaults,
+            scales: {
+              ...chartDefaults.scales,
+              y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v } },
+            },
+          },
+        });
+      }
+
+      if (churnData.length > 0) {
+        const ctx = document.getElementById('advChurnChart').getContext('2d');
+        if (advChurnChartInstance) advChurnChartInstance.destroy();
+        advChurnChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: monthLabels(churnData),
+            datasets: [{
+              label: 'Churn Rate',
+              data: churnData.map(d => d.churnRate),
+              borderColor: 'rgba(239, 68, 68, 1)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+            }],
+          },
+          options: {
+            ...chartDefaults,
+            scales: {
+              ...chartDefaults.scales,
+              y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } },
+            },
+          },
+        });
+      }
+
+      if (convData.length > 0) {
+        const ctx = document.getElementById('convRateChart').getContext('2d');
+        if (convRateChartInstance) convRateChartInstance.destroy();
+        convRateChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: monthLabels(convData),
+            datasets: [{
+              label: 'Conversion Rate',
+              data: convData.map(d => d.conversionRate),
+              borderColor: 'rgba(59, 130, 246, 1)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+            }],
+          },
+          options: {
+            ...chartDefaults,
+            scales: {
+              ...chartDefaults.scales,
+              y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } },
+            },
+          },
+        });
+      }
+
+      if (cohortData.length > 0) {
+        const table = document.getElementById('cohortTable');
+        const maxMonths = Math.max(...cohortData.map(c => (c.retention || []).length));
+        let headerCells = '<th>Cohort</th>';
+        for (let i = 0; i < maxMonths; i++) {
+          headerCells += '<th>M' + i + '</th>';
+        }
+
+        let rows = '';
+        for (const cohort of cohortData) {
+          const [y, m] = cohort.cohort.split('-');
+          const label = new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+          let cells = '<td>' + label + '</td>';
+          for (let i = 0; i < maxMonths; i++) {
+            const val = (cohort.retention && cohort.retention[i] != null) ? cohort.retention[i] : '';
+            let bg = 'transparent';
+            let fg = 'var(--text-secondary)';
+            if (val !== '') {
+              const intensity = Math.min(val / 100, 1);
+              bg = 'rgba(99, 102, 241, ' + (intensity * 0.6 + 0.05) + ')';
+              fg = intensity > 0.3 ? '#fff' : 'var(--text)';
+            }
+            cells += '<td><span class="cohort-cell" style="background:' + bg + ';color:' + fg + ';">' + (val !== '' ? val + '%' : '-') + '</span></td>';
+          }
+          rows += '<tr>' + cells + '</tr>';
+        }
+
+        table.innerHTML = '<thead><tr>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody>';
+      }
+
+      section.style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

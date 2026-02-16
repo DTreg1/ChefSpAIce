@@ -1,0 +1,1306 @@
+/api/pre-register:
+  post:
+    tags: [Auth]
+    operationId: preRegister
+    summary: Pre-register email from landing page
+    description: >
+      Allows users to sign up from the landing page with just their email address.
+      Creates a pre-registered user account that can be activated later.
+      Returns a generic success message regardless of whether the email already exists (to prevent enumeration).
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, privacyConsent]
+            properties:
+              email:
+                type: string
+                format: email
+                description: User's email address
+              privacyConsent:
+                type: boolean
+                description: Must be true to indicate agreement with the privacy policy
+    responses:
+      '200':
+        description: Pre-registration accepted (or email already exists)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  nullable: true
+                message:
+                  type: string
+                  example: "Thanks! We'll notify you when the app is available in the App Store and Google Play."
+      '400':
+        description: Validation error (missing email, invalid email, or missing privacy consent)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/login:
+  post:
+    tags: [Auth]
+    operationId: login
+    summary: Log in with email and password
+    description: >
+      Authenticates a user with email and password credentials.
+      Returns user data, a session token, and a CSRF token.
+      Also sets an HTTP-only auth cookie.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                format: password
+    responses:
+      '200':
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        displayName:
+                          type: string
+                          nullable: true
+                        avatarUrl:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                        subscriptionTier:
+                          type: string
+                        subscriptionStatus:
+                          type: string
+                        trialEndsAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                    token:
+                      type: string
+                      description: Bearer token for Authorization header
+                    csrfToken:
+                      type: string
+                      description: CSRF token for state-changing requests
+      '401':
+        description: Invalid credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/logout:
+  post:
+    tags: [Auth]
+    operationId: logout
+    summary: Log out and invalidate current session
+    description: >
+      Invalidates the current session token and clears the auth cookie.
+      Requires CSRF protection. Always returns 200 even if logout fails internally.
+    security:
+      - BearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+    responses:
+      '200':
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  nullable: true
+
+/api/auth/me:
+  get:
+    tags: [Auth]
+    operationId: getCurrentUser
+    summary: Get current authenticated user
+    description: >
+      Returns the profile of the currently authenticated user based on the Bearer token.
+      Includes subscription information.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Current user data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        displayName:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                        subscriptionTier:
+                          type: string
+                        subscriptionStatus:
+                          type: string
+                        trialEndsAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+      '401':
+        description: Not authenticated or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/restore-session:
+  get:
+    tags: [Auth]
+    operationId: restoreSession
+    summary: Restore session from auth cookie
+    description: >
+      Restores a user session using the HTTP-only auth cookie.
+      Returns the user profile, the session token, and a fresh CSRF token.
+      Used by clients to silently re-authenticate on app launch.
+    security: []
+    responses:
+      '200':
+        description: Session restored successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        displayName:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                        subscriptionTier:
+                          type: string
+                        subscriptionStatus:
+                          type: string
+                        trialEndsAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                    token:
+                      type: string
+                      description: Bearer token for Authorization header
+                    csrfToken:
+                      type: string
+                      description: CSRF token for state-changing requests
+      '401':
+        description: No session cookie or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/register:
+  post:
+    tags: [Auth]
+    operationId: register
+    summary: Register a new account with email and password
+    description: >
+      Creates a new user account with email/password credentials.
+      Returns the new user profile, a session token, and a CSRF token.
+      Also sets an HTTP-only auth cookie.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                format: password
+              displayName:
+                type: string
+                description: Optional display name for the user
+              selectedPlan:
+                type: string
+                enum: [monthly, annual]
+                description: Selected subscription billing plan
+              referralCode:
+                type: string
+                description: Optional referral code from an existing user
+    responses:
+      '201':
+        description: Registration successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        displayName:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                        subscriptionTier:
+                          type: string
+                        subscriptionStatus:
+                          type: string
+                        trialEndsAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                    token:
+                      type: string
+                      description: Bearer token for Authorization header
+                    csrfToken:
+                      type: string
+                      description: CSRF token for state-changing requests
+      '400':
+        description: Validation error (e.g., weak password, invalid email)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Email already in use
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/forgot-password:
+  post:
+    tags: [Auth]
+    operationId: forgotPassword
+    summary: Request a password reset token
+    description: >
+      Generates a password reset token for the given email address.
+      Always returns a success message regardless of whether the email exists
+      (to prevent email enumeration). Rate limited.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email]
+            properties:
+              email:
+                type: string
+                format: email
+    responses:
+      '200':
+        description: Reset request accepted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "If an account with that email exists, a password reset link has been sent."
+      '400':
+        description: Missing email
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '429':
+        description: Rate limit exceeded
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/reset-password:
+  post:
+    tags: [Auth]
+    operationId: resetPassword
+    summary: Reset password using a reset token
+    description: >
+      Resets the user's password using a previously generated reset token.
+      Invalidates all existing sessions after password change.
+      The token expires after 1 hour. Rate limited.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token, password]
+            properties:
+              token:
+                type: string
+                description: The password reset token received via email
+              password:
+                type: string
+                format: password
+                description: The new password (must meet strength requirements)
+    responses:
+      '200':
+        description: Password reset successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Password has been reset successfully."
+      '400':
+        description: Missing fields, weak password, or invalid/expired token
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '429':
+        description: Rate limit exceeded
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/sessions:
+  get:
+    tags: [Auth]
+    operationId: listSessions
+    summary: List active sessions
+    description: >
+      Returns all active (non-expired) sessions for the authenticated user.
+      Each session includes device info, masked IP address, and whether it is the current session.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: List of active sessions
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    sessions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          userAgent:
+                            type: string
+                            example: "Mozilla/5.0 ..."
+                          ipAddress:
+                            type: string
+                            description: Masked IP address (e.g., 192.168.*.*)
+                          createdAt:
+                            type: string
+                            format: date-time
+                          expiresAt:
+                            type: string
+                            format: date-time
+                          isCurrent:
+                            type: boolean
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  delete:
+    tags: [Auth]
+    operationId: revokeAllOtherSessions
+    summary: Revoke all other sessions
+    description: >
+      Revokes all sessions for the authenticated user except the current session.
+      Requires the current session token to identify which session to keep.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Other sessions revoked
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Revoked 3 other session(s)"
+      '400':
+        description: Unable to identify current session
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/sessions/{sessionId}:
+  delete:
+    tags: [Auth]
+    operationId: revokeSession
+    summary: Revoke a specific session
+    description: >
+      Revokes (deletes) a specific session by its ID.
+      The session must belong to the authenticated user.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: The ID of the session to revoke
+    responses:
+      '200':
+        description: Session revoked
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Session revoked successfully"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Session not found or does not belong to user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/sync:
+  get:
+    tags: [Account]
+    operationId: getSyncData
+    summary: Get user sync data
+    description: >
+      Returns all synced data for the authenticated user including inventory, recipes,
+      meal plans, shopping list, cookware, waste log, consumed log, custom locations,
+      and preferences. Supports delta sync via the lastSyncedAt query parameter—if the
+      server data has not changed since the client's timestamp, returns `unchanged: true`.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: lastSyncedAt
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+        description: ISO 8601 timestamp of last successful sync. Enables delta sync.
+    responses:
+      '200':
+        description: Sync data returned (full or delta)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    data:
+                      type: object
+                      nullable: true
+                      description: >
+                        All synced data sections (inventory, recipes, mealPlans, shoppingList,
+                        cookware, wasteLog, consumedLog, customLocations, preferences, analytics,
+                        onboarding, userProfile). Null when unchanged is true.
+                    unchanged:
+                      type: boolean
+                      description: True if no data has changed since lastSyncedAt
+                    delta:
+                      type: boolean
+                      description: True if response contains only changed sections
+                    lastSyncedAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    serverTimestamp:
+                      type: string
+                      format: date-time
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  post:
+    tags: [Account]
+    operationId: postSyncData
+    summary: Push sync data to server
+    description: >
+      Uploads the user's local data to the server. Each data section (inventory, recipes,
+      mealPlans, shoppingList, cookware, wasteLog, consumedLog, customLocations, preferences,
+      analytics, onboarding, userProfile) is optional. Sections provided will replace existing
+      server data for that section. Validates preferences against a schema and enforces
+      subscription limits for cookware and custom storage locations.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                description: Object with optional data sections to sync
+                properties:
+                  inventory:
+                    type: array
+                    items:
+                      type: object
+                  recipes:
+                    type: array
+                    items:
+                      type: object
+                  mealPlans:
+                    type: array
+                    items:
+                      type: object
+                  shoppingList:
+                    type: array
+                    items:
+                      type: object
+                  cookware:
+                    type: array
+                    items:
+                      type: object
+                  wasteLog:
+                    type: array
+                    items:
+                      type: object
+                  consumedLog:
+                    type: array
+                    items:
+                      type: object
+                  customLocations:
+                    type: array
+                    items:
+                      type: object
+                  preferences:
+                    type: object
+                  analytics:
+                    type: object
+                  onboarding:
+                    type: object
+                  userProfile:
+                    type: object
+    responses:
+      '200':
+        description: Sync successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    prefsSynced:
+                      type: boolean
+                      description: Whether preferences were validated and saved successfully
+                    prefsError:
+                      type: string
+                      description: Validation error message if prefsSynced is false
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Subscription limit reached (cookware or custom locations)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/migrate-guest-data:
+  post:
+    tags: [Account]
+    operationId: migrateGuestData
+    summary: Migrate guest/offline data to authenticated account
+    description: >
+      Migrates locally stored guest data to the authenticated user's account.
+      Merges with any existing server data. Supports all data sections including
+      inventory, recipes, mealPlans, shoppingList, cookware, wasteLog, consumedLog,
+      customLocations, preferences, onboarding, and userProfile. Enforces subscription
+      limits for cookware and custom storage locations.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              guestId:
+                type: string
+                description: Optional identifier for the guest session
+              data:
+                type: object
+                description: Guest data to migrate, with optional sections
+                properties:
+                  inventory:
+                    type: array
+                    items:
+                      type: object
+                  recipes:
+                    type: array
+                    items:
+                      type: object
+                  mealPlans:
+                    type: array
+                    items:
+                      type: object
+                  shoppingList:
+                    type: array
+                    items:
+                      type: object
+                  cookware:
+                    type: array
+                    items:
+                      type: object
+                  wasteLog:
+                    type: array
+                    items:
+                      type: object
+                  consumedLog:
+                    type: array
+                    items:
+                      type: object
+                  customLocations:
+                    type: array
+                    items:
+                      type: object
+                  preferences:
+                    type: object
+                  onboarding:
+                    type: object
+                  userProfile:
+                    type: object
+    responses:
+      '200':
+        description: Guest data migrated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    migratedAt:
+                      type: string
+                      format: date-time
+                    merged:
+                      type: boolean
+                      description: True if user had pre-existing data that was merged
+      '400':
+        description: No data provided for migration
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/delete-account:
+  delete:
+    tags: [Account]
+    operationId: deleteAccountLegacy
+    summary: Delete account (legacy endpoint)
+    description: >
+      Permanently deletes the authenticated user's account and all associated data.
+      Requires CSRF protection. Uses session token from Authorization header or auth cookie.
+      The demo account (demo@chefspaice.com) is protected from deletion.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Account deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  nullable: true
+                message:
+                  type: string
+                  example: "Account and all associated data have been permanently deleted"
+      '401':
+        description: Not authenticated or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Demo account cannot be deleted
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/account:
+  delete:
+    tags: [Account]
+    operationId: deleteAccount
+    summary: Delete account with email confirmation
+    description: >
+      Permanently deletes the authenticated user's account and all associated data.
+      Requires the user to confirm by providing their account email in the request body.
+      The demo account (demo@chefspaice.com) is protected from deletion.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email]
+            properties:
+              email:
+                type: string
+                format: email
+                description: Must match the user's account email for confirmation
+    responses:
+      '200':
+        description: Account deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  nullable: true
+                message:
+                  type: string
+                  example: "Your account and all associated data have been permanently deleted."
+      '400':
+        description: Missing email or email mismatch
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Demo account cannot be deleted
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/social/google:
+  post:
+    tags: [Auth]
+    operationId: socialLoginGoogle
+    summary: Sign in with Google
+    description: >
+      Authenticates a user via Google OAuth. Verifies the Google ID token against
+      configured client IDs (web, iOS, Android). Creates a new user if one does not
+      exist, or links to an existing account by email. Returns user data and a session token.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [idToken]
+            properties:
+              idToken:
+                type: string
+                description: Google OAuth ID token
+              accessToken:
+                type: string
+                description: Optional Google access token (stored encrypted)
+              selectedPlan:
+                type: string
+                enum: [monthly, annual]
+                description: Selected subscription billing plan for new users
+    responses:
+      '200':
+        description: Google sign-in successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        displayName:
+                          type: string
+                          nullable: true
+                        avatarUrl:
+                          type: string
+                          nullable: true
+                        provider:
+                          type: string
+                          enum: [google]
+                        isNewUser:
+                          type: boolean
+                          description: True if a new account was created
+                        createdAt:
+                          type: string
+                          format: date-time
+                    token:
+                      type: string
+                      description: Bearer token for Authorization header
+                    expiresAt:
+                      type: string
+                      format: date-time
+      '400':
+        description: Missing ID token
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Invalid Google token
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Google authentication not configured on server
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/auth/social/apple:
+  post:
+    tags: [Auth]
+    operationId: socialLoginApple
+    summary: Sign in with Apple
+    description: >
+      Authenticates a user via Apple Sign In. Supports both native iOS flow
+      (identity token verification) and web OAuth flow (authorization code exchange).
+      Creates a new user if one does not exist, or links to an existing account by email.
+      Returns user data and a session token.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              identityToken:
+                type: string
+                description: Apple identity token (for native iOS flow)
+              authorizationCode:
+                type: string
+                description: Apple authorization code (for web OAuth flow)
+              isWebAuth:
+                type: boolean
+                description: Set to true for web OAuth flow
+              redirectUri:
+                type: string
+                description: Redirect URI used in the web auth request
+              selectedPlan:
+                type: string
+                enum: [monthly, annual]
+                description: Selected subscription billing plan
+              selectedTier:
+                type: string
+                enum: [basic, pro]
+                description: Selected subscription tier
+              user:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    format: email
+                description: User info provided by Apple on first sign-in
+    responses:
+      '200':
+        description: Apple sign-in successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        displayName:
+                          type: string
+                          nullable: true
+                        avatarUrl:
+                          type: string
+                          nullable: true
+                        provider:
+                          type: string
+                          enum: [apple]
+                        isNewUser:
+                          type: boolean
+                          description: True if a new account was created
+                        createdAt:
+                          type: string
+                          format: date-time
+                    token:
+                      type: string
+                      description: Bearer token for Authorization header
+                    expiresAt:
+                      type: string
+                      format: date-time
+      '400':
+        description: Incomplete sign-in request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Token verification failed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/user/export-data:
+  get:
+    tags: [Account]
+    operationId: exportUserData
+    summary: Export all user data (GDPR)
+    description: >
+      Exports all data associated with the authenticated user as a JSON file download.
+      Compliant with GDPR Article 20 (Right to Data Portability). Includes profile,
+      auth providers, sessions, subscription, sync data, inventory, recipes, meal plans,
+      shopping list, cookware, waste log, consumed log, custom locations, preferences,
+      referrals, cancellation reasons, conversion events, feedback, nutrition corrections,
+      appliances, notifications, and password reset token metadata.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: User data export (JSON file download)
+        headers:
+          Content-Disposition:
+            schema:
+              type: string
+              example: 'attachment; filename="chefspaice-data-<userId>.json"'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    exportDate:
+                      type: string
+                      format: date-time
+                    dataSubject:
+                      type: string
+                      example: "GDPR Article 20 - Right to Data Portability"
+                    profile:
+                      type: object
+                      description: Full user profile data
+                    authProviders:
+                      type: array
+                      items:
+                        type: object
+                    sessions:
+                      type: array
+                      items:
+                        type: object
+                    subscription:
+                      type: object
+                      nullable: true
+                    syncData:
+                      type: object
+                    inventory:
+                      type: array
+                      items:
+                        type: object
+                    recipes:
+                      type: array
+                      items:
+                        type: object
+                    mealPlans:
+                      type: array
+                      items:
+                        type: object
+                    shoppingList:
+                      type: array
+                      items:
+                        type: object
+                    cookware:
+                      type: array
+                      items:
+                        type: object
+                    wasteLog:
+                      type: array
+                      items:
+                        type: object
+                    consumedLog:
+                      type: array
+                      items:
+                        type: object
+                    customLocations:
+                      type: array
+                      items:
+                        type: object
+                    preferences:
+                      type: object
+                      nullable: true
+                    analytics:
+                      type: object
+                      nullable: true
+                    onboarding:
+                      type: object
+                      nullable: true
+                    userProfile:
+                      type: object
+                      nullable: true
+                    referrals:
+                      type: array
+                      items:
+                        type: object
+                    cancellationReasons:
+                      type: array
+                      items:
+                        type: object
+                    conversionEvents:
+                      type: array
+                      items:
+                        type: object
+                    feedback:
+                      type: array
+                      items:
+                        type: object
+                    nutritionCorrections:
+                      type: array
+                      items:
+                        type: object
+                    userAppliances:
+                      type: array
+                      items:
+                        type: object
+                    notifications:
+                      type: array
+                      items:
+                        type: object
+                    passwordResetTokens:
+                      type: array
+                      items:
+                        type: object
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,3377 @@
+/api/sync/status:
+  get:
+    tags: [Sync]
+    operationId: getSyncStatus
+    summary: Get sync status and data counts
+    description: >
+      Returns the current sync status for the authenticated user, including
+      last sync timestamp, recent failure records (last 24 hours), data
+      consistency flag, and item counts per data type.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Sync status retrieved
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    lastSyncedAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    failedOperations24h:
+                      type: integer
+                    recentFailures:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          dataType:
+                            type: string
+                          operation:
+                            type: string
+                          errorMessage:
+                            type: string
+                          timestamp:
+                            type: string
+                            format: date-time
+                    isConsistent:
+                      type: boolean
+                    dataTypes:
+                      type: object
+                      properties:
+                        inventory:
+                          type: integer
+                        recipes:
+                          type: integer
+                        mealPlans:
+                          type: integer
+                        shoppingList:
+                          type: integer
+                        cookware:
+                          type: integer
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/export:
+  post:
+    tags: [Sync]
+    operationId: exportUserData
+    summary: Export all user data as JSON backup
+    description: >
+      Exports all user data (inventory, recipes, meal plans, shopping list,
+      cookware, waste logs, consumed logs, preferences, analytics, onboarding,
+      custom locations, user profile) as a downloadable JSON file.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Data export returned as JSON attachment
+        headers:
+          Content-Disposition:
+            schema:
+              type: string
+              example: 'attachment; filename="chefspaice-backup-2026-02-12.json"'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    version:
+                      type: integer
+                      enum: [1]
+                    exportedAt:
+                      type: string
+                      format: date-time
+                    data:
+                      type: object
+                      properties:
+                        inventory:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/InventoryItemExport'
+                        recipes:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/RecipeExport'
+                        mealPlans:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/MealPlanExport'
+                        shoppingList:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/ShoppingItemExport'
+                        cookware:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/CookwareExport'
+                        preferences:
+                          type: object
+                          nullable: true
+                        wasteLog:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              itemName:
+                                type: string
+                              quantity:
+                                type: number
+                              unit:
+                                type: string
+                              reason:
+                                type: string
+                              date:
+                                type: string
+                        consumedLog:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              itemName:
+                                type: string
+                              quantity:
+                                type: number
+                              unit:
+                                type: string
+                              date:
+                                type: string
+                        analytics:
+                          type: object
+                          nullable: true
+                        onboarding:
+                          type: object
+                          nullable: true
+                        customLocations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                        userProfile:
+                          type: object
+                          nullable: true
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/import:
+  post:
+    tags: [Sync]
+    operationId: importUserData
+    summary: Import user data from a JSON backup
+    description: >
+      Imports user data from a previously exported backup. Supports two modes:
+      "merge" (upsert items, keeping existing data) and "replace" (delete all
+      existing data before importing). Validates all items against sync schemas
+      and enforces subscription limits on inventory and cookware counts.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [backup, mode]
+            properties:
+              backup:
+                type: object
+                required: [version, exportedAt, data]
+                properties:
+                  version:
+                    type: integer
+                    enum: [1]
+                  exportedAt:
+                    type: string
+                    format: date-time
+                  data:
+                    type: object
+                    additionalProperties: true
+              mode:
+                type: string
+                enum: [merge, replace]
+                description: "'merge' upserts items; 'replace' deletes existing data first"
+    responses:
+      '200':
+        description: Import completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    importedAt:
+                      type: string
+                      format: date-time
+                    mode:
+                      type: string
+                    counts:
+                      type: object
+                      properties:
+                        inventory:
+                          type: integer
+                        recipes:
+                          type: integer
+                        mealPlans:
+                          type: integer
+                        shoppingList:
+                          type: integer
+                        cookware:
+                          type: integer
+                    truncationWarnings:
+                      type: array
+                      items:
+                        type: string
+      '400':
+        description: Invalid backup format or validation errors
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/inventory:
+  get:
+    tags: [Sync - Inventory]
+    operationId: listSyncInventory
+    summary: List inventory items (paginated)
+    description: >
+      Returns inventory items for the authenticated user with cursor-based
+      pagination. Items are ordered by updatedAt ascending. Soft-deleted items
+      (deletedAt not null) are excluded.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+        description: Number of items per page
+      - name: cursor
+        in: query
+        schema:
+          type: string
+        description: Base64url-encoded cursor for pagination
+    responses:
+      '200':
+        description: Paginated inventory items
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/SyncInventoryItem'
+                    nextCursor:
+                      type: string
+                      nullable: true
+                      description: Cursor for next page; null if no more items
+      '400':
+        description: Invalid cursor
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  post:
+    tags: [Sync - Inventory]
+    operationId: syncInventoryItem
+    summary: Create, update, or delete an inventory item via sync
+    description: >
+      Performs a sync operation (create, update, or delete) on a single inventory
+      item. Create uses upsert semantics. Update checks timestamps for conflict
+      resolution—if the incoming timestamp is stale, the server version is
+      returned with operation "skipped". Enforces pantry item limits.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [operation, data]
+            properties:
+              operation:
+                type: string
+                enum: [create, update, delete]
+              data:
+                $ref: '#/components/schemas/SyncInventoryItemInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Sync operation completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [create, update, delete, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                      description: Present when operation is "skipped"
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncInventoryItem'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Pantry item limit reached
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  put:
+    tags: [Sync - Inventory]
+    operationId: updateSyncInventoryItem
+    summary: Update an inventory item with conflict resolution
+    description: >
+      Updates an existing inventory item or creates it if not found. Uses
+      timestamp-based conflict resolution—stale updates are skipped and the
+      server version is returned. Enforces pantry item limits when creating.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                $ref: '#/components/schemas/SyncInventoryItemInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Update completed or skipped
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [update, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncInventoryItem'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Pantry item limit reached
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  delete:
+    tags: [Sync - Inventory]
+    operationId: deleteSyncInventoryItem
+    summary: Delete an inventory item
+    description: Permanently deletes an inventory item by its ID.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    oneOf:
+                      - type: string
+                      - type: integer
+    responses:
+      '200':
+        description: Item deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [delete]
+                    itemId:
+                      type: string
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/recipes:
+  get:
+    tags: [Sync - Recipes]
+    operationId: listSyncRecipes
+    summary: List saved recipes (paginated)
+    description: >
+      Returns saved recipes for the authenticated user with cursor-based
+      pagination. Items are ordered by updatedAt ascending.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Paginated recipes
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/SyncRecipe'
+                    nextCursor:
+                      type: string
+                      nullable: true
+      '400':
+        description: Invalid cursor
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  post:
+    tags: [Sync - Recipes]
+    operationId: syncRecipe
+    summary: Create, update, or delete a recipe via sync
+    description: >
+      Performs a sync operation on a single recipe. Create uses upsert semantics.
+      Update checks timestamps for conflict resolution.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [operation, data]
+            properties:
+              operation:
+                type: string
+                enum: [create, update, delete]
+              data:
+                $ref: '#/components/schemas/SyncRecipeInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Sync operation completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [create, update, delete, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncRecipe'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  put:
+    tags: [Sync - Recipes]
+    operationId: updateSyncRecipe
+    summary: Update a recipe with conflict resolution
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                $ref: '#/components/schemas/SyncRecipeInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Update completed or skipped
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [update, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncRecipe'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  delete:
+    tags: [Sync - Recipes]
+    operationId: deleteSyncRecipe
+    summary: Delete a recipe
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    oneOf:
+                      - type: string
+                      - type: integer
+    responses:
+      '200':
+        description: Recipe deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [delete]
+                    itemId:
+                      type: string
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/shoppingList:
+  get:
+    tags: [Sync - Shopping List]
+    operationId: listSyncShoppingList
+    summary: List shopping list items (paginated)
+    description: >
+      Returns shopping list items for the authenticated user with cursor-based
+      pagination ordered by updatedAt ascending.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Paginated shopping list items
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/SyncShoppingItem'
+                    nextCursor:
+                      type: string
+                      nullable: true
+      '400':
+        description: Invalid cursor
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  post:
+    tags: [Sync - Shopping List]
+    operationId: syncShoppingItem
+    summary: Create, update, or delete a shopping list item via sync
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [operation, data]
+            properties:
+              operation:
+                type: string
+                enum: [create, update, delete]
+              data:
+                $ref: '#/components/schemas/SyncShoppingItemInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Sync operation completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [create, update, delete, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncShoppingItem'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  put:
+    tags: [Sync - Shopping List]
+    operationId: updateSyncShoppingItem
+    summary: Update a shopping list item with conflict resolution
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                $ref: '#/components/schemas/SyncShoppingItemInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Update completed or skipped
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [update, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncShoppingItem'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  delete:
+    tags: [Sync - Shopping List]
+    operationId: deleteSyncShoppingItem
+    summary: Delete a shopping list item
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    oneOf:
+                      - type: string
+                      - type: integer
+    responses:
+      '200':
+        description: Item deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [delete]
+                    itemId:
+                      type: string
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/mealPlans:
+  post:
+    tags: [Sync - Meal Plans]
+    operationId: syncMealPlan
+    summary: Create, update, or delete a meal plan via sync
+    description: >
+      Performs a sync operation on a single meal plan entry. Create uses upsert
+      semantics. Update checks timestamps for conflict resolution. Note: meal
+      plans do not have a GET (paginated) endpoint at this level.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [operation, data]
+            properties:
+              operation:
+                type: string
+                enum: [create, update, delete]
+              data:
+                $ref: '#/components/schemas/SyncMealPlanInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Sync operation completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [create, update, delete, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncMealPlan'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  put:
+    tags: [Sync - Meal Plans]
+    operationId: updateSyncMealPlan
+    summary: Update a meal plan with conflict resolution
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                $ref: '#/components/schemas/SyncMealPlanInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Update completed or skipped
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [update, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncMealPlan'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  delete:
+    tags: [Sync - Meal Plans]
+    operationId: deleteSyncMealPlan
+    summary: Delete a meal plan
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    oneOf:
+                      - type: string
+                      - type: integer
+    responses:
+      '200':
+        description: Meal plan deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [delete]
+                    itemId:
+                      type: string
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/sync/cookware:
+  post:
+    tags: [Sync - Cookware]
+    operationId: syncCookwareItem
+    summary: Create, update, or delete a cookware item via sync
+    description: >
+      Performs a sync operation on a single cookware item. Create uses upsert
+      semantics and checks cookware limits. Update checks timestamps for
+      conflict resolution. Enforces cookware item limits per subscription.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [operation, data]
+            properties:
+              operation:
+                type: string
+                enum: [create, update, delete]
+              data:
+                $ref: '#/components/schemas/SyncCookwareInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Sync operation completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [create, update, delete, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncCookwareItem'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Cookware item limit reached
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  put:
+    tags: [Sync - Cookware]
+    operationId: updateSyncCookwareItem
+    summary: Update a cookware item with conflict resolution
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                $ref: '#/components/schemas/SyncCookwareInput'
+              clientTimestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Update completed or skipped
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [update, skipped]
+                    itemId:
+                      type: string
+                    reason:
+                      type: string
+                    serverVersion:
+                      $ref: '#/components/schemas/SyncCookwareItem'
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Cookware item limit reached
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  delete:
+    tags: [Sync - Cookware]
+    operationId: deleteSyncCookwareItem
+    summary: Delete a cookware item
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    oneOf:
+                      - type: string
+                      - type: integer
+    responses:
+      '200':
+        description: Cookware item deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    syncedAt:
+                      type: string
+                      format: date-time
+                    operation:
+                      type: string
+                      enum: [delete]
+                    itemId:
+                      type: string
+      '400':
+        description: Invalid request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Unauthorized or session expired
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/recipes/generate:
+  post:
+    tags: [Recipes]
+    operationId: generateRecipe
+    summary: Generate an AI recipe from inventory
+    description: >
+      Uses AI to generate a recipe based on the user's inventory items,
+      equipment, dietary restrictions, cuisine preferences, and macro targets.
+      Enforces monthly AI recipe generation limits per subscription tier.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              prioritizeExpiring:
+                type: boolean
+                default: false
+                description: Whether to prioritize soon-to-expire items
+              quickRecipe:
+                type: boolean
+                default: false
+                description: Limit total time to 20 minutes
+              ingredients:
+                type: array
+                items:
+                  oneOf:
+                    - type: integer
+                    - type: string
+                description: Selected ingredient IDs from inventory
+              servings:
+                type: integer
+                minimum: 1
+                maximum: 20
+                default: 4
+              maxTime:
+                type: integer
+                minimum: 5
+                maximum: 480
+                default: 60
+                description: Maximum total cooking time in minutes
+              dietaryRestrictions:
+                type: string
+              cuisine:
+                type: string
+              mealType:
+                type: string
+                enum: [breakfast, lunch, dinner, snack, late night snack]
+              inventory:
+                type: array
+                items:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id:
+                      oneOf:
+                        - type: integer
+                        - type: string
+                    name:
+                      type: string
+                    quantity:
+                      type: number
+                    unit:
+                      type: string
+                    expiryDate:
+                      type: string
+                      nullable: true
+              equipment:
+                type: array
+                items:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id:
+                      oneOf:
+                        - type: integer
+                        - type: string
+                    name:
+                      type: string
+                    alternatives:
+                      type: array
+                      items:
+                        type: string
+              macroTargets:
+                type: object
+                properties:
+                  protein:
+                    type: number
+                    minimum: 5
+                    maximum: 80
+                    default: 50
+                  carbs:
+                    type: number
+                    minimum: 5
+                    maximum: 80
+                    default: 35
+                  fat:
+                    type: number
+                    minimum: 5
+                    maximum: 80
+                    default: 15
+              previousRecipeTitles:
+                type: array
+                items:
+                  type: string
+                description: Previously generated titles for variety
+              ingredientCount:
+                type: object
+                properties:
+                  min:
+                    type: integer
+                    minimum: 2
+                    maximum: 10
+                    default: 4
+                  max:
+                    type: integer
+                    minimum: 2
+                    maximum: 10
+                    default: 6
+    responses:
+      '200':
+        description: Recipe generated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    ingredients:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          quantity:
+                            oneOf:
+                              - type: number
+                              - type: string
+                          unit:
+                            type: string
+                          fromInventory:
+                            type: boolean
+                    instructions:
+                      type: array
+                      items:
+                        type: string
+                    prepTime:
+                      type: integer
+                    cookTime:
+                      type: integer
+                    servings:
+                      type: integer
+                    nutrition:
+                      type: object
+                      nullable: true
+                      properties:
+                        calories:
+                          type: number
+                        protein:
+                          type: number
+                        carbs:
+                          type: number
+                        fat:
+                          type: number
+                    usedExpiringItems:
+                      type: array
+                      items:
+                        type: string
+                    usedExpiringCount:
+                      type: integer
+                    requiredEquipment:
+                      type: array
+                      items:
+                        type: string
+                    optionalEquipment:
+                      type: array
+                      items:
+                        type: string
+                    substitutionNotes:
+                      type: array
+                      items:
+                        type: string
+                    totalExpiringItems:
+                      type: integer
+                    prioritizedExpiring:
+                      type: boolean
+                    subscription:
+                      type: object
+                      properties:
+                        aiRecipesRemaining:
+                          type: integer
+                          nullable: true
+                        aiRecipesLimit:
+                          type: integer
+                          nullable: true
+      '400':
+        description: Validation error or no ingredients available
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: AI recipe limit reached
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/recipes/generate-image:
+  post:
+    tags: [Recipes]
+    operationId: generateRecipeImage
+    summary: Generate an AI image for a recipe
+    description: >
+      Uses AI image generation to create a professional food photography image
+      for a recipe based on its title, description, and cuisine.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [title]
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 100
+              description:
+                type: string
+                maxLength: 1000
+              cuisine:
+                type: string
+                maxLength: 50
+    responses:
+      '200':
+        description: Image generated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    imageBase64:
+                      type: string
+                      description: Base64-encoded display image (WebP)
+                    thumbnailBase64:
+                      type: string
+                      description: Base64-encoded thumbnail (WebP)
+                    format:
+                      type: string
+                      enum: [webp]
+                    imageUrl:
+                      type: string
+                      format: uri
+                      description: Returned if URL is available instead of base64
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/recipes/scan:
+  post:
+    tags: [Recipes]
+    operationId: scanRecipeImage
+    summary: Scan a recipe from a photo
+    description: >
+      Uses AI vision to extract a recipe from a photo of a cookbook page,
+      magazine, or printed recipe. Requires the recipeScanning feature access.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [image]
+            properties:
+              image:
+                type: string
+                description: Base64-encoded image data
+    responses:
+      '200':
+        description: Recipe extracted from image
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    ingredients:
+                      type: array
+                      items:
+                        type: string
+                    instructions:
+                      type: array
+                      items:
+                        type: string
+                    prepTime:
+                      type: string
+                    cookTime:
+                      type: string
+                    servings:
+                      type: integer
+                    notes:
+                      type: string
+      '400':
+        description: Invalid request body or content type
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: Feature not available for subscription tier
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/ingredients/scan:
+  post:
+    tags: [Ingredients]
+    operationId: scanIngredientLabel
+    summary: Scan an ingredient label from a photo
+    description: >
+      Uses AI vision to extract product name, ingredients, and nutrition
+      information from a photo of a food product label. Accepts either
+      multipart/form-data with an image file or application/json with
+      base64-encoded image data.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [image]
+            properties:
+              image:
+                type: string
+                description: Base64-encoded image data
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image:
+                type: string
+                format: binary
+                description: Image file (max 10MB)
+    responses:
+      '200':
+        description: Ingredient label scanned
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    productName:
+                      type: string
+                      nullable: true
+                    ingredients:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          simplifiedName:
+                            type: string
+                          category:
+                            type: string
+                          storageLocation:
+                            type: string
+                    nutrition:
+                      type: object
+                      nullable: true
+                      properties:
+                        servingSize:
+                          type: string
+                        servingsPerContainer:
+                          type: number
+                        calories:
+                          type: number
+                        protein:
+                          type: number
+                        carbs:
+                          type: number
+                        fat:
+                          type: number
+                        fiber:
+                          type: number
+                        sugar:
+                          type: number
+                        sodium:
+                          type: number
+                    rawText:
+                      type: string
+                    confidence:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+                    notes:
+                      type: string
+      '400':
+        description: No image provided, empty image, or invalid content type
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/nutrition/corrections:
+  post:
+    tags: [Nutrition]
+    operationId: submitNutritionCorrection
+    summary: Submit a nutrition data correction
+    description: >
+      Submits a correction for inaccurate nutrition data. The correction is
+      stored with "pending" status for review.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [productName]
+            properties:
+              productName:
+                type: string
+                minLength: 1
+              barcode:
+                type: string
+              brand:
+                type: string
+              originalSource:
+                type: string
+              originalSourceId:
+                type: string
+              originalNutrition:
+                type: string
+              correctedNutrition:
+                type: string
+              imageUrl:
+                type: string
+              notes:
+                type: string
+    responses:
+      '201':
+        description: Correction submitted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                message:
+                  type: string
+                  example: Correction submitted successfully
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  get:
+    tags: [Nutrition]
+    operationId: listNutritionCorrections
+    summary: List nutrition corrections
+    description: Returns a paginated list of nutrition corrections, optionally filtered by status.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, reviewed, approved, rejected]
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+    responses:
+      '200':
+        description: List of corrections
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    corrections:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          userId:
+                            type: string
+                            nullable: true
+                          productName:
+                            type: string
+                          barcode:
+                            type: string
+                            nullable: true
+                          brand:
+                            type: string
+                            nullable: true
+                          status:
+                            type: string
+                            enum: [pending, reviewed, approved, rejected]
+                          createdAt:
+                            type: string
+                            format: date-time
+                    count:
+                      type: integer
+                    limit:
+                      type: integer
+                    offset:
+                      type: integer
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/nutrition/corrections/{id}:
+  patch:
+    tags: [Nutrition]
+    operationId: updateNutritionCorrection
+    summary: Update a nutrition correction status
+    description: Updates the review status of a nutrition correction.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [status]
+            properties:
+              status:
+                type: string
+                enum: [pending, reviewed, approved, rejected]
+              reviewNotes:
+                type: string
+    responses:
+      '200':
+        description: Correction updated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    correction:
+                      type: object
+                message:
+                  type: string
+                  example: Correction updated
+      '400':
+        description: Invalid correction ID or status
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Correction not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/nutrition/lookup:
+  get:
+    tags: [Nutrition Lookup]
+    operationId: lookupNutritionByName
+    summary: Look up nutrition data by food name
+    description: >
+      Searches the USDA FoodData Central database for nutrition information
+      matching the given food name and optional brand.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Food name to search for
+      - name: brand
+        in: query
+        schema:
+          type: string
+        description: Optional brand name to narrow results
+    responses:
+      '200':
+        description: Nutrition lookup result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    found:
+                      type: boolean
+                    nutrition:
+                      type: object
+                      description: Nutrition data from USDA (present when found is true)
+      '400':
+        description: Missing name parameter
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/nutrition/lookup/{fdcId}:
+  get:
+    tags: [Nutrition Lookup]
+    operationId: lookupNutritionByFdcId
+    summary: Look up nutrition data by USDA FDC ID
+    description: >
+      Returns detailed nutrition information for a specific food item
+      identified by its USDA FoodData Central ID.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: fdcId
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    responses:
+      '200':
+        description: Nutrition data for the given FDC ID
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    found:
+                      type: boolean
+                    nutrition:
+                      type: object
+                      description: Nutrition data from USDA (present when found is true)
+      '400':
+        description: Invalid fdcId parameter
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/cooking-terms:
+  get:
+    tags: [Cooking Terms]
+    operationId: listCookingTerms
+    summary: List cooking term definitions
+    description: >
+      Returns all cooking term definitions, optionally filtered by category
+      or search query. Results are sorted alphabetically by term, with search
+      results prioritized by relevance.
+    security: []
+    parameters:
+      - name: category
+        in: query
+        schema:
+          type: string
+        description: Filter by category (use "all" or omit for no filter)
+      - name: search
+        in: query
+        schema:
+          type: string
+        description: Search terms by name or definition
+    responses:
+      '200':
+        description: List of cooking terms
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CookingTerm'
+
+/api/cooking-terms/detect:
+  get:
+    tags: [Cooking Terms]
+    operationId: detectCookingTerms
+    summary: Detect cooking terms in text
+    description: >
+      Scans the provided text for known cooking terms and returns matching
+      term definitions. Useful for highlighting cooking terms in recipe
+      instructions.
+    security: []
+    parameters:
+      - name: text
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Text to scan for cooking terms
+    responses:
+      '200':
+        description: Detected cooking terms
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CookingTerm'
+      '400':
+        description: Missing text parameter
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/cooking-terms/{id}:
+  get:
+    tags: [Cooking Terms]
+    operationId: getCookingTerm
+    summary: Get a single cooking term by ID
+    description: >
+      Returns a single cooking term definition. If the term has related terms,
+      their full details are included in relatedTermDetails.
+    security: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Cooking term details
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  allOf:
+                    - $ref: '#/components/schemas/CookingTerm'
+                    - type: object
+                      properties:
+                        relatedTermDetails:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/CookingTerm'
+      '400':
+        description: Invalid term ID
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Cooking term not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/appliances:
+  get:
+    tags: [Appliances]
+    operationId: listAppliances
+    summary: List all appliances in the catalog
+    description: >
+      Returns the full catalog of kitchen appliances, optionally filtered
+      by category. Results are cached for 24 hours. This is a public endpoint.
+    security: []
+    parameters:
+      - name: category
+        in: query
+        schema:
+          type: string
+        description: Filter by category (e.g., essential, cooking, bakeware, small appliances, prep tools, specialty)
+    responses:
+      '200':
+        description: List of appliances
+        headers:
+          Cache-Control:
+            schema:
+              type: string
+              example: 'public, max-age=86400'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Appliance'
+
+/api/appliances/common:
+  get:
+    tags: [Appliances]
+    operationId: listCommonAppliances
+    summary: List commonly available appliances
+    description: Returns only appliances marked as commonly available in kitchens.
+    security: []
+    responses:
+      '200':
+        description: List of common appliances
+        headers:
+          Cache-Control:
+            schema:
+              type: string
+              example: 'public, max-age=86400'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Appliance'
+
+/api/user/appliances:
+  get:
+    tags: [User Appliances]
+    operationId: listUserAppliances
+    summary: List user's kitchen appliances
+    description: Returns all appliances the authenticated user has added to their kitchen.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: User's appliances
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserAppliance'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  post:
+    tags: [User Appliances]
+    operationId: addUserAppliance
+    summary: Add an appliance to user's kitchen
+    description: Adds a catalog appliance to the user's kitchen by appliance ID.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [applianceId]
+            properties:
+              applianceId:
+                type: integer
+              notes:
+                type: string
+              brand:
+                type: string
+    responses:
+      '201':
+        description: Appliance added
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  $ref: '#/components/schemas/UserAppliance'
+      '400':
+        description: Missing appliance ID
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Appliance not found in catalog
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Appliance already in user's kitchen
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/user/appliances/{applianceId}:
+  delete:
+    tags: [User Appliances]
+    operationId: removeUserAppliance
+    summary: Remove an appliance from user's kitchen
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: applianceId
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: Appliance removed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  nullable: true
+                message:
+                  type: string
+                  example: Appliance removed from kitchen
+      '400':
+        description: Invalid appliance ID
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Appliance not found in user's kitchen
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/user/appliances/bulk:
+  post:
+    tags: [User Appliances]
+    operationId: bulkSyncUserAppliances
+    summary: Bulk sync user's appliances
+    description: >
+      Replaces the user's appliance set with the provided list of appliance IDs.
+      Adds new IDs and removes IDs no longer in the list.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [applianceIds]
+            properties:
+              applianceIds:
+                type: array
+                items:
+                  type: integer
+                description: Full list of appliance IDs the user should have
+    responses:
+      '200':
+        description: Bulk sync completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    added:
+                      type: integer
+                    removed:
+                      type: integer
+                    total:
+                      type: integer
+                message:
+                  type: string
+      '400':
+        description: Invalid appliance IDs
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/notifications:
+  get:
+    tags: [Notifications]
+    operationId: getUnreadNotifications
+    summary: Get unread notifications
+    description: Returns all unread notifications for the authenticated user.
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Unread notifications
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Notification'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/notifications/all:
+  get:
+    tags: [Notifications]
+    operationId: getAllNotifications
+    summary: Get all notifications
+    description: Returns all notifications for the authenticated user, ordered by most recent, with a configurable limit.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+    responses:
+      '200':
+        description: All notifications
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Notification'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/notifications/{id}/read:
+  post:
+    tags: [Notifications]
+    operationId: markNotificationRead
+    summary: Mark a notification as read
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: Notification marked as read
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    marked:
+                      type: boolean
+                      enum: [true]
+      '400':
+        description: Invalid notification ID
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/notifications/read-all:
+  post:
+    tags: [Notifications]
+    operationId: markAllNotificationsRead
+    summary: Mark all notifications as read
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: All notifications marked as read
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    marked:
+                      type: boolean
+                      enum: [true]
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/api/notifications/register-device:
+  post:
+    tags: [Notifications]
+    operationId: registerDeviceForNotifications
+    summary: Register a device for push notifications
+    description: >
+      Registers or updates a push notification token for the authenticated user's
+      device. If the token already exists, updates the associated user and platform.
+      This is the preferred endpoint for push token registration, replacing the
+      deprecated /api/user/push-token endpoint.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token, platform]
+            properties:
+              token:
+                type: string
+                minLength: 1
+                description: The device's push notification token (e.g., Expo push token)
+              platform:
+                type: string
+                minLength: 1
+                description: The device platform (e.g., "ios", "android")
+    responses:
+      '200':
+        description: Device registered successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  enum: [true]
+                data:
+                  type: object
+                  properties:
+                    registered:
+                      type: boolean
+                      enum: [true]
+      '400':
+        description: Missing or invalid token/platform
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+# ===========================================================================
+# Reusable component schemas referenced by $ref above
+# ===========================================================================
+# These would typically live in a shared components file. Defined here
+# inline for self-contained documentation.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: SessionToken
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+        errorCode:
+          type: string
+
+    SyncInventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        barcode:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+        unit:
+          type: string
+        storageLocation:
+          type: string
+        purchaseDate:
+          type: string
+          nullable: true
+        expirationDate:
+          type: string
+          nullable: true
+        category:
+          type: string
+        usdaCategory:
+          type: string
+          nullable: true
+        nutrition:
+          type: object
+          nullable: true
+          properties:
+            calories:
+              type: number
+            protein:
+              type: number
+            carbs:
+              type: number
+            fat:
+              type: number
+            fiber:
+              type: number
+            sugar:
+              type: number
+            sodium:
+              type: number
+        notes:
+          type: string
+          nullable: true
+        imageUri:
+          type: string
+          nullable: true
+        fdcId:
+          type: integer
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SyncInventoryItemInput:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        name:
+          type: string
+        barcode:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        storageLocation:
+          type: string
+        purchaseDate:
+          type: string
+        expirationDate:
+          type: string
+        category:
+          type: string
+        usdaCategory:
+          type: string
+        nutrition:
+          type: object
+          nullable: true
+          properties:
+            calories:
+              type: number
+            protein:
+              type: number
+            carbs:
+              type: number
+            fat:
+              type: number
+            fiber:
+              type: number
+            sugar:
+              type: number
+            sodium:
+              type: number
+        notes:
+          type: string
+        imageUri:
+          type: string
+        fdcId:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SyncRecipe:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              quantity:
+                oneOf:
+                  - type: number
+                  - type: string
+              unit:
+                type: string
+        instructions:
+          type: array
+          items:
+            type: string
+        prepTime:
+          type: integer
+          nullable: true
+        cookTime:
+          type: integer
+          nullable: true
+        servings:
+          type: integer
+          nullable: true
+        imageUri:
+          type: string
+          nullable: true
+        cloudImageUri:
+          type: string
+          nullable: true
+        nutrition:
+          type: object
+          nullable: true
+          properties:
+            calories:
+              type: number
+            protein:
+              type: number
+            carbs:
+              type: number
+            fat:
+              type: number
+        isFavorite:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+
+    SyncRecipeInput:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        title:
+          type: string
+        description:
+          type: string
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              quantity:
+                oneOf:
+                  - type: number
+                  - type: string
+              unit:
+                type: string
+        instructions:
+          type: array
+          items:
+            type: string
+        prepTime:
+          type: integer
+        cookTime:
+          type: integer
+        servings:
+          type: integer
+        imageUri:
+          type: string
+        cloudImageUri:
+          type: string
+        nutrition:
+          type: object
+          nullable: true
+          properties:
+            calories:
+              type: number
+            protein:
+              type: number
+            carbs:
+              type: number
+            fat:
+              type: number
+        isFavorite:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    SyncShoppingItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        isChecked:
+          type: boolean
+        category:
+          type: string
+          nullable: true
+        recipeId:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    SyncShoppingItemInput:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        isChecked:
+          type: boolean
+        category:
+          type: string
+        recipeId:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    SyncMealPlan:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+        meals:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              slot:
+                type: string
+              recipeId:
+                type: string
+              title:
+                type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    SyncMealPlanInput:
+      type: object
+      required: [id, date]
+      properties:
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        date:
+          type: string
+        meals:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              slot:
+                type: string
+              recipeId:
+                type: string
+              title:
+                type: string
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    SyncCookwareItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        alternatives:
+          type: array
+          nullable: true
+          items:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    SyncCookwareInput:
+      type: object
+      required: [id]
+      properties:
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        name:
+          type: string
+        category:
+          type: string
+        alternatives:
+          type: array
+          items:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    InventoryItemExport:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        barcode:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+        unit:
+          type: string
+        storageLocation:
+          type: string
+        purchaseDate:
+          type: string
+          nullable: true
+        expirationDate:
+          type: string
+          nullable: true
+        category:
+          type: string
+        usdaCategory:
+          type: string
+          nullable: true
+        nutrition:
+          type: object
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        imageUri:
+          type: string
+          nullable: true
+        fdcId:
+          type: integer
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    RecipeExport:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        ingredients:
+          type: array
+          items:
+            type: object
+        instructions:
+          type: array
+          items:
+            type: string
+        prepTime:
+          type: integer
+          nullable: true
+        cookTime:
+          type: integer
+          nullable: true
+        servings:
+          type: integer
+          nullable: true
+        imageUri:
+          type: string
+          nullable: true
+        cloudImageUri:
+          type: string
+          nullable: true
+        nutrition:
+          type: object
+          nullable: true
+        isFavorite:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    MealPlanExport:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+        meals:
+          type: array
+          nullable: true
+          items:
+            type: object
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    ShoppingItemExport:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        isChecked:
+          type: boolean
+        category:
+          type: string
+          nullable: true
+        recipeId:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    CookwareExport:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        alternatives:
+          type: array
+          nullable: true
+          items:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    CookingTerm:
+      type: object
+      properties:
+        id:
+          type: string
+        term:
+          type: string
+        definition:
+          type: string
+        shortDefinition:
+          type: string
+        longDefinition:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        timeEstimate:
+          type: string
+        tools:
+          type: array
+          items:
+            type: string
+        tips:
+          type: array
+          items:
+            type: string
+        videoUrl:
+          type: string
+        imageUrl:
+          type: string
+        relatedTerms:
+          type: array
+          items:
+            type: string
+        example:
+          type: string
+
+    Appliance:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        isCommon:
+          type: boolean
+        alternatives:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+
+    UserAppliance:
+      type: object
+      properties:
+        id:
+          type: integer
+        applianceId:
+          type: integer
+        notes:
+          type: string
+        brand:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        appliance:
+          $ref: '#/components/schemas/Appliance'
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        isRead:
+          type: boolean
+        data:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time

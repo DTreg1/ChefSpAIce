@@ -1,52 +1,10 @@
-# Server-side code (not needed for mobile build)
-server/
-
-# Documentation
-docs/
-DESIGN_GUIDELINES.md
-replit.md
-
-# Database migrations (server-side only)
-migrations/
-drizzle.config.ts
-
-# Development scripts
+node_modules
+dist
+server_dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
 scripts/
-
-# Attached assets from development
+migrations/
 attached_assets/
-
-# Test files
-**/__tests__/
-*.test.ts
-*.test.tsx
-*.spec.ts
-*.spec.tsx
-jest.config.js
-
-# Linting config (not needed for build)
-eslint.config.js
-
-# Git
-.git/
-
-# IDE/Editor
-.vscode/
-.idea/
-
-# Replit
-.replit
-replit.nix
-.cache/
-.config/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Temporary files
-.tmp/
-tmp/
-.github/workflows/android-build.yml
-.github/workflows/android-build.yml
-.github/workflows/android-build.yml
