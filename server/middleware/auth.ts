@@ -8,8 +8,9 @@ import { hashToken, getSessionByToken, anonymizeIpAddress } from "../lib/auth-ut
 import { queueNotification } from "../services/notificationService";
 import { sessionCache } from "../lib/session-cache";
 
-const recentUaMismatchAlerts = new Set<string>();
-const UA_MISMATCH_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 1 notification per session per day
+const recentUaMismatchAlerts = new Map<string, number>();
+const UA_MISMATCH_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const UA_MISMATCH_MAX_ENTRIES = 10_000;
 
 declare global {
   namespace Express {
@@ -77,9 +78,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       });
 
       const cacheKey = `ua_mismatch:${session.id}`;
-      if (!recentUaMismatchAlerts.has(cacheKey)) {
-        recentUaMismatchAlerts.add(cacheKey);
-        setTimeout(() => recentUaMismatchAlerts.delete(cacheKey), UA_MISMATCH_COOLDOWN_MS);
+      const lastAlert = recentUaMismatchAlerts.get(cacheKey);
+      const now = Date.now();
+      if (lastAlert === undefined || now - lastAlert >= UA_MISMATCH_COOLDOWN_MS) {
+        if (recentUaMismatchAlerts.size >= UA_MISMATCH_MAX_ENTRIES) {
+          const oldestKey = recentUaMismatchAlerts.keys().next().value;
+          if (oldestKey !== undefined) recentUaMismatchAlerts.delete(oldestKey);
+        }
+        recentUaMismatchAlerts.set(cacheKey, now);
         queueNotification({
           userId: session.userId,
           type: "security",

@@ -20,7 +20,7 @@ import { registerDataRetentionJob } from "./jobs/dataRetentionJob";
 import { registerSoftDeleteCleanupJob } from "./jobs/softDeleteCleanupJob";
 import { startJobScheduler } from "./jobs/jobScheduler";
 import { logger } from "./lib/logger";
-import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
+import { AppError } from "./middleware/errorHandler";
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { runDrizzleMigrations } from "./migrate";
@@ -347,10 +347,6 @@ function configureStaticFiles(app: express.Application) {
   app.use("/attached_assets", express.static(path.resolve(process.cwd(), "attached_assets"), { maxAge: "1y", immutable: true }));
 }
 
-function setupErrorHandler(app: express.Application) {
-  app.use(globalErrorHandler);
-}
-
 async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): Promise<boolean> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     const client = new Client({
@@ -380,7 +376,7 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
   return false;
 }
 
-async function initStripe(retries = 3, delay = 2000) {
+async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -488,7 +484,6 @@ async function ensureStripePrices() {
 }
 
 (async () => {
-  app.use(requestIdMiddleware);
   setupCors(app);
 
   app.use((_req: Request, res: Response, next: NextFunction) => {
@@ -601,8 +596,6 @@ async function ensureStripePrices() {
   const server = await registerRoutes(app);
 
   configureStaticFiles(app);
-
-  setupErrorHandler(app);
 
   const encKey = process.env.TOKEN_ENCRYPTION_KEY;
   if (encKey) {
