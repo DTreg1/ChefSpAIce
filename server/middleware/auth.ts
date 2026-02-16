@@ -82,8 +82,15 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       const now = Date.now();
       if (lastAlert === undefined || now - lastAlert >= UA_MISMATCH_COOLDOWN_MS) {
         if (recentUaMismatchAlerts.size >= UA_MISMATCH_MAX_ENTRIES) {
-          const oldestKey = recentUaMismatchAlerts.keys().next().value;
-          if (oldestKey !== undefined) recentUaMismatchAlerts.delete(oldestKey);
+          for (const [key, timestamp] of recentUaMismatchAlerts) {
+            if (now - timestamp >= UA_MISMATCH_COOLDOWN_MS) {
+              recentUaMismatchAlerts.delete(key);
+            }
+          }
+          if (recentUaMismatchAlerts.size >= UA_MISMATCH_MAX_ENTRIES) {
+            const oldestKey = recentUaMismatchAlerts.keys().next().value;
+            if (oldestKey !== undefined) recentUaMismatchAlerts.delete(oldestKey);
+          }
         }
         recentUaMismatchAlerts.set(cacheKey, now);
         queueNotification({

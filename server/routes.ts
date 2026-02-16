@@ -101,6 +101,10 @@ import { z } from "zod";
  * @param app - Express application instance
  * @returns HTTP server instance
  */
+const healthRateLimit = new Map<string, { count: number; resetAt: number }>();
+const HEALTH_RATE_LIMIT = 10;
+const HEALTH_RATE_WINDOW_MS = 60_000;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================================================
   // REQUEST ID - Attach a unique ID to every request for tracing
@@ -110,7 +114,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================================================
   // HEALTH CHECK - Used by client for network detection
   // =========================================================================
-  app.get("/api/health", async (_req: Request, res: Response) => {
+  app.get("/api/health", async (req: Request, res: Response) => {
+    const clientIp = req.ip || 'unknown';
+    const now = Date.now();
+    const rateEntry = healthRateLimit.get(clientIp);
+    if (rateEntry && now < rateEntry.resetAt) {
+      if (rateEntry.count >= HEALTH_RATE_LIMIT) {
+        return res.status(429).json({ success: false, message: "Too many health check requests" });
+      }
+      rateEntry.count++;
+    } else {
+      healthRateLimit.set(clientIp, { count: 1, resetAt: now + HEALTH_RATE_WINDOW_MS });
+    }
+    if (healthRateLimit.size > 1000) {
+      for (const [key, val] of healthRateLimit) {
+        if (now >= val.resetAt) healthRateLimit.delete(key);
+      }
+    }
+
     const dbCheck = await Promise.race([
       checkPoolHealth(),
       new Promise<{ healthy: false; responseTimeMs: number; stats: null }>((resolve) =>
