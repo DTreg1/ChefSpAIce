@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "./errorHandler";
-import { getSessionByToken, getUserByToken } from "../lib/auth-utils";
+import { getUserByToken } from "../lib/auth-utils";
 
 export async function requireAdmin(
   req: Request,
@@ -16,17 +16,10 @@ export async function requireAdmin(
     }
 
     const rawToken = authHeader.slice(7);
-    const session = await getSessionByToken(rawToken);
-
-    if (!session || new Date(session.expiresAt) < new Date()) {
-      next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
-      return;
-    }
-
     const user = await getUserByToken(rawToken);
 
     if (!user) {
-      next(AppError.unauthorized("User not found", "USER_NOT_FOUND"));
+      next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
       return;
     }
 

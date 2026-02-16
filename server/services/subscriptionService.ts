@@ -158,17 +158,20 @@ export async function checkPantryItemLimit(
 export async function checkAiRecipeLimit(
   userId: string
 ): Promise<LimitCheckResult> {
-  // Check cache first to avoid redundant DB calls for rapid generations
   const cached = await getCachedAiLimit(userId);
   if (cached) {
     return cached;
   }
 
-  await resetMonthlyCountsIfNeeded(userId);
-
-  const user = await getUserById(userId);
-  if (!user) {
+  const initialUser = await getUserById(userId);
+  if (!initialUser) {
     throw new Error("User not found");
+  }
+
+  const wasReset = await resetMonthlyCountsIfNeededOptimized(userId, initialUser);
+  const user = wasReset ? await getUserById(userId) : initialUser;
+  if (!user) {
+    throw new Error("User not found after reset");
   }
 
   const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.STANDARD;
@@ -369,48 +372,54 @@ export async function downgradeUserTier(userId: string): Promise<void> {
 }
 
 export async function checkAndRedeemReferralCredits(userId: string): Promise<void> {
-  const [result] = await db
-    .select({ value: count() })
-    .from(referrals)
-    .where(
-      and(
-        eq(referrals.referrerId, userId),
-        eq(referrals.status, "completed"),
-        eq(referrals.bonusGranted, false)
-      )
-    );
-
-  const unredeemedCount = result?.value ?? 0;
-
-  if (unredeemedCount >= 3) {
-    await db.transaction(async (tx) => {
-      await tx.execute(
-        sql`UPDATE referrals SET bonus_granted = true WHERE id IN (SELECT id FROM referrals WHERE referrer_id = ${userId} AND status = 'completed' AND bonus_granted = false ORDER BY created_at ASC LIMIT 3)`
+  await db.transaction(async (tx) => {
+    const [result] = await tx
+      .select({ value: count() })
+      .from(referrals)
+      .where(
+        and(
+          eq(referrals.referrerId, userId),
+          eq(referrals.status, "completed"),
+          eq(referrals.bonusGranted, false)
+        )
       );
 
-      const [subscription] = await tx
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, userId))
-        .limit(1);
+    const unredeemedCount = result?.value ?? 0;
 
-      if (subscription) {
-        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    if (unredeemedCount < 3) {
+      return;
+    }
 
-        if (subscription.status === "active" || subscription.status === "trialing") {
-          const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
+    const updated = await tx.execute(
+      sql`UPDATE referrals SET bonus_granted = true WHERE id IN (SELECT id FROM referrals WHERE referrer_id = ${userId} AND status = 'completed' AND bonus_granted = false ORDER BY created_at ASC LIMIT 3 FOR UPDATE SKIP LOCKED) RETURNING id`
+    );
 
-          await tx
-            .update(subscriptions)
-            .set({
-              currentPeriodEnd: newPeriodEnd,
-              updatedAt: new Date(),
-            })
-            .where(eq(subscriptions.userId, userId));
-        }
+    if (!updated.rows || updated.rows.length < 3) {
+      return;
+    }
+
+    const [subscription] = await tx
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .limit(1);
+
+    if (subscription) {
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+
+      if (subscription.status === "active" || subscription.status === "trialing") {
+        const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
+
+        await tx
+          .update(subscriptions)
+          .set({
+            currentPeriodEnd: newPeriodEnd,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.userId, userId));
       }
-    });
+    }
 
     logger.info("Referral reward granted: 1 month free", { userId, creditsRedeemed: 3 });
-  }
+  });
 }
