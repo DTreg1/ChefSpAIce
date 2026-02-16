@@ -37,7 +37,7 @@ export function PricingCard({
   onDownloadiOS,
   onDownloadAndroid,
 }: PricingCardProps) {
-  const { style } = useTheme();
+  const { theme, style } = useTheme();
   const lc = style.landing;
   const ge = style.glassEffect;
 
@@ -100,7 +100,7 @@ export function PricingCard({
               accessibilityRole="button"
               accessibilityLabel="Download on the App Store"
             >
-              <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name="apple" size={20} color={theme.buttonText} />
               <Text style={[styles.downloadButtonText, { color: lc.textSecondary }]}>App Store</Text>
             </Pressable>
             <Pressable
@@ -118,7 +118,7 @@ export function PricingCard({
               <MaterialCommunityIcons
                 name="google-play"
                 size={20}
-                color="#FFFFFF"
+                color={theme.buttonText}
               />
               <Text style={[styles.downloadButtonText, { color: lc.textSecondary }]}>Google Play</Text>
             </Pressable>

@@ -2,6 +2,7 @@ import { StyleSheet, View, Text, Pressable, Image } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
+import { AppUrls } from "@/constants/urls";
 
 const logoImage = require("../../assets/images/transparent/chef-hat-light-256.png");
 
@@ -37,7 +38,7 @@ export function FooterSection({
         <View style={[styles.qrCodeSection, { backgroundColor: lc.surfaceSubtle, borderColor: lc.borderSubtle }]} data-testid="qr-code-section">
           <View style={styles.qrCodeContainer}>
             <QRCode
-              value="https://chefspaice.com"
+              value={AppUrls.website}
               size={280}
               color="#FFFFFF"
               backgroundColor="transparent"

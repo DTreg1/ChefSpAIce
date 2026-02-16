@@ -9,6 +9,7 @@ import Animated, {
 import { useEffect } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 interface SkeletonBoxProps {
   width: number | string;
@@ -30,7 +31,7 @@ export function SkeletonBox({
   useEffect(() => {
     if (!reduceMotion) {
       opacity.value = withRepeat(
-        withTiming(0.7, { duration: 800 }),
+        withTiming(0.7, { duration: AnimationDurations.breathe }),
         -1,
         true,
       );

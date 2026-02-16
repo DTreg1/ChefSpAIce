@@ -24,6 +24,7 @@ export function NutritionScoreBadge({
   showLabel = false,
   onPress,
 }: NutritionScoreBadgeProps) {
+  const { theme } = useTheme();
   const scoreResult = calculateNutritionScore(nutrition);
 
   const badgeSize = size === "large" ? 36 : size === "medium" ? 28 : 22;
@@ -56,7 +57,7 @@ export function NutritionScoreBadge({
             styles.gradeText,
             {
               fontSize,
-              color: "#FFFFFF",
+              color: theme.buttonText,
             },
           ]}
         >
@@ -149,7 +150,7 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
         <View
           style={[styles.largeBadge, { backgroundColor: scoreResult.color }]}
         >
-          <ThemedText style={styles.largeGradeText}>
+          <ThemedText style={[styles.largeGradeText, { color: theme.buttonText }]}>
             {scoreResult.grade}
           </ThemedText>
         </View>
@@ -231,7 +232,6 @@ const styles = StyleSheet.create({
   largeGradeText: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#FFFFFF",
   },
   detailInfo: {
     flex: 1,

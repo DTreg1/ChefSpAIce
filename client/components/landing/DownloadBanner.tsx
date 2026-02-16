@@ -42,7 +42,7 @@ function StoreBadge({
       <MaterialCommunityIcons
         name={isIOS ? "apple" : "google-play"}
         size={20}
-        color="#FFFFFF"
+        color={colors.textPrimary}
       />
       <View>
         <Text style={[styles.badgeLabel, { color: colors.textMuted }]}>
@@ -64,7 +64,7 @@ export function DownloadBanner() {
     return false;
   });
   const { width } = useWindowDimensions();
-  const { style } = useTheme();
+  const { theme, style } = useTheme();
   const colors = style.landing;
   const ge = style.glassEffect;
   const isWide = width > 600;
@@ -93,7 +93,7 @@ export function DownloadBanner() {
             <MaterialCommunityIcons
               name="cellphone-arrow-down"
               size={18}
-              color="#FFFFFF"
+              color={theme.buttonText}
             />
           </View>
           <View style={styles.textGroup}>

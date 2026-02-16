@@ -23,7 +23,7 @@ export function MealPlanActionSheet({
   onRemoveMeal,
   onClose,
 }: MealPlanActionSheetProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -38,7 +38,7 @@ export function MealPlanActionSheet({
       accessibilityViewIsModal={true}
     >
       <Pressable
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
         onPress={onClose}
         accessibilityRole="button"
         accessibilityLabel="Close meal options"
@@ -100,7 +100,6 @@ export function MealPlanActionSheet({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   actionSheet: {

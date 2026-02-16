@@ -22,7 +22,8 @@ import { GlassView } from "@/components/GlassViewWithContext";
 import { ThemedText } from "@/components/ThemedText";
 import { NutritionBadge } from "@/components/nutrition/NutritionBadge";
 import { NutritionScoreBadge } from "@/components/nutrition/NutritionScoreBadge";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Typography, AppColors } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 import {
   FoodItem,
   getExpirationStatus,
@@ -61,8 +62,8 @@ export function SwipeableItemCard({
       translateX.value = withDelay(
         600,
         withSequence(
-          withTiming(-60, { duration: 500 }),
-          withDelay(700, withTiming(0, { duration: 500 }))
+          withTiming(-60, { duration: AnimationDurations.pulse }),
+          withDelay(700, withTiming(0, { duration: AnimationDurations.pulse }))
         )
       );
     }
@@ -73,9 +74,9 @@ export function SwipeableItemCard({
 
   const getBadgeColor = () => {
     const mutedColors = {
-      success: "#6B8E6B",
-      warning: "#C4956A",
-      error: "#B57D7D",
+      success: AppColors.expiryStatusOk,
+      warning: AppColors.expiryStatusWarning,
+      error: AppColors.expiryStatusExpired,
     };
 
     switch (status) {
@@ -281,6 +282,7 @@ export function SwipeableItemCard({
                 styles.itemCard,
                 {
                   borderColor: themeStyle.glass.border,
+                  shadowColor: themeStyle.glass.shadowColor,
                 },
               ]}
             >
@@ -399,7 +401,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     overflow: "hidden",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -449,6 +450,6 @@ const styles = StyleSheet.create({
   expirationText: {
     opacity: 0.8,
     letterSpacing: 0.3,
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
   },
 });

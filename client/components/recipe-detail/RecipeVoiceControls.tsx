@@ -15,6 +15,7 @@ import {
   BorderRadius,
   AppColors,
 } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 const IS_WEB = Platform.OS === "web";
 
@@ -73,12 +74,12 @@ export function RecipeVoiceControls({
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1.15,
-            duration: 600,
+            duration: AnimationDurations.pulseWide,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 600,
+            duration: AnimationDurations.pulseWide,
             useNativeDriver: true,
           }),
         ]),
@@ -87,7 +88,7 @@ export function RecipeVoiceControls({
       pulseAnim.stopAnimation();
       Animated.timing(pulseAnim, {
         toValue: 1,
-        duration: 200,
+        duration: AnimationDurations.fast,
         useNativeDriver: true,
       }).start();
     }
@@ -99,12 +100,12 @@ export function RecipeVoiceControls({
         Animated.sequence([
           Animated.timing(speakingAnim, {
             toValue: 1,
-            duration: 400,
+            duration: AnimationDurations.slow,
             useNativeDriver: true,
           }),
           Animated.timing(speakingAnim, {
             toValue: 0,
-            duration: 400,
+            duration: AnimationDurations.slow,
             useNativeDriver: true,
           }),
         ]),
@@ -113,7 +114,7 @@ export function RecipeVoiceControls({
       speakingAnim.stopAnimation();
       Animated.timing(speakingAnim, {
         toValue: 0,
-        duration: 100,
+        duration: AnimationDurations.instant,
         useNativeDriver: true,
       }).start();
     }
@@ -216,7 +217,7 @@ export function RecipeVoiceControls({
         <ThemedText type="caption" style={styles.stepText}>
           Step {currentStep + 1} of {totalSteps}
         </ThemedText>
-        <View style={styles.progressBar}>
+        <View style={[styles.progressBar, { backgroundColor: style.surface.inputSubtle }]}>
           <View
             style={[
               styles.progressFill,
@@ -232,7 +233,7 @@ export function RecipeVoiceControls({
       <View style={styles.statusRow}>
         {isSpeaking && !isPaused ? (
           <Animated.View
-            style={[styles.statusBadge, { opacity: speakingOpacity }]}
+            style={[styles.statusBadge, { backgroundColor: style.surface.feedbackBg, opacity: speakingOpacity }]}
           >
             <Feather name="volume-2" size={12} color={AppColors.primary} />
             <ThemedText type="caption" style={{ color: AppColors.primary }}>
@@ -256,7 +257,7 @@ export function RecipeVoiceControls({
         ) : null}
 
         {isProcessing ? (
-          <View style={styles.statusBadge}>
+          <View style={[styles.statusBadge, { backgroundColor: style.surface.feedbackBg }]}>
             <Feather name="loader" size={12} color={theme.textSecondary} />
             <ThemedText type="caption" style={{ color: theme.textSecondary }}>
               Processing
@@ -325,6 +326,7 @@ export function RecipeVoiceControls({
               {
                 backgroundColor: getVoiceButtonColor(),
                 opacity: pressed ? 0.8 : 1,
+                shadowColor: style.glass.shadowColor,
               },
             ]}
             accessibilityRole="button"
@@ -333,7 +335,7 @@ export function RecipeVoiceControls({
             }
             accessibilityState={{ disabled: isProcessing }}
           >
-            <Feather name="mic" size={24} color="#FFFFFF" />
+            <Feather name="mic" size={24} color={theme.buttonText} />
           </Pressable>
         </Animated.View>
 
@@ -447,11 +449,11 @@ export function RecipeVoiceControls({
           <Feather
             name="headphones"
             size={16}
-            color={handsFreeModeEnabled ? "#FFFFFF" : theme.text}
+            color={handsFreeModeEnabled ? theme.buttonText : theme.text}
           />
           <ThemedText
             type="caption"
-            style={{ color: handsFreeModeEnabled ? "#FFFFFF" : theme.text }}
+            style={{ color: handsFreeModeEnabled ? theme.buttonText : theme.text }}
           >
             Hands-free
           </ThemedText>
@@ -522,7 +524,6 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 4,
-    backgroundColor: "rgba(128, 128, 128, 0.2)",
     borderRadius: 2,
     overflow: "hidden",
   },
@@ -543,7 +544,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.sm,
-    backgroundColor: "rgba(128, 128, 128, 0.1)",
   },
   mainControls: {
     flexDirection: "row",
@@ -570,7 +570,6 @@ const styles = StyleSheet.create({
         boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
       },
       default: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,

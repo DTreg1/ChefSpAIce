@@ -23,7 +23,8 @@ import { HeaderMenu, MenuItemConfig } from "@/components/HeaderMenu";
 export type { MenuItemConfig };
 import { useSearch } from "@/contexts/SearchContext";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { AnimationDurations, AnimationDelays } from "@/constants/animations";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BUTTON_SIZE = 44;
@@ -77,12 +78,12 @@ export function GlassHeader({
 
   useEffect(() => {
     searchExpansion.value = withTiming(isOpen ? 1 : 0, {
-      duration: 250,
+      duration: AnimationDurations.normal,
       easing: Easing.bezier(0.25, 0.1, 0.25, 1),
     });
 
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 150);
+      setTimeout(() => inputRef.current?.focus(), AnimationDelays.focusInput);
     } else {
       inputRef.current?.blur();
     }
@@ -146,14 +147,8 @@ export function GlassHeader({
   const textColor = typeof theme.text === "string" ? theme.text : "#000";
   const secondaryColor =
     typeof theme.textSecondary === "string" ? theme.textSecondary : "#888";
-  const glassBg =
-    typeof themeStyle.glass?.background === "string"
-      ? themeStyle.glass.background
-      : "rgba(255,255,255,0.1)";
-  const glassBorder =
-    typeof themeStyle.glass?.border === "string"
-      ? themeStyle.glass.border
-      : "rgba(255,255,255,0.2)";
+  const glassBg = themeStyle.glass.background;
+  const glassBorder = themeStyle.glass.border;
 
   return (
     <View
@@ -345,7 +340,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     paddingVertical: 8,
     paddingHorizontal: 4,
   },

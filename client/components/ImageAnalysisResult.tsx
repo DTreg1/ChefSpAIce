@@ -61,7 +61,7 @@ export function ImageAnalysisResult({
   onScanMore,
 }: ImageAnalysisResultProps) {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const [editedItems, setEditedItems] = useState<IdentifiedFood[]>(
     results.items,
   );
@@ -288,7 +288,7 @@ export function ImageAnalysisResult({
                         { backgroundColor: AppColors.primary },
                       ]}
                     >
-                      <Feather name="check" size={14} color="#FFFFFF" />
+                      <Feather name="check" size={14} color={theme.buttonText} />
                     </View>
                   ) : (
                     <View
@@ -346,7 +346,7 @@ export function ImageAnalysisResult({
                     >
                       {item.quantity} {item.quantityUnit}
                     </ThemedText>
-                    <View style={styles.metaDot} />
+                    <View style={[styles.metaDot, { backgroundColor: themeStyle.surface.pillBg }]} />
                     <Feather name="box" size={12} color={theme.textSecondary} />
                     <ThemedText
                       type="caption"
@@ -452,7 +452,7 @@ export function ImageAnalysisResult({
                             type="caption"
                             style={
                               item.category.toLowerCase() === cat
-                                ? { color: "#FFFFFF" }
+                                ? { color: theme.buttonText }
                                 : undefined
                             }
                           >
@@ -534,7 +534,7 @@ export function ImageAnalysisResult({
                               type="caption"
                               style={
                                 item.quantityUnit === unit
-                                  ? { color: "#FFFFFF" }
+                                  ? { color: theme.buttonText }
                                   : undefined
                               }
                             >
@@ -575,7 +575,7 @@ export function ImageAnalysisResult({
                             type="caption"
                             style={
                               item.storageLocation.toLowerCase() === loc
-                                ? { color: "#FFFFFF" }
+                                ? { color: theme.buttonText }
                                 : undefined
                             }
                           >
@@ -649,6 +649,7 @@ export function ImageAnalysisResult({
           {
             paddingBottom: insets.bottom + Spacing.lg,
             backgroundColor: theme.backgroundDefault,
+            borderTopColor: themeStyle.glass.borderSubtle,
           },
         ]}
       >
@@ -794,7 +795,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(128, 128, 128, 0.5)",
     marginHorizontal: Spacing.sm,
   },
   reviewWarning: {
@@ -858,7 +858,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "rgba(128, 128, 128, 0.2)",
   },
   confirmButton: {
     width: "100%",

@@ -30,7 +30,8 @@ import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Typography } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 interface UpdateBannerProps {
   visible: boolean;
@@ -53,10 +54,10 @@ export function UpdateBanner({
   useEffect(() => {
     if (visible) {
       translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
-      opacity.value = withTiming(1, { duration: 250 });
+      opacity.value = withTiming(1, { duration: AnimationDurations.normal });
     } else {
       translateY.value = withSpring(-100, { damping: 20, stiffness: 300 });
-      opacity.value = withTiming(0, { duration: 200 });
+      opacity.value = withTiming(0, { duration: AnimationDurations.fast });
     }
   }, [visible, translateY, opacity]);
 
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   text: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     fontWeight: "500",
     flex: 1,
   },
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
   },
   updateText: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     fontWeight: "600",
   },
 });

@@ -103,7 +103,7 @@ export function StorageStep({
                     <Feather
                       name={area.icon}
                       size={24}
-                      color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                      color={isSelected ? theme.buttonText : theme.textSecondary}
                     />
                   </View>
                   <ThemedText style={styles.storageAreaLabel}>
@@ -124,7 +124,7 @@ export function StorageStep({
                         { backgroundColor: AppColors.primary },
                       ]}
                     >
-                      <Feather name="check" size={12} color="#FFFFFF" />
+                      <Feather name="check" size={12} color={theme.buttonText} />
                     </View>
                   )}
                 </Pressable>

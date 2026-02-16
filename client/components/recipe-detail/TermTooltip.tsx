@@ -30,7 +30,7 @@ export function TermTooltip({
   onClose,
   onLearnMore,
 }: TermTooltipProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const insets = useSafeAreaInsets();
   const { onAccessibilityEscape } = useFocusTrap({
     visible,
@@ -47,7 +47,7 @@ export function TermTooltip({
       onRequestClose={onClose}
       accessibilityViewIsModal={true}
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Dismiss tooltip">
+      <Pressable style={[styles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Dismiss tooltip">
         <Pressable
           style={[
             styles.tooltipContainer,
@@ -157,7 +157,6 @@ export function TermTooltip({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "flex-end",
   },
   tooltipContainer: {

@@ -21,10 +21,10 @@ interface WasteReductionStatsProps {
 }
 
 const TIER_COLORS = {
-  bronze: "#CD7F32",
-  silver: "#C0C0C0",
-  gold: "#FFD700",
-  platinum: "#E5E4E2",
+  bronze: AppColors.medalBronze,
+  silver: AppColors.medalSilver,
+  gold: AppColors.medalGold,
+  platinum: AppColors.medalPlatinum,
 };
 
 export function WasteReductionStats({
@@ -227,7 +227,7 @@ export function WasteReductionStats({
                     <Feather
                       name={badge.iconName as keyof typeof Feather.glyphMap}
                       size={16}
-                      color="#FFFFFF"
+                      color={theme.buttonText}
                     />
                   </View>
                   <View style={styles.badgeInfo}>

@@ -101,11 +101,11 @@ export function SettingsReferral({
               onPress={onShareReferral}
               style={{ flex: 1 }}
               icon={
-                <Feather name="share-2" size={16} color="#fff" />
+                <Feather name="share-2" size={16} color={theme.buttonText} />
               }
               testID="button-share-referral"
             >
-              <ThemedText style={{ color: "#fff" }}>Share</ThemedText>
+              <ThemedText style={{ color: theme.buttonText }}>Share</ThemedText>
             </GlassButton>
           </View>
 

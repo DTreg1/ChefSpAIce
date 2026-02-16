@@ -210,7 +210,7 @@ export function RecipeSettingsModal({
     >
       <ThemedText
         type="small"
-        style={{ color: selected ? "#FFFFFF" : theme.text }}
+        style={{ color: selected ? theme.buttonText : theme.text }}
       >
         {label}
       </ThemedText>
@@ -238,7 +238,7 @@ export function RecipeSettingsModal({
             { backgroundColor: theme.backgroundRoot },
           ]}
         >
-          <View style={styles.header}>
+          <View style={[styles.header, { borderBottomColor: themeStyle.glass.borderSubtle }]}>
             <ThemedText type="h3">Recipe Settings</ThemedText>
             <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close recipe settings">
               <Feather name="x" size={24} color={theme.text} />
@@ -473,7 +473,7 @@ export function RecipeSettingsModal({
                       styles.toggleKnob,
                       {
                         backgroundColor: prioritizeExpiring
-                          ? "#FFFFFF"
+                          ? theme.buttonText
                           : theme.textSecondary,
                         transform: [
                           { translateX: prioritizeExpiring ? 16 : 0 },
@@ -496,8 +496,8 @@ export function RecipeSettingsModal({
               accessibilityLabel={saving ? "Saving settings" : "Generate recipe"}
               accessibilityState={{ disabled: saving }}
             >
-              <Feather name="zap" size={20} color="#FFFFFF" />
-              <ThemedText type="button" style={styles.generateButtonText}>
+              <Feather name="zap" size={20} color={theme.buttonText} />
+              <ThemedText type="button" style={[styles.generateButtonText, { color: theme.buttonText }]}>
                 {saving ? "Saving..." : "Generate Recipe"}
               </ThemedText>
             </Pressable>
@@ -526,7 +526,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
   },
   closeButton: {
     padding: Spacing.xs,
@@ -599,7 +598,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   generateButtonText: {
-    color: "#FFFFFF",
     fontWeight: "600",
   },
 });

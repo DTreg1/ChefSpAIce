@@ -9,7 +9,7 @@ import Animated from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 
 interface VoiceModeViewProps {
   voiceChat: {
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   voiceStatusText: {
     marginTop: Spacing.sm,
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     fontWeight: "500",
   },
   transcriptPreview: {

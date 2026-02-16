@@ -26,7 +26,7 @@ export const TIP_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
 export const TIP_COLORS: Record<string, string> = {
   recipe: AppColors.primary,
   storage: AppColors.secondary,
-  freeze: "#4FC3F7",
+  freeze: AppColors.tipFreeze,
   preserve: AppColors.accent,
   general: AppColors.warning,
 };
@@ -55,6 +55,7 @@ export function TipBanner({
         styles.tipBanner,
         {
           backgroundColor: themeStyle.surface.feedbackBg,
+          borderBottomColor: themeStyle.glass.borderSubtle,
         },
       ]}
       onPress={onRefreshTip}
@@ -123,7 +124,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     gap: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.1)",
     minHeight: 44,
   },
   tipIcon: {

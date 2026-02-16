@@ -13,7 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Fonts } from "@/constants/theme";
+import { Spacing, BorderRadius, Fonts, Typography } from "@/constants/theme";
 import { logger } from "@/lib/logger";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 
@@ -23,7 +23,7 @@ export type ErrorFallbackProps = {
 };
 
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const { triggerRef, onAccessibilityEscape } = useFocusTrap({
     visible: isModalVisible,
@@ -84,6 +84,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
               backgroundColor: theme.link,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
+              shadowColor: themeStyle.glass.shadowColor,
             },
           ]}
           accessibilityRole="button"
@@ -106,9 +107,9 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           onRequestClose={() => setIsModalVisible(false)}
           accessibilityViewIsModal={true}
         >
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}>
             <ThemedView style={styles.modalContainer} onAccessibilityEscape={onAccessibilityEscape}>
-              <View style={styles.modalHeader}>
+              <View style={[styles.modalHeader, { borderBottomColor: themeStyle.glass.borderSubtle }]}>
                 <ThemedText type="h2" style={styles.modalTitle}>
                   Error Details
                 </ThemedText>
@@ -205,7 +206,6 @@ const styles = StyleSheet.create({
         boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
       },
       default: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -216,11 +216,10 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: "600",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   modalContainer: {
@@ -237,7 +236,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(128, 128, 128, 0.2)",
   },
   modalTitle: {
     fontWeight: "600",
@@ -258,7 +256,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     lineHeight: 18,
     width: "100%",
   },

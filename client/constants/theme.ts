@@ -31,6 +31,19 @@ export const AppColors = {
   expiryTextNeutral: "#1f2937",
   sourceOpenFoodFacts: "#1a2e05",
   sourceLocal: "#6C757D",
+  instacartGreen: "#43B02A",
+  medalBronze: "#CD7F32",
+  medalSilver: "#C0C0C0",
+  medalGold: "#FFD700",
+  medalPlatinum: "#E5E4E2",
+  tipFreeze: "#4FC3F7",
+  storageFridge: "#3B82F6",
+  storageFreezer: "#8B5CF6",
+  storagePantry: "#F59E0B",
+  storageCounter: "#10B981",
+  expiryStatusOk: "#6B8E6B",
+  expiryStatusWarning: "#C4956A",
+  expiryStatusExpired: "#B57D7D",
 };
 
 export const Colors = {
@@ -163,6 +176,16 @@ export const Typography = {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "600" as const,
+  },
+  micro: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "400" as const,
+  },
+  tiny: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "400" as const,
   },
 };
 

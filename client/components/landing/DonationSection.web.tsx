@@ -9,6 +9,7 @@ import { sharedStyles, getLandingTextStyles } from "./shared-styles";
 import { logger } from "@/lib/logger";
 import { apiClient } from "@/lib/api-client";
 import { useTheme } from "@/hooks/useTheme";
+import { AppUrls } from "@/constants/urls";
 
 const isWeb = Platform.OS === "web";
 
@@ -18,7 +19,7 @@ interface DonationSectionProps {
 
 export function DonationSection({ isWide }: DonationSectionProps) {
   const [isDonating, setIsDonating] = useState(false);
-  const { style } = useTheme();
+  const { theme, style } = useTheme();
   const lc = style.landing;
   const textStyles = getLandingTextStyles(style.landing);
 
@@ -29,7 +30,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
     try {
       const redirectBaseUrl = isWeb
         ? window.location.origin
-        : "https://chefspaice.com";
+        : AppUrls.website;
 
       const data = await apiClient.post<{ url?: string; error?: string }>("/api/donations/create-checkout-session", {
         amount,
@@ -110,7 +111,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
                     accessibilityLabel={`Donate ${item.label}`}
                     accessibilityState={{ disabled: isDonating }}
                   >
-                    <Text style={styles.donationButtonText}>{item.label}</Text>
+                    <Text style={[styles.donationButtonText, { color: theme.buttonText }]}>{item.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -191,7 +192,6 @@ const styles = StyleSheet.create({
   donationButtonText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
   },
   donationNote: {
     fontSize: 12,

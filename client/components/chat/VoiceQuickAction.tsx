@@ -37,6 +37,7 @@ import { storage, FoodItem, generateId } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -298,7 +299,7 @@ export function VoiceQuickAction() {
       setStatusText("Listening...");
       startSilenceTimeout();
       pulseAnimation.value = withRepeat(
-        withTiming(1.3, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.3, { duration: AnimationDurations.long, easing: Easing.inOut(Easing.ease) }),
         -1,
         true
       );
@@ -380,7 +381,7 @@ export function VoiceQuickAction() {
   };
 
   const renderFabContent = () => {
-    const iconContent = <Feather name="mic" size={22} color="#FFFFFF" />;
+    const iconContent = <Feather name="mic" size={22} color={theme.buttonText} />;
 
     if (useLiquidGlass) {
       return (
@@ -440,7 +441,7 @@ export function VoiceQuickAction() {
           style={styles.overlay}
         >
           <Pressable
-            style={styles.overlayBackground}
+            style={[styles.overlayBackground, { backgroundColor: themeStyle.surface.overlayStrong }]}
             onPress={handleCancel}
             testID="button-voice-overlay-dismiss"
             accessibilityRole="button"
@@ -502,6 +503,7 @@ export function VoiceQuickAction() {
                             ? AppColors.primary
                             : "transparent",
                     borderWidth: voiceState !== "idle" ? 2 : 0,
+                    shadowColor: themeStyle.glass.shadowColor,
                   },
                 ]}
                 onPress={handleMicPress}
@@ -512,11 +514,11 @@ export function VoiceQuickAction() {
                 accessibilityState={{ disabled: voiceState === "processing" || voiceState === "speaking" }}
               >
                 {voiceState === "processing" ? (
-                  <ActivityIndicator size="large" color="#FFFFFF" />
+                  <ActivityIndicator size="large" color={theme.buttonText} />
                 ) : voiceState === "speaking" ? (
-                  <Feather name="volume-2" size={40} color="#FFFFFF" />
+                  <Feather name="volume-2" size={40} color={theme.buttonText} />
                 ) : (
-                  <Feather name="mic" size={40} color="#FFFFFF" />
+                  <Feather name="mic" size={40} color={theme.buttonText} />
                 )}
               </Pressable>
             </View>
@@ -608,7 +610,6 @@ const styles = StyleSheet.create({
   },
   overlayBackground: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   cancelButton: {
     position: "absolute",
@@ -659,7 +660,6 @@ const styles = StyleSheet.create({
         boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.3)",
       },
       ios: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,

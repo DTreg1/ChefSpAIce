@@ -12,7 +12,8 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Typography } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 interface SyncStatusIndicatorProps {
   showLabel?: boolean;
@@ -43,14 +44,14 @@ export function SyncStatusIndicator({
     if (status === "syncing") {
       pulse.value = withRepeat(
         withSequence(
-          withTiming(1.2, { duration: 500 }),
-          withTiming(1, { duration: 500 }),
+          withTiming(1.2, { duration: AnimationDurations.pulse }),
+          withTiming(1, { duration: AnimationDurations.pulse }),
         ),
         -1,
         true,
       );
     } else {
-      pulse.value = withTiming(1, { duration: 200 });
+      pulse.value = withTiming(1, { duration: AnimationDurations.fast });
     }
   }, [status, pulse]);
 
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   statusLabel: {
-    fontSize: 13,
+    fontSize: Typography.caption.fontSize,
     fontWeight: "500",
   },
   lastSyncLabel: {

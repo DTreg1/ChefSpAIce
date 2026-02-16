@@ -103,7 +103,7 @@ function FoodItemRow({
               <Feather
                 name={food.icon}
                 size={18}
-                color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                color={isSelected ? theme.buttonText : theme.textSecondary}
               />
             )}
           </View>
@@ -146,7 +146,7 @@ function FoodItemRow({
             ]}
           >
             {isSelected ? (
-              <Feather name="check" size={14} color="#FFFFFF" />
+              <Feather name="check" size={14} color={theme.buttonText} />
             ) : null}
           </View>
         </View>

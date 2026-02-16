@@ -73,7 +73,7 @@ export function HeaderMenu({
           accessibilityLabel="Close options menu"
           accessibilityRole="button"
         >
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: themeStyle.glass.backgroundSubtle }]}>
             <TouchableWithoutFeedback>
               <View
                 ref={containerRef}
@@ -82,6 +82,7 @@ export function HeaderMenu({
                   {
                     backgroundColor: theme.backgroundSecondary,
                     borderColor: themeStyle.glass.border,
+                    shadowColor: themeStyle.glass.shadowColor,
                   },
                 ]}
                 accessibilityRole="menu"
@@ -168,7 +169,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "flex-start",
     alignItems: "flex-end",
     paddingTop: 60,
@@ -178,7 +178,6 @@ const styles = StyleSheet.create({
     minWidth: 180,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,

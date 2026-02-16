@@ -90,7 +90,7 @@ export function ChatMessageItem({
       ]}
       accessibilityRole="text"
     >
-      <ThemedText type="small" style={{ color: "#FFFFFF" }}>
+      <ThemedText type="small" style={{ color: themeStyle.button.primaryText }}>
         {item.content}
       </ThemedText>
     </GlassView>

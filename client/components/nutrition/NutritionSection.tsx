@@ -17,7 +17,8 @@ import {
 } from "./NutritionScoreBadge";
 import { NutritionCorrectionModal } from "./NutritionCorrectionModal";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 import type { NutritionFacts } from "@shared/schema";
 
 interface NutritionSectionProps {
@@ -74,7 +75,7 @@ export function NutritionSection({
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
-    expandProgress.value = withTiming(newExpanded ? 1 : 0, { duration: 300 });
+    expandProgress.value = withTiming(newExpanded ? 1 : 0, { duration: AnimationDurations.moderate });
   };
 
   const chevronStyle = useAnimatedStyle(() => ({
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
   },
   collapsedServingContext: {
     opacity: 0.5,
-    fontSize: 11,
+    fontSize: Typography.tiny.fontSize,
   },
   expandedContent: {
     overflow: "hidden",
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
   },
   attributionText: {
     opacity: 0.5,
-    fontSize: 11,
+    fontSize: Typography.tiny.fontSize,
   },
   reportIssueButton: {
     flexDirection: "row",

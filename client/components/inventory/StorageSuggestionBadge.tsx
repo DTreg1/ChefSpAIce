@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemedText } from "@/components/ThemedText";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 import type { StorageLocation } from "@/lib/shelf-life-data";
 
 interface StorageSuggestionBadgeProps {
@@ -109,7 +110,7 @@ function LocationChip({
 
   useEffect(() => {
     selectionProgress.value = withTiming(isSelected ? 1 : 0, {
-      duration: 200,
+      duration: AnimationDurations.fast,
       easing: Easing.bezier(0.4, 0, 0.2, 1),
     });
   }, [isSelected]);
@@ -164,6 +165,7 @@ function LocationChip({
         <View
           style={[
             styles.iconContainer,
+            { backgroundColor: themeStyle.surface.feedbackBg },
             isSelected && styles.iconContainerSelected,
           ]}
         >
@@ -389,7 +391,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.05)",
   },
   iconContainerSelected: {
     backgroundColor: "rgba(255,255,255,0.2)",

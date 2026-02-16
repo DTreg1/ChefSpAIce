@@ -15,7 +15,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { syncManager } from "@/lib/sync-manager";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Typography } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 const DISMISS_REAPPEAR_MS = 60_000;
 
@@ -54,10 +55,10 @@ export function OfflineIndicator() {
   useEffect(() => {
     if (shouldShow) {
       translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
-      opacity.value = withTiming(1, { duration: 250 });
+      opacity.value = withTiming(1, { duration: AnimationDurations.normal });
     } else {
       translateY.value = withSpring(-100, { damping: 20, stiffness: 300 });
-      opacity.value = withTiming(0, { duration: 200 });
+      opacity.value = withTiming(0, { duration: AnimationDurations.fast });
     }
   }, [shouldShow, translateY, opacity]);
 
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   text: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     fontWeight: "500",
     flex: 1,
   },
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
   },
   dismissText: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     fontWeight: "600",
     opacity: 0.85,
   },

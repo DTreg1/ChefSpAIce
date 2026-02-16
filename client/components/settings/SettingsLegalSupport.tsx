@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { AppUrls } from "@/constants/urls";
 import { useTheme } from "@/hooks/useTheme";
 import type { ProfileNavigation, ThemeColors } from "@/lib/types";
 
@@ -67,7 +68,7 @@ export function SettingsLegalSupport({
 
       <Pressable
         style={[styles.legalMenuItem, { borderColor: themeStyle.glass.border }]}
-        onPress={() => Linking.openURL("https://chefspaice.com/support")}
+        onPress={() => Linking.openURL(AppUrls.support)}
         testID="button-support"
         accessibilityRole="button"
         accessibilityLabel="Open help and support"

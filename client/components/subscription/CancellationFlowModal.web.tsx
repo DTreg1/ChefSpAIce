@@ -552,9 +552,9 @@ export function CancellationFlowModal({
         accessibilityState={{ disabled: isSubmitting }}
       >
         {isSubmitting ? (
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={theme.buttonText} size="small" />
         ) : (
-          <ThemedText type="button" style={{ color: "#fff" }}>
+          <ThemedText type="button" style={{ color: theme.buttonText }}>
             Cancel Subscription
           </ThemedText>
         )}
@@ -564,7 +564,7 @@ export function CancellationFlowModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" accessibilityViewIsModal={true}>
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: themeStyle.surface.overlayStrong }]}>
         <BlurView
           ref={containerRef}
           onAccessibilityEscape={onAccessibilityEscape}
@@ -604,7 +604,6 @@ export function CancellationFlowModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.lg,

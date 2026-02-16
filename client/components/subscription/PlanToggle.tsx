@@ -4,6 +4,7 @@ import { View, Pressable, StyleSheet, Platform } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, AppColors } from "@/constants/theme";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
+import { useTheme } from "@/hooks/useTheme";
 
 interface PlanToggleProps {
   selectedPlan: "monthly" | "annual";
@@ -16,6 +17,7 @@ export function PlanToggle({
   onSelectPlan,
   testIdPrefix = "",
 }: PlanToggleProps) {
+  const { theme, style: themeStyle } = useTheme();
   const monthlyTestId = testIdPrefix
     ? `button-${testIdPrefix}-billing-monthly`
     : "button-billing-monthly";
@@ -24,7 +26,7 @@ export function PlanToggle({
     : "button-billing-annual";
 
   return (
-    <View style={styles.billingToggleContainer}>
+    <View style={[styles.billingToggleContainer, { backgroundColor: themeStyle.surface.feedbackBg }]}>
       <Pressable
         style={[
           styles.billingToggleButton,
@@ -40,7 +42,7 @@ export function PlanToggle({
         <ThemedText
           style={[
             styles.billingToggleText,
-            selectedPlan === "monthly" && styles.billingToggleTextActive,
+            selectedPlan === "monthly" && { color: theme.buttonText },
           ]}
         >
           Monthly
@@ -61,13 +63,13 @@ export function PlanToggle({
         <ThemedText
           style={[
             styles.billingToggleText,
-            selectedPlan === "annual" && styles.billingToggleTextActive,
+            selectedPlan === "annual" && { color: theme.buttonText },
           ]}
         >
           Annual
         </ThemedText>
         <View style={styles.saveBadge}>
-          <ThemedText style={styles.saveBadgeText}>
+          <ThemedText style={[styles.saveBadgeText, { color: theme.buttonText }]}>
             {Platform.OS === "web" ? "Save 17%" : "Best Value"}
           </ThemedText>
         </View>
@@ -82,7 +84,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.md,
-    backgroundColor: "rgba(0,0,0,0.05)",
     borderRadius: 24,
     padding: 4,
   },
@@ -100,11 +101,9 @@ const styles = StyleSheet.create({
   billingToggleText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#666",
+    color: AppColors.textSecondary,
   },
-  billingToggleTextActive: {
-    color: "#FFFFFF",
-  },
+  billingToggleTextActive: {},
   saveBadge: {
     backgroundColor: "rgba(255,255,255,0.25)",
     paddingHorizontal: 6,
@@ -114,6 +113,5 @@ const styles = StyleSheet.create({
   saveBadgeText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
 });

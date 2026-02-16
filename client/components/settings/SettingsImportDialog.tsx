@@ -26,7 +26,7 @@ export function SettingsImportDialog({
   }
 
   return (
-    <View style={styles.modalOverlay}>
+    <View style={[styles.modalOverlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}>
       <View style={[styles.modalContent, { backgroundColor: theme.backgroundRoot }]}>
         <View style={styles.modalHeader}>
           <Feather name="alert-circle" size={24} color={AppColors.primary} />
@@ -93,7 +93,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,

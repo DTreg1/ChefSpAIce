@@ -93,13 +93,13 @@ export function RecipeInstructions({
                     ]}
                   >
                     {isPastStep ? (
-                      <Feather name="check" size={14} color="#FFFFFF" />
+                      <Feather name="check" size={14} color={theme.buttonText} />
                     ) : (
                       <ThemedText
                         type="small"
                         style={[
                           styles.stepNumberText,
-                          { color: isCurrentStep ? "#FFFFFF" : theme.text },
+                          { color: isCurrentStep ? theme.buttonText : theme.text },
                         ]}
                       >
                         {index + 1}

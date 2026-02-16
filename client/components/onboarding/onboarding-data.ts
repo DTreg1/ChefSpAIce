@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { NutritionInfo } from "@/lib/storage";
 import { WithSpringConfig } from "react-native-reanimated";
+import { AppColors } from "@/constants/theme";
 
 export interface Appliance {
   id: number;
@@ -410,10 +411,10 @@ export const STORAGE_LABELS: Record<
   string,
   { label: string; color: string; icon: keyof typeof Feather.glyphMap }
 > = {
-  fridge: { label: "Fridge", color: "#3B82F6", icon: "box" },
-  freezer: { label: "Freezer", color: "#8B5CF6", icon: "thermometer" },
-  pantry: { label: "Pantry", color: "#F59E0B", icon: "archive" },
-  counter: { label: "Counter", color: "#10B981", icon: "grid" },
+  fridge: { label: "Fridge", color: AppColors.storageFridge, icon: "box" },
+  freezer: { label: "Freezer", color: AppColors.storageFreezer, icon: "thermometer" },
+  pantry: { label: "Pantry", color: AppColors.storagePantry, icon: "archive" },
+  counter: { label: "Counter", color: AppColors.storageCounter, icon: "grid" },
 };
 
 export const EQUIPMENT_CATEGORIES = [

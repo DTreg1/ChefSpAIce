@@ -165,12 +165,12 @@ export function IngredientSwapModal({
                 <Feather
                   name={filter.icon as keyof typeof Feather.glyphMap}
                   size={14}
-                  color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                  color={isSelected ? theme.buttonText : theme.textSecondary}
                 />
                 <ThemedText
                   type="caption"
                   style={{
-                    color: isSelected ? "#FFFFFF" : theme.text,
+                    color: isSelected ? theme.buttonText : theme.text,
                     marginLeft: Spacing.xs,
                   }}
                 >
@@ -318,7 +318,7 @@ export function IngredientSwapModal({
       onRequestClose={onClose}
       accessibilityViewIsModal={true}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close swap modal" accessibilityRole="button" />
         <Animated.View
           entering={FadeIn.duration(200)}
@@ -362,7 +362,6 @@ export function IngredientSwapModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.lg,

@@ -26,7 +26,7 @@ export function UpgradePrompt({
   onUpgrade,
   onDismiss,
 }: UpgradePromptProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   const isLimit = type === "limit";
   const iconName = isLimit ? "alert-circle" : "lock";
@@ -40,7 +40,7 @@ export function UpgradePrompt({
   const priceInfo = `$${annualMonthly}/mo (billed annually at $${ANNUAL_PRICE.toFixed(2)}/yr) or $${MONTHLY_PRICE.toFixed(2)}/mo`;
 
   return (
-    <View style={styles.overlay} testID="upgrade-prompt-overlay">
+    <View style={[styles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]} testID="upgrade-prompt-overlay">
       <GlassCard style={styles.card} testID="upgrade-prompt-card">
         <Pressable
           style={styles.closeButton}
@@ -129,7 +129,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     zIndex: 1000,
     padding: Spacing.lg,
   },

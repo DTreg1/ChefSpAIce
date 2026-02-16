@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 
 type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
@@ -77,7 +77,7 @@ export function EmptyState({
           accessibilityState={{ disabled: actionDisabled }}
           testID="button-empty-state-action"
         >
-          <ThemedText type="button" style={styles.actionButtonText}>
+          <ThemedText type="button" style={[styles.actionButtonText, { color: theme.buttonText }]}>
             {actionLabel}
           </ThemedText>
         </Pressable>
@@ -104,13 +104,13 @@ const styles = StyleSheet.create({
   title: {
     marginTop: Spacing.lg,
     textAlign: "center",
-    fontSize: 18,
+    fontSize: Typography.h4.fontSize,
     fontWeight: "bold",
   },
   description: {
     marginTop: Spacing.sm,
     textAlign: "center",
-    fontSize: 14,
+    fontSize: Typography.small.fontSize,
   },
   actionButton: {
     flexDirection: "row",
@@ -122,7 +122,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   actionButtonText: {
-    color: "#FFFFFF",
     fontWeight: "600",
   },
 });

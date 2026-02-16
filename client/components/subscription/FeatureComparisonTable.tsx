@@ -27,7 +27,7 @@ interface FeatureComparisonTableProps {
 export function FeatureComparisonTable({
   features,
 }: FeatureComparisonTableProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <GlassCard style={styles.featuresCard}>
@@ -52,6 +52,7 @@ export function FeatureComparisonTable({
           key={feature.key}
           style={[
             styles.featureRow,
+            { borderBottomColor: themeStyle.glass.borderSubtle },
             index === features.length - 1 && styles.featureRowLast,
           ]}
         >
@@ -94,7 +95,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0,0,0,0.05)",
     marginHorizontal: -Spacing.sm,
     paddingHorizontal: Spacing.sm,
     borderRadius: BorderRadius.sm,

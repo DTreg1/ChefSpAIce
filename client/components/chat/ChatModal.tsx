@@ -30,7 +30,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 import type { ChatMessage } from "@/lib/storage";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useChatMessages } from "@/hooks/useChatMessages";
@@ -97,15 +98,15 @@ export function ChatModal() {
     if (voiceChat.isListening) {
       pulseAnimation.value = withRepeat(
         withSequence(
-          withTiming(1.2, { duration: 600 }),
-          withTiming(1, { duration: 600 })
+          withTiming(1.2, { duration: AnimationDurations.pulseWide }),
+          withTiming(1, { duration: AnimationDurations.pulseWide })
         ),
         -1,
         false
       );
     } else {
       cancelAnimation(pulseAnimation);
-      pulseAnimation.value = withTiming(1, { duration: 200 });
+      pulseAnimation.value = withTiming(1, { duration: AnimationDurations.fast });
     }
   }, [voiceChat.isListening]);
 
@@ -215,7 +216,7 @@ export function ChatModal() {
 
   const chatContent = (
     <>
-      <GlassView style={[styles.header, { backgroundColor: themeStyle.surface.modalHeader }]}>
+      <GlassView style={[styles.header, { backgroundColor: themeStyle.surface.modalHeader, borderBottomColor: themeStyle.glass.borderSubtle }]}>
         <GlassView style={styles.headerLeft}>
           <Image
             source={chefHatDark}
@@ -364,12 +365,12 @@ export function ChatModal() {
             accessibilityState={{ disabled: !inputText.trim() || sending }}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={theme.buttonText} />
             ) : (
               <Feather
                 name="send"
                 size={14}
-                color={inputText.trim() ? "#FFFFFF" : theme.textSecondary}
+                color={inputText.trim() ? theme.buttonText : theme.textSecondary}
               />
             )}
           </Pressable>
@@ -384,9 +385,8 @@ export function ChatModal() {
         style={[
           {
             ...styles.backdrop,
-            backgroundColor: AppColors.background,
+            backgroundColor: themeStyle.glass.backgroundSubtle,
           },
-          { opacity: 0.3 },
           { pointerEvents: isChatOpen ? "auto" : "none" },
         ]}
       >
@@ -404,6 +404,7 @@ export function ChatModal() {
             bottom: bottomPosition,
             right: Spacing.lg,
             borderRadius: BorderRadius.xl,
+            shadowColor: themeStyle.glass.shadowColor,
           },
           containerStyle,
         ]}
@@ -440,7 +441,6 @@ export function ChatModal() {
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000",
     zIndex: 1050,
   },
   chatContainer: {
@@ -451,7 +451,6 @@ const styles = StyleSheet.create({
         boxShadow: "0px 8px 8px rgba(0, 0, 0, 0.2)",
       },
       ios: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
         shadowRadius: 16,
@@ -477,7 +476,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.1)",
   },
   headerLeft: {
     flexDirection: "row",
@@ -485,7 +483,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: Typography.h4.fontSize,
   },
   headerRight: {
     flexDirection: "row",
@@ -519,7 +517,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 13,
+    fontSize: Typography.caption.fontSize,
     minHeight: 44,
     maxHeight: 80,
     paddingHorizontal: Spacing.sm,

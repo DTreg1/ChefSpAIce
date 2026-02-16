@@ -12,6 +12,7 @@ import Animated, {
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { AppColors, BorderRadius, Spacing } from "@/constants/theme";
+import { AnimationDurations } from "@/constants/animations";
 
 type BadgeSize = "small" | "medium" | "large";
 
@@ -108,16 +109,16 @@ export function ExpiryBadge({
     if (isUrgent && !reduceMotion) {
       pulseScale.value = withRepeat(
         withSequence(
-          withTiming(1.05, { duration: 600 }),
-          withTiming(1, { duration: 600 }),
+          withTiming(1.05, { duration: AnimationDurations.pulseWide }),
+          withTiming(1, { duration: AnimationDurations.pulseWide }),
         ),
         -1,
         true,
       );
       pulseOpacity.value = withRepeat(
         withSequence(
-          withTiming(0.85, { duration: 600 }),
-          withTiming(1, { duration: 600 }),
+          withTiming(0.85, { duration: AnimationDurations.pulseWide }),
+          withTiming(1, { duration: AnimationDurations.pulseWide }),
         ),
         -1,
         true,

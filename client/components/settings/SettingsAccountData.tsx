@@ -12,6 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import { AnimationDelays } from "@/constants/animations";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
@@ -74,7 +75,7 @@ export function SettingsAccountData({
 
   const handleDeletionOption = (callback: () => void) => {
     onDeletionLevelsClose();
-    setTimeout(() => callback(), 300);
+    setTimeout(() => callback(), AnimationDelays.dismissCallback);
   };
   return (
     <GlassCard style={styles.section}>
@@ -206,7 +207,7 @@ export function SettingsAccountData({
         onRequestClose={onDeletionLevelsClose}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.deleteModalOverlay} testID="modal-deletion-levels">
+        <View style={[styles.deleteModalOverlay, { backgroundColor: themeStyle.surface.overlayMedium }]} testID="modal-deletion-levels">
           <View ref={containerRef1} style={[styles.deleteModalContent, { backgroundColor: modalBg }]} onAccessibilityEscape={onAccessibilityEscape1}>
             <View ref={focusTargetRef1} style={[styles.warningBanner, { backgroundColor: `${theme.textSecondary}15`, marginBottom: Spacing.md }]}>
               <Feather name="sliders" size={24} color={theme.text} />
@@ -303,7 +304,7 @@ export function SettingsAccountData({
         onRequestClose={onCancelDelete}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.deleteModalOverlay}>
+        <View style={[styles.deleteModalOverlay, { backgroundColor: themeStyle.surface.overlayMedium }]}>
           <View ref={containerRef2} style={[styles.deleteModalContent, { backgroundColor: modalBg }]} onAccessibilityEscape={onAccessibilityEscape2}>
             <View ref={focusTargetRef2} style={[styles.warningBanner, { backgroundColor: `${AppColors.error}15` }]}>
               <Feather name="alert-triangle" size={24} color={AppColors.error} />
@@ -444,7 +445,6 @@ const styles = StyleSheet.create({
   },
   deleteModalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,

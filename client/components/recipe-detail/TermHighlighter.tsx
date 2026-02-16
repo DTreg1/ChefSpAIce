@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Text, StyleSheet } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "@/hooks/useTheme";
+import { Typography } from "@/constants/theme";
 
 export interface CookingTerm {
   id: number;
@@ -129,8 +130,8 @@ export function TermHighlighter({ text, onTermPress }: TermHighlighterProps) {
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: Typography.body.fontSize,
+    lineHeight: Typography.body.lineHeight,
   },
   term: {
     textDecorationLine: "underline",

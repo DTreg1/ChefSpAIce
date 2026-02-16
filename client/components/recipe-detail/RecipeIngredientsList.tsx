@@ -213,7 +213,7 @@ export function RecipeIngredientsList({
               disabled={instacartLoading}
               style={styles.instacartButton}
               icon={
-                <Feather name="shopping-bag" size={18} color="#FFFFFF" />
+                <Feather name="shopping-bag" size={18} color={theme.buttonText} />
               }
               testID="button-order-instacart-recipe"
               accessibilityLabel={instacartLoading ? "Creating Instacart link" : "Order missing ingredients on Instacart"}
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   instacartButton: {
     flex: 1,
-    backgroundColor: "#43B02A",
+    backgroundColor: AppColors.instacartGreen,
   },
   servingsStepper: {
     flexDirection: "row",

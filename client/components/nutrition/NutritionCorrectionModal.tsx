@@ -230,7 +230,7 @@ export function NutritionCorrectionModal({
                     { backgroundColor: AppColors.success },
                   ]}
                 >
-                  <Feather name="check" size={32} color="#FFFFFF" />
+                  <Feather name="check" size={32} color={theme.buttonText} />
                 </View>
                 <ThemedText type="h4" style={styles.successTitle}>
                   Thank You!
@@ -280,13 +280,13 @@ export function NutritionCorrectionModal({
                       accessibilityLabel="Food image for nutrition analysis"
                     />
                     <Pressable
-                      style={styles.removeImageButton}
+                      style={[styles.removeImageButton, { backgroundColor: themeStyle.surface.overlayMedium }]}
                       onPress={handleRemoveImage}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       accessibilityRole="button"
                       accessibilityLabel="Remove uploaded image"
                     >
-                      <Feather name="x" size={16} color="#FFFFFF" />
+                      <Feather name="x" size={16} color={theme.buttonText} />
                     </Pressable>
                   </View>
                 ) : cameraPermissionDenied ? (
@@ -394,9 +394,9 @@ export function NutritionCorrectionModal({
                   style={styles.submitButton}
                 >
                   {submitting ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <ActivityIndicator color={theme.buttonText} size="small" />
                   ) : (
-                    <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                    <ThemedText style={{ color: theme.buttonText, fontWeight: "600" }}>
                       Submit Correction
                     </ThemedText>
                   )}
@@ -503,7 +503,6 @@ const styles = StyleSheet.create({
     height: 28,
     minHeight: 44,
     borderRadius: 14,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "center",
     alignItems: "center",
   },

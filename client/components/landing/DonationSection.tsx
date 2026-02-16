@@ -9,6 +9,7 @@ import { sharedStyles, getLandingTextStyles } from "./shared-styles";
 import { logger } from "@/lib/logger";
 import { apiClient } from "@/lib/api-client";
 import { useTheme } from "@/hooks/useTheme";
+import { AppUrls } from "@/constants/urls";
 
 const isWeb = Platform.OS === "web";
 
@@ -29,7 +30,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
     try {
       const redirectBaseUrl = isWeb
         ? window.location.origin
-        : "https://chefspaice.com";
+        : AppUrls.website;
 
       const data = await apiClient.post<{ url?: string; error?: string }>("/api/donations/create-checkout-session", {
         amount,

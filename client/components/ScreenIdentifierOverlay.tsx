@@ -15,6 +15,7 @@ import { syncManager } from "@/lib/sync-manager";
 import { queryClient } from "@/lib/query-client";
 import { apiClient } from "@/lib/api-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AnimationDelays } from "@/constants/animations";
 
 interface ScreenIdentifierOverlayProps {
   screenName: string | undefined;
@@ -39,7 +40,7 @@ export function ScreenIdentifierOverlay({
         await Clipboard.setStringAsync(screenName);
       }
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), AnimationDelays.copiedReset);
     } catch (error) {
       logger.error("Failed to copy screen name:", error);
     }

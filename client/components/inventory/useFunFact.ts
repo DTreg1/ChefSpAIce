@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiClient } from "@/lib/api-client";
 import type { FoodItem } from "@/lib/storage";
 import { logger } from "@/lib/logger";
+import { AnimationDelays } from "@/constants/animations";
 
 const FUN_FACT_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -95,7 +96,7 @@ export function useFunFact(items: FoodItem[], nutritionTotals: NutritionTotals) 
     };
 
     updateTimeRemaining();
-    const interval = setInterval(updateTimeRemaining, 60000);
+    const interval = setInterval(updateTimeRemaining, AnimationDelays.funFactInterval);
     return () => clearInterval(interval);
   }, [funFactTimestamp]);
 
