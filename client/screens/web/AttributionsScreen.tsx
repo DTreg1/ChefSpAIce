@@ -10,9 +10,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigation } from "@react-navigation/native";
-import { webClickable } from "@/lib/types";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import { webSharedStyles, WebTypography } from "./sharedStyles";
 
-const BRAND_GREEN = "#1a2e05";
 const isWeb = Platform.OS === "web";
 
 function useNavigationSafe() {
@@ -76,8 +76,8 @@ export default function AttributionsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: themeStyle.webPage.background }]}
-      contentContainerStyle={styles.contentContainer}
+      style={[webSharedStyles.container, { backgroundColor: themeStyle.webPage.background }]}
+      contentContainerStyle={webSharedStyles.contentContainer}
     >
       <LinearGradient
         colors={[themeStyle.webPage.background, themeStyle.webPage.backgroundGradient]}
@@ -85,21 +85,21 @@ export default function AttributionsScreen() {
       />
 
       {isWeb && (
-        <View style={styles.header}>
-          <Pressable style={styles.logoContainer} onPress={handleGoHome} accessibilityRole="link" accessibilityLabel="Go to home page">
+        <View style={webSharedStyles.headerRow}>
+          <Pressable style={webSharedStyles.logoContainerNoMargin} onPress={handleGoHome} accessibilityRole="link" accessibilityLabel="Go to home page">
             <MaterialCommunityIcons
               name="chef-hat"
               size={32}
-              color={BRAND_GREEN}
+              color={themeStyle.webInfo.brandGreen}
             />
-            <Text style={[styles.logoText, { color: themeStyle.webPage.textPrimary }]}>
+            <Text style={[WebTypography.logoText, { color: themeStyle.webPage.textPrimary }]}>
               ChefSpAIce
             </Text>
           </Pressable>
           <Pressable
             onPress={toggleTheme}
             style={[
-              styles.themeToggle,
+              webSharedStyles.themeToggle,
               {
                 backgroundColor: themeStyle.webPage.toggleBg,
               },
@@ -113,10 +113,10 @@ export default function AttributionsScreen() {
       )}
 
       <View style={styles.content}>
-        <Text style={[styles.title, { color: themeStyle.webPage.textPrimary }]}>
+        <Text style={[WebTypography.pageTitle, { color: themeStyle.webPage.textPrimary, marginBottom: Spacing.lg }]}>
           Attributions
         </Text>
-        <Text style={[styles.subtitle, { color: themeStyle.webPage.textSecondary }]}>
+        <Text style={[WebTypography.subtitle, { color: themeStyle.webPage.textSecondary }]}>
           ChefSpAIce is built with the help of these amazing open-source
           projects and services.
         </Text>
@@ -125,19 +125,19 @@ export default function AttributionsScreen() {
           <View
             key={index}
             style={[
-              styles.card,
+              styles.attributionCard,
               { backgroundColor: themeStyle.webPage.card, borderColor: themeStyle.webPage.cardBorder },
             ]}
           >
-            <Text style={[styles.itemName, { color: themeStyle.webPage.textPrimary }]}>
+            <Text style={[WebTypography.itemName, { color: themeStyle.webPage.textPrimary }]}>
               {item.name}
             </Text>
             <Text
-              style={[styles.itemDescription, { color: themeStyle.webPage.textSecondary }]}
+              style={[WebTypography.itemDescription, { color: themeStyle.webPage.textSecondary }]}
             >
               {item.description}
             </Text>
-            <Text style={[styles.itemUrl, { color: BRAND_GREEN }]}>
+            <Text style={[WebTypography.itemUrl, { color: themeStyle.webInfo.brandGreen }]}>
               {item.url}
             </Text>
           </View>
@@ -145,31 +145,31 @@ export default function AttributionsScreen() {
 
         <View
           style={[
-            styles.card,
+            styles.attributionCard,
             { backgroundColor: themeStyle.webPage.card, borderColor: themeStyle.webPage.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: themeStyle.webPage.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: themeStyle.webPage.textPrimary }]}>
             Special Thanks
           </Text>
-          <Text style={[styles.paragraph, { color: themeStyle.webPage.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: themeStyle.webPage.textSecondary }]}>
             Thank you to the open-source community for making projects like
             ChefSpAIce possible. Your contributions to libraries, frameworks,
             and tools help developers build better software every day.
           </Text>
         </View>
 
-        <Pressable style={styles.backButton} onPress={handleGoHome} accessibilityRole="link" accessibilityLabel="Back to home">
+        <Pressable style={[styles.backButton, { backgroundColor: themeStyle.webInfo.brandGreen }]} onPress={handleGoHome} accessibilityRole="link" accessibilityLabel="Back to home">
           <Feather name="arrow-left" size={20} color="#FFFFFF" />
-          <Text style={styles.backButtonText}>
+          <Text style={WebTypography.backButtonText}>
             {isWeb ? "Back to Home" : "Go Back"}
           </Text>
         </Pressable>
       </View>
 
       {isWeb && (
-        <View style={[styles.footer, { backgroundColor: themeStyle.webPage.footerBg }]}>
-          <Text style={[styles.copyright, { color: themeStyle.webPage.textMuted }]}>
+        <View style={[webSharedStyles.footer, { backgroundColor: themeStyle.webPage.footerBg }]}>
+          <Text style={[WebTypography.copyright, { color: themeStyle.webPage.textMuted }]}>
             © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
           </Text>
         </View>
@@ -179,56 +179,28 @@ export default function AttributionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  contentContainer: { minHeight: "100%" },
-  header: {
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    ...webClickable,
-  },
-  logoText: { fontSize: 24, fontWeight: "700" },
-  themeToggle: { padding: 10, borderRadius: 10 },
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.xl,
     paddingVertical: 60,
     maxWidth: 800,
     alignSelf: "center",
     width: "100%",
   },
-  title: {
-    fontSize: 42,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 16,
+  attributionCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
   },
-  subtitle: { fontSize: 18, textAlign: "center", marginBottom: 40 },
-  card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 16 },
-  itemName: { fontSize: 20, fontWeight: "600", marginBottom: 4 },
-  itemDescription: { fontSize: 15, marginBottom: 8 },
-  itemUrl: { fontSize: 14 },
-  sectionTitle: { fontSize: 22, fontWeight: "600", marginBottom: 12 },
-  paragraph: { fontSize: 16, lineHeight: 26 },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    backgroundColor: BRAND_GREEN,
+    gap: Spacing.sm,
     paddingVertical: 14,
     paddingHorizontal: 28,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     alignSelf: "center",
-    marginTop: 20,
+    marginTop: Spacing.xl,
   },
-  backButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
-  footer: { paddingVertical: 32, paddingHorizontal: 24, alignItems: "center" },
-  copyright: { fontSize: 12 },
 });

@@ -118,7 +118,7 @@ export default function CookingTermsScreen() {
         >
           <ThemedText
             type="small"
-            style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+            style={{ color: isSelected ? theme.buttonText : theme.text }}
           >
             {item.label}
           </ThemedText>
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   difficultyDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
   },
   emptyState: {
     flex: 1,

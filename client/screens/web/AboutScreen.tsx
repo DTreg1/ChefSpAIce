@@ -1,5 +1,4 @@
 import {
-  StyleSheet,
   View,
   Text,
   ScrollView,
@@ -10,17 +9,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GradientBackground } from "@/components/GradientBackground.web";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "@/lib/web-router";
-import { webClickable } from "@/lib/types";
+import { Spacing } from "@/constants/theme";
+import { webSharedStyles, WebTypography, NAV_LINKS } from "./sharedStyles";
 
 const isWeb = Platform.OS === "web";
-
-const NAV_LINKS = [
-  { label: "Home", path: "/" },
-  { label: "About", path: "/about" },
-  { label: "Privacy", path: "/privacy" },
-  { label: "Terms", path: "/terms" },
-  { label: "Support", path: "/support" },
-];
 
 export default function AboutScreen() {
   const { style } = useTheme();
@@ -30,15 +22,15 @@ export default function AboutScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      style={webSharedStyles.container}
+      contentContainerStyle={webSharedStyles.contentContainer}
     >
       <GradientBackground />
 
       {isWeb && (
-        <View style={styles.header} role="banner" accessibilityLabel="Site header">
+        <View style={webSharedStyles.header} role="banner" accessibilityLabel="Site header">
           <Pressable
-            style={styles.logoContainer}
+            style={webSharedStyles.logoContainer}
             onPress={() => navigate("/")}
             accessibilityRole="link"
             accessibilityLabel="Go to home page"
@@ -48,23 +40,23 @@ export default function AboutScreen() {
               size={32}
               color={colors.iconLight}
             />
-            <Text style={[styles.logoText, { color: colors.textPrimary }]}>
+            <Text style={[WebTypography.logoText, { color: colors.textPrimary }]}>
               ChefSpAIce
             </Text>
           </Pressable>
-          <View style={styles.navLinks} role="navigation" accessibilityLabel="Site navigation">
+          <View style={webSharedStyles.navLinks} role="navigation" accessibilityLabel="Site navigation">
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
                 onPress={() => navigate(link.path)}
-                style={styles.navLink}
+                style={webSharedStyles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
                 accessibilityRole="link"
                 accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
                   style={[
-                    styles.navLinkText,
+                    WebTypography.navLinkText,
                     {
                       color:
                         currentPath === link.path
@@ -81,21 +73,21 @@ export default function AboutScreen() {
         </View>
       )}
 
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+      <View style={webSharedStyles.content}>
+        <Text style={[WebTypography.pageTitle, { color: colors.textPrimary, marginBottom: Spacing["3xl"] }]}>
           About ChefSpAIce
         </Text>
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             The Mission
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce was born from a personal frustration: I was wasting food
             because it would expire before I could use it. I wanted to stop
             throwing away good ingredients and instead find creative ways to
@@ -107,14 +99,14 @@ export default function AboutScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             What ChefSpAIce Does
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce combines barcode scanning, expiration tracking, and
             AI-powered recipe generation to help you make the most of every
             ingredient. The app learns your preferences and suggests recipes
@@ -125,14 +117,14 @@ export default function AboutScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             About the Founder
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             I studied Architectural Technology and Construction Management,
             driven by a passion for creating buildings. That love for
             construction evolved into a passion for building something else —
@@ -143,8 +135,8 @@ export default function AboutScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 16 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.lg },
             ]}
           >
             From there, I moved to Houston, TX to support a Microchip Processing
@@ -154,8 +146,8 @@ export default function AboutScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 16 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.lg },
             ]}
           >
             I like to set lofty goals, like building an entire app from nothing.
@@ -168,14 +160,14 @@ export default function AboutScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             The Vision
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             I want to share this project with others who face the same problem.
             My goal is to work together with users to make ChefSpAIce the kind
             of app that helps you delete other apps — because this one has all
@@ -187,14 +179,14 @@ export default function AboutScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             Environmental Impact
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             Food waste is one of the largest contributors to greenhouse gas
             emissions. By helping reduce food waste, ChefSpAIce contributes to a
             more sustainable future. Every item saved from the trash is a small
@@ -204,8 +196,8 @@ export default function AboutScreen() {
       </View>
 
       {isWeb && (
-        <View style={[styles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
-          <Text style={[styles.copyright, { color: colors.textMuted }]}>
+        <View style={[webSharedStyles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
+          <Text style={[WebTypography.copyright, { color: colors.textMuted }]}>
             © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
           </Text>
         </View>
@@ -213,50 +205,3 @@ export default function AboutScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  contentContainer: { minHeight: "100%" },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 12,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    ...webClickable,
-    marginBottom: 16,
-  },
-  logoText: { fontSize: 24, fontWeight: "700" },
-  navLinks: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-  navLink: { ...webClickable },
-  navLinkText: { fontSize: 14, fontWeight: "500" },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 60,
-    maxWidth: 800,
-    alignSelf: "center",
-    width: "100%",
-  },
-  title: {
-    fontSize: 42,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 40,
-  },
-  card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 24 },
-  sectionTitle: { fontSize: 22, fontWeight: "600", marginBottom: 12 },
-  paragraph: { fontSize: 16, lineHeight: 26 },
-  footer: { paddingVertical: 32, paddingHorizontal: 24, alignItems: "center" },
-  copyright: { fontSize: 12 },
-});

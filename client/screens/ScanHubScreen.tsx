@@ -18,7 +18,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import type { RootNavigation } from "@/lib/types";
 
 type ScanOption = {
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 56,
     height: 56,
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   optionDescription: {
     opacity: 0.6,
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: Typography.micro.lineHeight,
     marginTop: 2,
   },
   optionCardLocked: {
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.warning,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
   },
   proBadgeText: {
     color: "#FFFFFF",

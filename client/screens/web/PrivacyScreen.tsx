@@ -1,5 +1,4 @@
 import {
-  StyleSheet,
   View,
   Text,
   ScrollView,
@@ -10,18 +9,12 @@ import {
 import { GradientBackground } from "@/components/GradientBackground.web";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "@/lib/web-router";
-import { webClickable } from "@/lib/types";
+import { Spacing } from "@/constants/theme";
+import { AppUrls } from "@/constants/urls";
+import { webSharedStyles, WebTypography, NAV_LINKS } from "./sharedStyles";
 
 const isWeb = Platform.OS === "web";
 const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
-
-const NAV_LINKS = [
-  { label: "Home", path: "/" },
-  { label: "About", path: "/about" },
-  { label: "Privacy", path: "/privacy" },
-  { label: "Terms", path: "/terms" },
-  { label: "Support", path: "/support" },
-];
 
 export default function PrivacyScreen() {
   const { style } = useTheme();
@@ -31,15 +24,15 @@ export default function PrivacyScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      style={webSharedStyles.container}
+      contentContainerStyle={webSharedStyles.contentContainer}
     >
       <GradientBackground />
 
       {isWeb && (
-        <View style={styles.header} role="banner" accessibilityLabel="Site header">
+        <View style={webSharedStyles.header} role="banner" accessibilityLabel="Site header">
           <Pressable
-            style={styles.logoContainer}
+            style={webSharedStyles.logoContainer}
             onPress={() => navigate("/")}
             accessibilityRole="link"
             accessibilityLabel="Go to home page"
@@ -51,23 +44,23 @@ export default function PrivacyScreen() {
               accessibilityElementsHidden={true}
               importantForAccessibility="no-hide-descendants"
             />
-            <Text style={[styles.logoText, { color: colors.textPrimary }]}>
+            <Text style={[WebTypography.logoText, { color: colors.textPrimary }]}>
               ChefSpAIce
             </Text>
           </Pressable>
-          <View style={styles.navLinks} role="navigation" accessibilityLabel="Site navigation">
+          <View style={webSharedStyles.navLinks} role="navigation" accessibilityLabel="Site navigation">
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
                 onPress={() => navigate(link.path)}
-                style={styles.navLink}
+                style={webSharedStyles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
                 accessibilityRole="link"
                 accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
                   style={[
-                    styles.navLinkText,
+                    WebTypography.navLinkText,
                     {
                       color:
                         currentPath === link.path
@@ -84,24 +77,24 @@ export default function PrivacyScreen() {
         </View>
       )}
 
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+      <View style={webSharedStyles.content}>
+        <Text style={[WebTypography.pageTitle, { color: colors.textPrimary, marginBottom: Spacing.sm }]}>
           Privacy Policy
         </Text>
-        <Text style={[styles.lastUpdated, { color: colors.textMuted }]}>
+        <Text style={[WebTypography.lastUpdated, { color: colors.textMuted }]}>
           Last updated: February 2026
         </Text>
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             1. Information We Collect
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             We collect information you provide directly, including:{"\n\n"}-
             Account information (email, name) when you register{"\n"}- Food
             inventory data (items, quantities, expiration dates){"\n"}- Recipe
@@ -114,14 +107,14 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             2. How We Use Your Information
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             Your information is used to:{"\n\n"}- Track your food inventory and
             expiration dates{"\n"}- Generate personalized AI-powered recipe
             suggestions{"\n"}- Send notifications about expiring items{"\n"}-
@@ -132,14 +125,14 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             3. Data Storage & Security
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             Your data is stored securely using industry-standard encryption.
             Inventory data is stored locally on your device by default. If you
             create an account, data may be synced to our secure cloud servers
@@ -151,14 +144,14 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             4. Third-Party Services
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             We integrate with the following third-party services:{"\n\n"}-
             OpenAI: Powers our AI recipe generation. When you request a recipe,
             relevant inventory information is processed by OpenAI's API.{"\n"}-
@@ -172,33 +165,33 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             5. Your Rights
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             You have the right to:{"\n\n"}- Access your personal data{"\n"}-
             Correct inaccurate information{"\n"}- Delete your account and
             associated data{"\n"}- Export your data in a portable format{"\n"}-
             Opt out of non-essential communications{"\n\n"}
-            To exercise these rights, contact us at privacy@chefspaice.com or
+            To exercise these rights, contact us at {AppUrls.privacyEmail} or
             use the settings within the app.
           </Text>
         </View>
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             6. Nutrition Information Disclaimer
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             Nutrition data provided in ChefSpAIce is sourced from third-party
             databases (USDA, OpenFoodFacts) and AI-generated estimates. This
             information is for general informational purposes only and should
@@ -211,14 +204,14 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             7. Children's Privacy
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce is not intended for children under 13 years of age. We do
             not knowingly collect personal information from children under 13.
             If you believe we have collected information from a child under 13,
@@ -228,14 +221,14 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             8. Data Retention & Account Deletion
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             We retain your personal data only for as long as your account is
             active and as needed to provide you with our services. When you
             delete your account through the app settings, all associated data
@@ -255,14 +248,14 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             9. Changes to This Policy
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             We may update this Privacy Policy from time to time. We will notify
             you of any significant changes by posting the new policy on this
             page and updating the "Last updated" date. We encourage you to
@@ -272,25 +265,25 @@ export default function PrivacyScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             10. Contact Us
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             If you have questions about this Privacy Policy or our data
             practices, please contact us at:{"\n\n"}
-            Email: privacy@chefspaice.com{"\n"}
+            Email: {AppUrls.privacyEmail}{"\n"}
             Or visit our Support page for additional contact options.
           </Text>
         </View>
       </View>
 
       {isWeb && (
-        <View style={[styles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
-          <Text style={[styles.copyright, { color: colors.textMuted }]}>
+        <View style={[webSharedStyles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
+          <Text style={[WebTypography.copyright, { color: colors.textMuted }]}>
             © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
           </Text>
         </View>
@@ -298,51 +291,3 @@ export default function PrivacyScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  contentContainer: { minHeight: "100%" },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 12,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    ...webClickable,
-    marginBottom: 16,
-  },
-  logoText: { fontSize: 24, fontWeight: "700" },
-  navLinks: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-  navLink: { ...webClickable },
-  navLinkText: { fontSize: 14, fontWeight: "500" },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 60,
-    maxWidth: 800,
-    alignSelf: "center",
-    width: "100%",
-  },
-  title: {
-    fontSize: 42,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  lastUpdated: { fontSize: 14, textAlign: "center", marginBottom: 40 },
-  card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 24 },
-  sectionTitle: { fontSize: 22, fontWeight: "600", marginBottom: 12 },
-  paragraph: { fontSize: 16, lineHeight: 26 },
-  footer: { paddingVertical: 32, paddingHorizontal: 24, alignItems: "center" },
-  copyright: { fontSize: 12 },
-});

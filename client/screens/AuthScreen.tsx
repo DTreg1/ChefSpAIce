@@ -20,7 +20,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, Typography, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
@@ -267,7 +267,7 @@ export default function AuthScreen() {
     >
       <AnimatedBackground />
       <View style={styles.header}>
-        <ThemedText style={{ fontSize: 17, fontWeight: "600", textAlign: "center" }}>
+        <ThemedText style={{ ...Typography.body, fontWeight: "600", textAlign: "center" }}>
           {isSignUp ? "Sign Up" : "Sign In"}
         </ThemedText>
       </View>
@@ -297,7 +297,7 @@ export default function AuthScreen() {
                     { backgroundColor: AppColors.primary },
                   ]}
                 >
-                  <Feather name="zap" size={20} color="#FFFFFF" />
+                  <Feather name="zap" size={20} color={theme.buttonText} />
                 </View>
                 <View style={styles.trialTextContainer}>
                   <ThemedText style={styles.trialTitle}>
@@ -536,7 +536,7 @@ export default function AuthScreen() {
 
             {isSignUp && (
               <View style={{ paddingHorizontal: 4, marginTop: -4, marginBottom: 4 }}>
-                <ThemedText testID="text-password-requirements" style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 18 }}>
+                <ThemedText testID="text-password-requirements" style={{ fontSize: Typography.micro.fontSize, color: theme.textSecondary, lineHeight: Typography.caption.lineHeight }}>
                   Password must be at least 8 characters and contain an uppercase letter, lowercase letter, and number.
                 </ThemedText>
               </View>
@@ -592,7 +592,7 @@ export default function AuthScreen() {
             accessibilityState={{ disabled: authLoading }}
           >
             {authLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={theme.buttonText} />
             ) : (
               <ThemedText style={styles.authButtonText}>
                 {isSignUp ? "Create Account" : "Sign In"}
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     minHeight: 40,
-    borderRadius: 20,
+    borderRadius: BorderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   appIconContainer: {
     width: 80,
     height: 80,
-    borderRadius: 20,
+    borderRadius: BorderRadius.xl,
     overflow: "hidden",
     marginBottom: Spacing.md,
   },
@@ -731,13 +731,12 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   appName: {
-    fontSize: 28,
-    fontWeight: "700",
+    ...Typography.h1,
     textAlign: "center",
     marginBottom: Spacing.xs,
   },
   appTagline: {
-    fontSize: 14,
+    fontSize: Typography.small.fontSize,
     textAlign: "center",
   },
   featuresContainer: {
@@ -753,7 +752,7 @@ const styles = StyleSheet.create({
   featureIconContainer: {
     width: 32,
     minHeight: 32,
-    borderRadius: 8,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.sm,
@@ -762,12 +761,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 14,
+    ...Typography.small,
     fontWeight: "600",
     marginBottom: 2,
   },
   featureDescription: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
   },
   authSection: {
     marginTop: Spacing.md,
@@ -785,7 +784,7 @@ const styles = StyleSheet.create({
   trialIconContainer: {
     width: 44,
     minHeight: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius["2xl"],
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -794,12 +793,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   trialTitle: {
-    fontSize: 18,
+    ...Typography.h4,
     fontWeight: "700",
     marginBottom: 2,
   },
   trialSubtitle: {
-    fontSize: 13,
+    fontSize: Typography.caption.fontSize,
   },
   subscriptionPreview: {
     padding: Spacing.md,
@@ -808,7 +807,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   subscriptionPreviewTitle: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     textAlign: "center",
     marginBottom: Spacing.sm,
   },
@@ -822,12 +821,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   planPreviewName: {
-    fontSize: 14,
+    ...Typography.small,
     fontWeight: "600",
     marginBottom: 2,
   },
   planPreviewPrice: {
-    fontSize: 16,
+    ...Typography.button,
     fontWeight: "700",
   },
   planPreviewDivider: {
@@ -839,7 +838,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   featuresListTitle: {
-    fontSize: 14,
+    ...Typography.small,
     fontWeight: "600",
     marginBottom: Spacing.sm,
   },
@@ -855,10 +854,10 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   featureGridItemText: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
   },
   authTitle: {
-    fontSize: 20,
+    ...Typography.h3,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: Spacing.md,
@@ -872,7 +871,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   authErrorText: {
-    fontSize: 13,
+    fontSize: Typography.caption.fontSize,
     flex: 1,
   },
   authInputContainer: {
@@ -892,7 +891,7 @@ const styles = StyleSheet.create({
   },
   authInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     height: "100%",
   },
   authEyeButton: {
@@ -910,15 +909,14 @@ const styles = StyleSheet.create({
   },
   authButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+    ...Typography.button,
   },
   authSwitchButton: {
     alignItems: "center",
     paddingVertical: Spacing.sm,
   },
   authSwitchText: {
-    fontSize: 14,
+    fontSize: Typography.small.fontSize,
   },
   authDividerContainer: {
     flexDirection: "row",
@@ -931,7 +929,7 @@ const styles = StyleSheet.create({
   },
   authDividerText: {
     marginHorizontal: Spacing.md,
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
   },
   authSocialButtons: {
     gap: Spacing.sm,
@@ -947,7 +945,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   authSocialButtonText: {
-    fontSize: 14,
+    ...Typography.small,
     fontWeight: "500",
   },
   authGoogleIcon: {
@@ -959,7 +957,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   forgotPasswordText: {
-    fontSize: 14,
+    ...Typography.small,
     fontWeight: "500",
   },
   legalLinksContainer: {
@@ -968,9 +966,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   legalText: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: Typography.caption.lineHeight,
   },
   legalLinksRow: {
     flexDirection: "row",
@@ -980,11 +978,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   legalLink: {
-    fontSize: 12,
+    ...Typography.micro,
     fontWeight: "500",
     textDecorationLine: "underline" as const,
   },
   legalSeparator: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
   },
 });

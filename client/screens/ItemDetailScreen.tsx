@@ -471,14 +471,14 @@ export default function ItemDetailScreen() {
                   name={loc.icon as keyof typeof Feather.glyphMap}
                   size={24}
                   color={
-                    item.storageLocation === loc.key ? "#FFFFFF" : theme.text
+                    item.storageLocation === loc.key ? theme.buttonText : theme.text
                   }
                 />
                 <ThemedText
                   type="small"
                   style={{
                     color:
-                      item.storageLocation === loc.key ? "#FFFFFF" : theme.text,
+                      item.storageLocation === loc.key ? theme.buttonText : theme.text,
                     marginTop: Spacing.xs,
                   }}
                 >
@@ -589,7 +589,7 @@ export default function ItemDetailScreen() {
             accessibilityViewIsModal={true}
           >
             <Pressable
-              style={styles.datePickerOverlay}
+              style={[styles.datePickerOverlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
               onPress={handleDatePickerDone}
               accessibilityRole="button"
               accessibilityLabel="Close date picker"
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
   locationGrid: {
     flexDirection: "row",
     flexWrap: "nowrap",
-    gap: 4,
+    gap: Spacing.xs,
     width: "100%",
   },
   locationCard: {
@@ -761,7 +761,6 @@ const styles = StyleSheet.create({
   },
   datePickerOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   datePickerContainer: {
@@ -796,6 +795,6 @@ const styles = StyleSheet.create({
   removeButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: Spacing.xs,
   },
 });

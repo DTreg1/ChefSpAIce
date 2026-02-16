@@ -26,7 +26,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { apiClient } from "@/lib/api-client";
 import { storage, generateId, type Recipe } from "@/lib/storage";
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   cameraButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     alignItems: "center",
     justifyContent: "center",
@@ -522,28 +522,28 @@ const styles = StyleSheet.create({
     left: 0,
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderTopLeftRadius: 8,
+    borderTopLeftRadius: BorderRadius.sm,
   },
   cornerTR: {
     top: 0,
     right: 0,
     borderTopWidth: 3,
     borderRightWidth: 3,
-    borderTopRightRadius: 8,
+    borderTopRightRadius: BorderRadius.sm,
   },
   cornerBL: {
     bottom: 0,
     left: 0,
     borderBottomWidth: 3,
     borderLeftWidth: 3,
-    borderBottomLeftRadius: 8,
+    borderBottomLeftRadius: BorderRadius.sm,
   },
   cornerBR: {
     bottom: 0,
     right: 0,
     borderBottomWidth: 3,
     borderRightWidth: 3,
-    borderBottomRightRadius: 8,
+    borderBottomRightRadius: BorderRadius.sm,
   },
   cameraFooter: {
     alignItems: "center",
@@ -558,16 +558,16 @@ const styles = StyleSheet.create({
   captureButton: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    padding: 4,
+    padding: Spacing.xs,
   },
   captureButtonDisabled: {
     opacity: 0.5,
   },
   captureButtonInner: {
     flex: 1,
-    borderRadius: 32,
+    borderRadius: BorderRadius.full,
     backgroundColor: "#FFFFFF",
   },
   processingContainer: {
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -643,9 +643,9 @@ const styles = StyleSheet.create({
   bulletPoint: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: BorderRadius.full,
     backgroundColor: AppColors.primary,
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
   ingredientText: {
     flex: 1,
@@ -659,14 +659,14 @@ const styles = StyleSheet.create({
   stepNumber: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     backgroundColor: AppColors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   stepNumberText: {
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   instructionText: {
     flex: 1,

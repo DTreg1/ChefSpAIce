@@ -1129,7 +1129,7 @@ export default function AddItemScreen() {
             accessibilityViewIsModal={true}
           >
             <Pressable
-              style={styles.datePickerOverlay}
+              style={[styles.datePickerOverlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
               onPress={handleDatePickerDone}
               accessibilityRole="button"
               accessibilityLabel="Close date picker"
@@ -1220,7 +1220,7 @@ export default function AddItemScreen() {
         accessibilityViewIsModal={true}
         testID="modal-upgrade-pantry-limit"
       >
-        <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
+        <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: themeStyle.surface.overlaySubtle, padding: Spacing.xl }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
             type="limit"
             limitName="pantry items"
@@ -1385,7 +1385,6 @@ const styles = StyleSheet.create({
   },
   datePickerOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   datePickerContainer: {

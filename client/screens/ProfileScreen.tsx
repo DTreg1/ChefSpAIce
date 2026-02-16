@@ -27,7 +27,7 @@ import type { ThemePreference } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import {
   storage,
   FoodItem,
@@ -232,11 +232,11 @@ export default function ProfileScreen() {
                       { backgroundColor: AppColors.primary },
                     ]}
                   >
-                    <Feather name="user" size={40} color="#FFFFFF" />
+                    <Feather name="user" size={40} color={theme.buttonText} />
                   </View>
                 )}
                 <View style={styles.editBadge}>
-                  <Feather name="camera" size={12} color="#FFFFFF" />
+                  <Feather name="camera" size={12} color={theme.buttonText} />
                 </View>
               </BlurView>
             ) : (
@@ -263,11 +263,11 @@ export default function ProfileScreen() {
                       { backgroundColor: AppColors.primary },
                     ]}
                   >
-                    <Feather name="user" size={40} color="#FFFFFF" />
+                    <Feather name="user" size={40} color={theme.buttonText} />
                   </View>
                 )}
                 <View style={styles.editBadge}>
-                  <Feather name="camera" size={12} color="#FFFFFF" />
+                  <Feather name="camera" size={12} color={theme.buttonText} />
                 </View>
               </View>
             )}
@@ -367,7 +367,7 @@ export default function ProfileScreen() {
                               : "monitor"
                         }
                         size={16}
-                        color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                        color={isSelected ? theme.buttonText : theme.textSecondary}
                       />
                     </Pressable>
                   );
@@ -902,14 +902,14 @@ const styles = StyleSheet.create({
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarImage: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: BorderRadius.full,
   },
   editBadge: {
     position: "absolute",
@@ -917,7 +917,7 @@ const styles = StyleSheet.create({
     right: 4,
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     backgroundColor: AppColors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -933,8 +933,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   nameInput: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: Typography.h3.fontSize,
+    fontWeight: Typography.h3.fontWeight,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderWidth: 2,
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
   preferenceIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: BorderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1003,12 +1003,12 @@ const styles = StyleSheet.create({
   storageBar: {
     flex: 1,
     height: 8,
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
     overflow: "hidden",
   },
   storageProgress: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
   },
   storageCount: {
     width: 30,
@@ -1042,7 +1042,7 @@ const styles = StyleSheet.create({
   menuIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: BorderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -1072,7 +1072,7 @@ const styles = StyleSheet.create({
   accountIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: BorderRadius["2xl"],
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -1083,7 +1083,7 @@ const styles = StyleSheet.create({
   syncBadge: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
   subscriptionIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: BorderRadius["2xl"],
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -1127,7 +1127,7 @@ const styles = StyleSheet.create({
   signInIcon: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: BorderRadius["3xl"],
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -1143,7 +1143,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     minHeight: 44,
-    borderRadius: 18,
+    borderRadius: BorderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
   },

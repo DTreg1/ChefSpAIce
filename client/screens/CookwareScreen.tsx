@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
   setupIconContainer: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: BorderRadius.full,
     backgroundColor: `${AppColors.primary}15`,
     justifyContent: "center",
     alignItems: "center",
@@ -933,7 +933,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: BorderRadius["2xl"],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -971,7 +971,7 @@ const styles = StyleSheet.create({
     right: Spacing.xs,
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: BorderRadius.sm,
     backgroundColor: AppColors.primary,
     justifyContent: "center",
     alignItems: "center",

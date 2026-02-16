@@ -35,7 +35,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import { apiClient } from "@/lib/api-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
@@ -313,7 +313,7 @@ function ReceiptResultsView({
                     ]}
                   >
                     <Feather name="box" size={12} color={theme.textSecondary} />
-                    <ThemedText type="caption" style={{ marginLeft: 4 }}>
+                    <ThemedText type="caption" style={{ marginLeft: Spacing.xs }}>
                       {item.storageLocation}
                     </ThemedText>
                   </View>
@@ -328,7 +328,7 @@ function ReceiptResultsView({
                       size={12}
                       color={theme.textSecondary}
                     />
-                    <ThemedText type="caption" style={{ marginLeft: 4 }}>
+                    <ThemedText type="caption" style={{ marginLeft: Spacing.xs }}>
                       {item.shelfLifeDays}d
                     </ThemedText>
                   </View>
@@ -769,7 +769,7 @@ export default function ReceiptScanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#000",
   },
   centered: {
     justifyContent: "center",
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
   controlButtonInner: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
   captureButtonOuter: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: BorderRadius.full,
     borderWidth: 4,
     borderColor: "#FFFFFF",
     justifyContent: "center",
@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
   captureButtonInner: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: BorderRadius.full,
     backgroundColor: "#FFFFFF",
   },
   previewOverlay: {
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
   analyzingIconContainer: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: BorderRadius.full,
     backgroundColor: AppColors.primary,
     justifyContent: "center",
     alignItems: "center",
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: BorderRadius.full,
     backgroundColor: AppColors.primary,
   },
   analyzingSubtext: {
@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   itemPrice: {
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   itemMeta: {
     flexDirection: "row",

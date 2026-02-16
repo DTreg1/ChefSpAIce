@@ -78,7 +78,7 @@ function getMealTypeFromTime(): { mealType: string; greeting: string } {
 
 export default function GenerateRecipeScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation = useNavigation<RecipesNavigation>();
   const route = useRoute<RouteProp<RecipesStackParamList, "GenerateRecipe">>();
   const customSettings = route.params?.customSettings;
@@ -695,7 +695,7 @@ export default function GenerateRecipeScreen() {
         <GlassButton
           onPress={() => navigation.goBack()}
           style={styles.actionButton}
-          icon={<Feather name="plus" size={20} color="#FFFFFF" />}
+          icon={<Feather name="plus" size={20} color={theme.buttonText} />}
           accessibilityLabel="Go to inventory to add items"
           accessibilityRole="button"
         >
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 96,
     height: 96,
-    borderRadius: 48,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.md,

@@ -26,7 +26,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { EmptyState } from "@/components/EmptyState";
 import { useInstacart } from "@/hooks/useInstacart";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import * as Haptics from "expo-haptics";
 import { storage, ShoppingListItem } from "@/lib/storage";
 
@@ -173,7 +173,7 @@ export default function ShoppingListScreen() {
             ]}
           >
             {item.isChecked ? (
-              <Feather name="check" size={14} color="#FFFFFF" />
+              <Feather name="check" size={14} color={theme.buttonText} />
             ) : null}
           </View>
           <View style={styles.itemContent}>
@@ -300,7 +300,7 @@ export default function ShoppingListScreen() {
           accessibilityRole="alert"
           accessibilityLabel="Shopping complete! All items checked off"
         >
-          <Feather name="check-circle" size={24} color="#FFFFFF" />
+          <Feather name="check-circle" size={24} color={theme.buttonText} />
           <ThemedText
             type="body"
             style={styles.completedText}
@@ -327,9 +327,9 @@ export default function ShoppingListScreen() {
           >
             <View style={styles.instacartButtonContent}>
               {instacartLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={theme.buttonText} />
               ) : (
-                <Feather name="shopping-bag" size={20} color="#FFFFFF" />
+                <Feather name="shopping-bag" size={20} color={theme.buttonText} />
               )}
               <ThemedText type="body" style={styles.instacartButtonText}>
                 {instacartLoading ? "Creating Link..." : "Order on Instacart"}
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   },
   completedText: {
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   instacartContainer: {
     paddingHorizontal: Spacing.lg,
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   instacartButton: {
-    backgroundColor: "#43B02A",
+    backgroundColor: AppColors.instacartGreen,
     borderRadius: BorderRadius.md,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   },
   instacartButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   searchButton: {
     padding: Spacing.xs,

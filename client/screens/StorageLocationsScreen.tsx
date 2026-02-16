@@ -333,7 +333,7 @@ export default function StorageLocationsScreen() {
                     <Feather
                       name={icon as FeatherIconName}
                       size={20}
-                      color={selectedIcon === icon ? "#FFFFFF" : theme.text}
+                      color={selectedIcon === icon ? theme.buttonText : theme.text}
                     />
                   </Pressable>
                 ))}
@@ -369,7 +369,7 @@ export default function StorageLocationsScreen() {
               <Feather
                 name="plus"
                 size={20}
-                color="#FFFFFF"
+                color={theme.buttonText}
                 style={{ marginRight: Spacing.sm }}
               />
               Add Custom Location
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.warning,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
   },
   proBadgeText: {
     color: "#FFFFFF",

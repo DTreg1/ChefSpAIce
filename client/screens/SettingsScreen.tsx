@@ -65,7 +65,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
-import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import { Spacing, AppColors, BorderRadius, Typography } from "@/constants/theme";
 import {
   storage,
   UserPreferences,
@@ -132,7 +132,7 @@ const SETTINGS_CATEGORIES: SettingsCategory[] = [
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { user, isAuthenticated, signOut } = useAuth();
   const biometric = useBiometricAuth();
   const { isTablet, isLandscape } = useDeviceType();
@@ -1050,12 +1050,12 @@ export default function SettingsScreen() {
                   <Feather
                     name={cat.icon}
                     size={18}
-                    color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                    color={isSelected ? theme.buttonText : theme.textSecondary}
                   />
                   <ThemedText
                     style={[
                       styles.categoryLabel,
-                      { color: isSelected ? "#FFFFFF" : theme.text },
+                      { color: isSelected ? theme.buttonText : theme.text },
                     ]}
                   >
                     {cat.label}
@@ -1092,7 +1092,7 @@ export default function SettingsScreen() {
           accessibilityViewIsModal={true}
         >
           <Pressable
-            style={addStorageStyles.overlay}
+            style={[addStorageStyles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
             onPress={() => setShowAddStorageModal(false)}
             accessibilityRole="button"
             accessibilityLabel="Close add storage modal"
@@ -1165,7 +1165,7 @@ export default function SettingsScreen() {
                   accessibilityLabel="Add storage area"
                   accessibilityState={{ disabled: !newStorageAreaName.trim() }}
                 >
-                  <ThemedText style={[addStorageStyles.buttonText, { color: "#FFFFFF" }]}>
+                  <ThemedText style={[addStorageStyles.buttonText, { color: theme.buttonText }]}>
                     Add
                   </ThemedText>
                 </Pressable>
@@ -1362,7 +1362,7 @@ export default function SettingsScreen() {
         accessibilityViewIsModal={true}
       >
         <Pressable
-          style={addStorageStyles.overlay}
+          style={[addStorageStyles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
           onPress={() => setShowAddStorageModal(false)}
           accessibilityRole="button"
           accessibilityLabel="Close add storage modal"
@@ -1435,7 +1435,7 @@ export default function SettingsScreen() {
                 accessibilityLabel="Add storage area"
                 accessibilityState={{ disabled: !newStorageAreaName.trim() }}
               >
-                <ThemedText style={[addStorageStyles.buttonText, { color: "#FFFFFF" }]}>
+                <ThemedText style={[addStorageStyles.buttonText, { color: theme.buttonText }]}>
                   Add
                 </ThemedText>
               </Pressable>
@@ -1478,7 +1478,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   categoryLabel: {
-    fontSize: 15,
+    ...Typography.small,
     fontWeight: "500",
   },
   rightPane: {
@@ -1494,7 +1494,6 @@ const styles = StyleSheet.create({
 const addStorageStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.lg,
@@ -1517,7 +1516,7 @@ const addStorageStyles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
   },
   buttons: {
     flexDirection: "row",
@@ -1531,7 +1530,7 @@ const addStorageStyles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   buttonText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: Typography.small.fontSize,
+    fontWeight: Typography.button.fontWeight,
   },
 });

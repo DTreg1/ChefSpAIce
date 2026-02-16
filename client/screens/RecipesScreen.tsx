@@ -69,6 +69,7 @@ import {
   Spacing,
   BorderRadius,
   AppColors,
+  Typography,
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";
@@ -435,7 +436,7 @@ export default function RecipesScreen() {
                   },
                 ]}
               >
-                <ThemedText type="caption" style={styles.matchText}>
+                <ThemedText type="caption" style={[styles.matchText, { color: theme.buttonText }]}>
                   {matchPercentage}% match
                 </ThemedText>
               </View>
@@ -543,7 +544,7 @@ export default function RecipesScreen() {
                   ? AppColors.warning
                   : AppColors.secondary,
             }]}>
-              <ThemedText type="caption" style={styles.matchText}>
+              <ThemedText type="caption" style={[styles.matchText, { color: theme.buttonText }]}>
                 {getMatchPercentage(selectedRecipe)}% ingredient match
               </ThemedText>
             </View>
@@ -582,8 +583,8 @@ export default function RecipesScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="View full recipe"
               >
-                <Feather name="arrow-right" size={16} color="#FFFFFF" style={{ marginRight: Spacing.xs }} />
-                <ThemedText type="small" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                <Feather name="arrow-right" size={16} color={theme.buttonText} style={{ marginRight: Spacing.xs }} />
+                <ThemedText type="small" style={{ color: theme.buttonText, fontWeight: Typography.button.fontWeight }}>
                   View Full Recipe
                 </ThemedText>
               </Pressable>
@@ -735,13 +736,13 @@ export default function RecipesScreen() {
                       <Feather
                         name="globe"
                         size={12}
-                        color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                        color={isSelected ? theme.buttonText : theme.textSecondary}
                         style={{ marginRight: 4 }}
                       />
                       <ThemedText
                         type="caption"
                         style={{
-                          color: isSelected ? "#FFFFFF" : theme.textSecondary,
+                          color: isSelected ? theme.buttonText : theme.textSecondary,
                           fontWeight: isSelected ? "600" : "400",
                         }}
                       >
@@ -785,13 +786,13 @@ export default function RecipesScreen() {
                       <Feather
                         name="check-circle"
                         size={12}
-                        color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                        color={isSelected ? theme.buttonText : theme.textSecondary}
                         style={{ marginRight: 4 }}
                       />
                       <ThemedText
                         type="caption"
                         style={{
-                          color: isSelected ? "#FFFFFF" : theme.textSecondary,
+                          color: isSelected ? theme.buttonText : theme.textSecondary,
                           fontWeight: isSelected ? "600" : "400",
                         }}
                       >
@@ -999,7 +1000,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   matchText: {
-    color: "#FFFFFF",
     fontWeight: "600",
   },
   progressModalOverlay: {

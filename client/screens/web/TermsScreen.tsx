@@ -1,5 +1,4 @@
 import {
-  StyleSheet,
   View,
   Text,
   ScrollView,
@@ -10,18 +9,11 @@ import {
 import { GradientBackground } from "@/components/GradientBackground.web";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "@/lib/web-router";
-import { webClickable } from "@/lib/types";
+import { Spacing } from "@/constants/theme";
+import { webSharedStyles, WebTypography, NAV_LINKS } from "./sharedStyles";
 
 const isWeb = Platform.OS === "web";
 const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
-
-const NAV_LINKS = [
-  { label: "Home", path: "/" },
-  { label: "About", path: "/about" },
-  { label: "Privacy", path: "/privacy" },
-  { label: "Terms", path: "/terms" },
-  { label: "Support", path: "/support" },
-];
 
 export default function TermsScreen() {
   const { style } = useTheme();
@@ -31,15 +23,15 @@ export default function TermsScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      style={webSharedStyles.container}
+      contentContainerStyle={webSharedStyles.contentContainer}
     >
       <GradientBackground />
 
       {isWeb && (
-        <View style={styles.header} role="banner" accessibilityLabel="Site header">
+        <View style={webSharedStyles.header} role="banner" accessibilityLabel="Site header">
           <Pressable
-            style={styles.logoContainer}
+            style={webSharedStyles.logoContainer}
             onPress={() => navigate("/")}
             accessibilityRole="link"
             accessibilityLabel="Go to home page"
@@ -51,23 +43,23 @@ export default function TermsScreen() {
               accessibilityElementsHidden={true}
               importantForAccessibility="no-hide-descendants"
             />
-            <Text style={[styles.logoText, { color: colors.textPrimary }]}>
+            <Text style={[WebTypography.logoText, { color: colors.textPrimary }]}>
               ChefSpAIce
             </Text>
           </Pressable>
-          <View style={styles.navLinks} role="navigation" accessibilityLabel="Site navigation">
+          <View style={webSharedStyles.navLinks} role="navigation" accessibilityLabel="Site navigation">
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
                 onPress={() => navigate(link.path)}
-                style={styles.navLink}
+                style={webSharedStyles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
                 accessibilityRole="link"
                 accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
                   style={[
-                    styles.navLinkText,
+                    WebTypography.navLinkText,
                     {
                       color:
                         currentPath === link.path
@@ -84,24 +76,24 @@ export default function TermsScreen() {
         </View>
       )}
 
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+      <View style={webSharedStyles.content}>
+        <Text style={[WebTypography.pageTitle, { color: colors.textPrimary, marginBottom: Spacing.sm }]}>
           Terms of Service
         </Text>
-        <Text style={[styles.lastUpdated, { color: colors.textMuted }]}>
+        <Text style={[WebTypography.lastUpdated, { color: colors.textMuted }]}>
           Last updated: January 2026
         </Text>
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             Acceptance of Terms
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             By accessing or using ChefSpAIce, you agree to be bound by these
             Terms of Service. If you do not agree to these terms, please do not
             use our application.
@@ -110,14 +102,14 @@ export default function TermsScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             Use of Service
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce is provided for personal, non-commercial use. You agree
             to use the service responsibly and not to misuse or attempt to
             exploit any features of the application.
@@ -126,14 +118,14 @@ export default function TermsScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             AI-Generated Content
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             Recipes generated by our AI are provided for informational purposes
             only. While we strive for accuracy, we cannot guarantee that all
             recipes are safe for individuals with specific allergies or dietary
@@ -143,14 +135,14 @@ export default function TermsScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             Limitation of Liability
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce is provided "as is" without warranties of any kind. We
             are not liable for any damages arising from your use of the
             application, including but not limited to food safety issues or
@@ -160,21 +152,21 @@ export default function TermsScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             Subscriptions and Payments
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce offers the following auto-renewable subscription options
             to access premium features:
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 12 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.md },
             ]}
           >
             <Text style={{ fontWeight: "600" }}>Subscription Plans:</Text>
@@ -185,8 +177,8 @@ export default function TermsScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 12 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.md },
             ]}
           >
             <Text style={{ fontWeight: "600" }}>Payment:</Text> Payment will be
@@ -194,8 +186,8 @@ export default function TermsScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 12 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.md },
             ]}
           >
             <Text style={{ fontWeight: "600" }}>Renewal:</Text> Subscriptions
@@ -206,8 +198,8 @@ export default function TermsScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 12 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.md },
             ]}
           >
             <Text style={{ fontWeight: "600" }}>Managing Subscriptions:</Text>{" "}
@@ -218,8 +210,8 @@ export default function TermsScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 12 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.md },
             ]}
           >
             <Text style={{ fontWeight: "600" }}>Refunds:</Text> Refunds are
@@ -229,8 +221,8 @@ export default function TermsScreen() {
           </Text>
           <Text
             style={[
-              styles.paragraph,
-              { color: colors.textSecondary, marginTop: 12 },
+              WebTypography.paragraph,
+              { color: colors.textSecondary, marginTop: Spacing.md },
             ]}
           >
             <Text style={{ fontWeight: "600" }}>EULA:</Text> This app is
@@ -251,14 +243,14 @@ export default function TermsScreen() {
 
         <View
           style={[
-            styles.card,
+            webSharedStyles.card,
             { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[WebTypography.sectionTitle, { color: colors.textPrimary }]}>
             Contact Us
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[WebTypography.paragraph, { color: colors.textSecondary }]}>
             If you have any questions about these Terms of Service, please
             contact us through our Support page.
           </Text>
@@ -266,8 +258,8 @@ export default function TermsScreen() {
       </View>
 
       {isWeb && (
-        <View style={[styles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
-          <Text style={[styles.copyright, { color: colors.textMuted }]}>
+        <View style={[webSharedStyles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
+          <Text style={[WebTypography.copyright, { color: colors.textMuted }]}>
             © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
           </Text>
         </View>
@@ -275,51 +267,3 @@ export default function TermsScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  contentContainer: { minHeight: "100%" },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 12,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    ...webClickable,
-    marginBottom: 16,
-  },
-  logoText: { fontSize: 24, fontWeight: "700" },
-  navLinks: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-  navLink: { ...webClickable },
-  navLinkText: { fontSize: 14, fontWeight: "500" },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 60,
-    maxWidth: 800,
-    alignSelf: "center",
-    width: "100%",
-  },
-  title: {
-    fontSize: 42,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  lastUpdated: { fontSize: 14, textAlign: "center", marginBottom: 40 },
-  card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 24 },
-  sectionTitle: { fontSize: 22, fontWeight: "600", marginBottom: 12 },
-  paragraph: { fontSize: 16, lineHeight: 26 },
-  footer: { paddingVertical: 32, paddingHorizontal: 24, alignItems: "center" },
-  copyright: { fontSize: 12 },
-});

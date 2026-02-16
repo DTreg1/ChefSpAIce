@@ -402,7 +402,7 @@ export default function OnboardingScreen() {
       >
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
-          <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading...</ThemedText>
+          <ThemedText style={{ marginTop: Spacing.md, color: theme.textSecondary }}>Loading...</ThemedText>
         </View>
       </View>
     );

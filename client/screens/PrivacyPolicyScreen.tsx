@@ -5,7 +5,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassHeader } from "@/components/GlassHeader";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { AppUrls } from "@/constants/urls";
 
 const PRIVACY_SECTIONS = [
   {
@@ -57,7 +58,7 @@ Each third-party service has its own privacy policy governing the use of your in
 • Export your data in a portable format
 • Opt out of non-essential communications
 
-To exercise these rights, contact us at privacy@chefspaice.com or use the settings within the app.`,
+To exercise these rights, contact us at ${AppUrls.privacyEmail} or use the settings within the app.`,
   },
   {
     title: "6. Nutrition Information Disclaimer",
@@ -105,7 +106,7 @@ Your continued use of the app after any changes constitutes acceptance of the ne
     title: "10. Contact Us",
     content: `If you have any questions about this Privacy Policy, please contact us:
 
-Email: privacy@chefspaice.com
+Email: ${AppUrls.privacyEmail}
 Website: https://chefspaice.com/support`,
   },
 ];
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
   headerIconContainer: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: BorderRadius["3xl"],
     backgroundColor: `${AppColors.primary}15`,
     alignItems: "center",
     justifyContent: "center",

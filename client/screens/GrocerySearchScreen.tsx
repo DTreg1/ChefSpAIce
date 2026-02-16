@@ -22,7 +22,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import { storage, ShoppingListItem, generateId } from "@/lib/storage";
 
 const productImages: Record<string, ImageSourcePropType> = {
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     paddingVertical: Platform.OS === "ios" ? Spacing.sm : Spacing.xs,
   },
   section: {
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   addedCheckContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: BorderRadius.lg,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     alignItems: "center",
     justifyContent: "center",

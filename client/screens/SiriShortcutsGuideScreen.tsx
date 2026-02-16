@@ -31,7 +31,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
@@ -373,10 +373,10 @@ export default function SiriShortcutsGuideScreen() {
                 onPress={handleGenerateApiKey}
                 loading={isGeneratingKey}
                 disabled={!canGenerateKey}
-                icon={<Feather name="key" size={18} color="#FFFFFF" />}
+                icon={<Feather name="key" size={18} color={theme.buttonText} />}
                 testID="button-generate-api-key"
               >
-                <ThemedText type="body" style={{ color: "#FFFFFF" }}>
+                <ThemedText type="body" style={{ color: theme.buttonText }}>
                   Generate API Key
                 </ThemedText>
               </GlassButton>
@@ -591,20 +591,20 @@ const styles = StyleSheet.create({
   stepNumber: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.sm,
   },
   stepNumberText: {
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   stepContent: {
     flex: 1,
   },
   stepTitle: {
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
     marginBottom: 2,
   },
   stepDescription: {
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   },
   substepText: {
     flex: 1,
-    lineHeight: 18,
+    lineHeight: Typography.caption.lineHeight,
   },
   apiKeySection: {
     marginTop: Spacing.md,
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
   },
   apiKeyLabel: {
     marginBottom: Spacing.xs,
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   codeBlock: {
     borderRadius: BorderRadius.md,
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   codeText: {
     flex: 1,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
   },
   copyButton: {
     padding: Spacing.xs,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
   },
   apiEndpointLabel: {
     marginBottom: Spacing.xs,
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   actionsList: {
     gap: Spacing.md,
@@ -699,10 +699,10 @@ const styles = StyleSheet.create({
   actionBadgeText: {
     color: "#FFFFFF",
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   actionDescription: {
-    lineHeight: 18,
+    lineHeight: Typography.caption.lineHeight,
   },
   examplesList: {
     marginTop: Spacing.sm,
@@ -723,11 +723,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   troubleshootQuestion: {
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
     marginBottom: 4,
   },
   troubleshootAnswer: {
-    lineHeight: 20,
+    lineHeight: Typography.small.lineHeight,
   },
   proRequiredBox: {
     flexDirection: "row",

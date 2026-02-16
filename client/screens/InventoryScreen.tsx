@@ -23,7 +23,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassCard } from "@/components/GlassCard";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
   storage,
   FoodItem,
@@ -377,7 +377,7 @@ export default function InventoryScreen() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              gap: 6,
+              gap: Spacing.sm,
               paddingVertical: Spacing.md,
               marginTop: Spacing.sm,
             }}
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     marginTop: Spacing.lg,
   },
 });

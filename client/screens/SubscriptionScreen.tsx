@@ -22,7 +22,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { handleStripeWebCheckout } from "@/lib/stripe-checkout";
 import {
@@ -322,7 +322,7 @@ export default function SubscriptionScreen() {
         ]}
       >
         <ActivityIndicator size="large" accessibilityLabel="Loading subscription data" />
-        <ThemedText style={{ marginTop: 12, color: theme.textSecondary }} accessibilityRole="text" accessibilityLabel="Loading subscription">Loading subscription...</ThemedText>
+        <ThemedText style={{ marginTop: Spacing.md, color: theme.textSecondary }} accessibilityRole="text" accessibilityLabel="Loading subscription">Loading subscription...</ThemedText>
       </View>
     );
   }
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
   },
   blockingBanner: {
     flexDirection: "row",
@@ -877,8 +877,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...Typography.h4,
   },
   usageGrid: {
     gap: Spacing.md,
@@ -899,12 +898,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   usageLabel: {
-    fontSize: 12,
+    fontSize: Typography.micro.fontSize,
     marginBottom: 2,
   },
   usageValue: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...Typography.button,
   },
   upgradeCard: {
     padding: Spacing.lg,
@@ -916,12 +914,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   upgradeTitle: {
-    fontSize: 20,
+    ...Typography.h3,
     fontWeight: "700",
   },
   upgradeDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...Typography.small,
     marginBottom: Spacing.lg,
   },
   upgradeButton: {
@@ -931,8 +928,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   manageDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...Typography.small,
     marginBottom: Spacing.lg,
   },
   manageButton: {
@@ -952,15 +948,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   refreshText: {
-    fontSize: 14,
+    fontSize: Typography.small.fontSize,
   },
   successCard: {
     padding: Spacing.lg,
     marginTop: Spacing.sm,
   },
   successDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...Typography.small,
     marginBottom: Spacing.md,
   },
   continueButton: {
@@ -971,8 +966,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   signInDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...Typography.small,
     marginBottom: Spacing.md,
   },
   signInButton: {

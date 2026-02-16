@@ -12,7 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { WasteReductionStats } from "@/components/WasteReductionStats";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors, Typography } from "@/constants/theme";
 import {
   storage,
   FoodItem,
@@ -276,7 +276,7 @@ export default function AnalyticsScreen() {
             >
               <ThemedText
                 type="small"
-                style={{ color: timeRange === range ? "#FFFFFF" : theme.text }}
+                style={{ color: timeRange === range ? theme.buttonText : theme.text }}
               >
                 {range === "week"
                   ? "7 Days"
@@ -559,7 +559,7 @@ export default function AnalyticsScreen() {
               <Feather name="thumbs-up" size={32} color={AppColors.success} />
               <ThemedText
                 type="body"
-                style={{ fontWeight: "600", marginTop: Spacing.sm }}
+                style={{ fontWeight: Typography.button.fontWeight, marginTop: Spacing.sm }}
               >
                 No waste recorded
               </ThemedText>
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   gaugeOuter: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: BorderRadius.full,
     borderWidth: 4,
     alignItems: "center",
     justifyContent: "center",
@@ -723,17 +723,17 @@ const styles = StyleSheet.create({
   gaugeInner: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
   gaugeScore: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   gaugeLabel: {
     marginTop: Spacing.md,
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   gaugeSubLabel: {
     marginTop: Spacing.xs,
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
   timelineDot: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: BorderRadius.xs,
   },
   timelineContent: {
     flex: 1,
@@ -798,24 +798,24 @@ const styles = StyleSheet.create({
   categoryDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: BorderRadius.xs,
   },
   categoryCount: {
     width: 30,
     textAlign: "right",
-    fontWeight: "600",
+    fontWeight: Typography.button.fontWeight,
   },
   progressBarContainer: {
     flex: 1,
   },
   progressBar: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: BorderRadius.xs,
   },
   wasteBreakdown: {
     gap: Spacing.lg,
@@ -839,13 +839,13 @@ const styles = StyleSheet.create({
   reasonBar: {
     flex: 1,
     height: 6,
-    backgroundColor: "#E9ECEF",
-    borderRadius: 3,
+    backgroundColor: AppColors.border,
+    borderRadius: BorderRadius.xs,
     overflow: "hidden",
   },
   reasonFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: BorderRadius.xs,
   },
   nutritionGrid: {
     flexDirection: "row",
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#E9ECEF",
+    borderTopColor: AppColors.border,
   },
   macroItem: {
     flexDirection: "row",

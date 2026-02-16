@@ -266,7 +266,7 @@ function SwipeableItem({
 export default function AddFoodBatchScreen() {
   const insets = useSafeAreaInsets();
   const MODAL_HEADER_HEIGHT = 56;
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "AddFoodBatch">>();
   const { checkLimit, entitlements } = useSubscription();
@@ -571,7 +571,7 @@ export default function AddFoodBatchScreen() {
         accessibilityViewIsModal={true}
         testID="modal-upgrade-pantry-limit"
       >
-        <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
+        <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: themeStyle.surface.overlaySubtle, padding: Spacing.xl }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
             type="limit"
             limitName="pantry items"
@@ -610,7 +610,7 @@ function EditModal({
   onUpdate: (updates: Partial<IdentifiedFood>) => void;
   onClose: () => void;
 }) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState(item.name);
@@ -676,7 +676,7 @@ function EditModal({
   };
 
   return (
-    <Pressable style={styles.modalOverlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close edit modal">
+    <Pressable style={[styles.modalOverlay, { backgroundColor: themeStyle.surface.overlaySubtle }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close edit modal">
       <Pressable
         style={[
           styles.modalContent,
@@ -1051,7 +1051,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   modalContent: {

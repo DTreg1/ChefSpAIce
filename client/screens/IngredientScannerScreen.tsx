@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
@@ -592,28 +592,28 @@ const styles = StyleSheet.create({
     left: 0,
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderTopLeftRadius: 12,
+    borderTopLeftRadius: BorderRadius.md,
   },
   topRight: {
     top: 0,
     right: 0,
     borderTopWidth: 3,
     borderRightWidth: 3,
-    borderTopRightRadius: 12,
+    borderTopRightRadius: BorderRadius.md,
   },
   bottomLeft: {
     bottom: 0,
     left: 0,
     borderBottomWidth: 3,
     borderLeftWidth: 3,
-    borderBottomLeftRadius: 12,
+    borderBottomLeftRadius: BorderRadius.md,
   },
   bottomRight: {
     bottom: 0,
     right: 0,
     borderBottomWidth: 3,
     borderRightWidth: 3,
-    borderBottomRightRadius: 12,
+    borderBottomRightRadius: BorderRadius.md,
   },
   instructions: {
     alignItems: "center",
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
   captureButton: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(255,255,255,0.3)",
     alignItems: "center",
     justifyContent: "center",
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   captureButtonInner: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: BorderRadius.full,
     backgroundColor: "#FFFFFF",
   },
   processingContainer: {

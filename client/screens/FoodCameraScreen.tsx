@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: BorderRadius.full,
     backgroundColor: AppColors.primary,
   },
   analyzingSubtext: {
@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
   confidenceDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: BorderRadius.full,
     marginRight: Spacing.xs,
   },
   itemDetails: {

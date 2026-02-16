@@ -5,7 +5,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassHeader } from "@/components/GlassHeader";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { AppUrls } from "@/constants/urls";
 
 const STATIC_TERMS_SECTIONS = [
   {
@@ -82,7 +83,7 @@ Your continued use of the app after changes constitutes acceptance of the new te
     title: "10. Contact Us",
     content: `If you have any questions about these Terms of Service, please contact us:
 
-Email: support@chefspaice.com
+Email: ${AppUrls.supportEmail}
 Website: https://chefspaice.com/support`,
   },
 ];
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
   headerIconContainer: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: BorderRadius["3xl"],
     backgroundColor: `${AppColors.primary}15`,
     alignItems: "center",
     justifyContent: "center",
