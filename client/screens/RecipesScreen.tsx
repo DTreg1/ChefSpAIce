@@ -59,7 +59,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
-import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
+import { RecipesSkeleton } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";

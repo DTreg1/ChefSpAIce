@@ -30,7 +30,7 @@ import { MealPlanWeekNav } from "@/components/meal-plan/MealPlanWeekNav";
 import { MealPlanDaySelector } from "@/components/meal-plan/MealPlanDaySelector";
 import { MealPlanSlotCard } from "@/components/meal-plan/MealPlanSlotCard";
 import { MealPlanActionSheet } from "@/components/meal-plan/MealPlanActionSheet";
-import { MealPlanSkeleton } from "@/components/meal-plan/MealPlanSkeleton";
+import { MealPlanSkeleton } from "@/components/LoadingState";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useDeviceType } from "@/hooks/useDeviceType";

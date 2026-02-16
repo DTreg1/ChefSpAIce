@@ -18,7 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
-import { InventorySkeleton } from "@/components/inventory/InventorySkeleton";
+import { InventorySkeleton } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassCard } from "@/components/GlassCard";

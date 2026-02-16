@@ -16,7 +16,7 @@ import { useFocusEffect, useNavigation, CommonActions } from "@react-navigation/
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 import { syncManager } from "@/lib/sync-manager";
-import { ShoppingListSkeleton } from "@/components/shopping/ShoppingListSkeleton";
+import { ShoppingListSkeleton } from "@/components/LoadingState";
 
 import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";

@@ -24,7 +24,7 @@ import { RecipeVoiceControls } from "@/components/RecipeVoiceControls";
 import { CookingTerm } from "@/components/TermHighlighter";
 import { TermTooltip } from "@/components/TermTooltip";
 import { IngredientSwapModal } from "@/components/IngredientSwapModal";
-import { RecipeDetailSkeleton } from "@/components/Skeleton";
+import { RecipeDetailSkeleton } from "@/components/LoadingState";
 import { GlassHeader, MenuItemConfig } from "@/components/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useRecipeVoiceNavigation } from "@/hooks/useRecipeVoiceNavigation";
