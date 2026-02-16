@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 const EXPIRING_THRESHOLD_DAYS = 3;
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const SCHEDULED_IDS_PREFIX = "@chefspaice/notif_id_";
+const IMMEDIATE_NOTIFIED_PREFIX = "@chefspaice/notif_imm_";
 
 async function getNotificationsModule() {
   try {
@@ -89,14 +90,38 @@ async function scheduleItemNotifications(): Promise<void> {
     return daysUntil >= 0 && daysUntil <= EXPIRING_THRESHOLD_DAYS;
   });
 
+  const expiringItemIds = new Set(expiringItems.map((item) => item.id));
+  for (const item of inventory) {
+    if (!expiringItemIds.has(item.id)) {
+      try {
+        await AsyncStorage.removeItem(`${IMMEDIATE_NOTIFIED_PREFIX}${item.id}`);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+  }
+
   for (const item of expiringItems) {
     const expDate = startOfDay(parseISO(item.expirationDate));
     const triggerDate = subDays(expDate, EXPIRING_THRESHOLD_DAYS);
     triggerDate.setHours(9, 0, 0, 0);
 
-    if (triggerDate <= now) continue;
-
     const daysRemaining = differenceInDays(expDate, today);
+    const shouldTriggerImmediately = triggerDate <= now;
+
+    if (shouldTriggerImmediately && daysRemaining < 0) continue;
+
+    if (shouldTriggerImmediately) {
+      try {
+        const alreadyNotified = await AsyncStorage.getItem(
+          `${IMMEDIATE_NOTIFIED_PREFIX}${item.id}`,
+        );
+        if (alreadyNotified) continue;
+      } catch {
+        // If we can't check, err on the side of not spamming
+        continue;
+      }
+    }
 
     let title: string;
     let body: string;
@@ -112,6 +137,13 @@ async function scheduleItemNotifications(): Promise<void> {
     }
 
     try {
+      const trigger = shouldTriggerImmediately
+        ? null
+        : {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: triggerDate,
+          };
+
       const notificationId =
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -125,13 +157,16 @@ async function scheduleItemNotifications(): Promise<void> {
             },
             sound: true,
           },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: triggerDate,
-          },
+          trigger,
         });
 
       await storeNotificationId(item.id, notificationId);
+      if (shouldTriggerImmediately) {
+        await AsyncStorage.setItem(
+          `${IMMEDIATE_NOTIFIED_PREFIX}${item.id}`,
+          new Date().toISOString(),
+        );
+      }
     } catch (error) {
       logger.error(
         "Failed to schedule notification for item:",

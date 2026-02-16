@@ -5,7 +5,7 @@ import {
   AudioModule,
   setAudioModeAsync,
 } from "expo-audio";
-import { useVoiceInput } from "./useVoiceInput";
+
 import { useAIVoice } from "./useAIVoice";
 import { apiClient } from "@/lib/api-client";
 
@@ -43,7 +43,6 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const voiceInput = useVoiceInput();
   const aiVoice = useAIVoice();
 
   const updateState = useCallback((updates: Partial<VoiceChatState>) => {
@@ -215,7 +214,7 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
     });
   }, [updateState]);
 
-  const isListening = isRecordingRef.current || voiceInput.isListening;
+  const isListening = isRecordingRef.current;
   const isSpeaking = aiVoice.isSpeaking;
   const isActive = isListening || state.isProcessing || isSpeaking;
 

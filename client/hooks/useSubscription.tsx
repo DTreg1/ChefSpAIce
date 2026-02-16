@@ -273,10 +273,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         "Error fetching subscription:",
         error instanceof Error ? error.message : error,
       );
-      setSubscriptionData(null);
-      if (typeof window !== "undefined") {
-        window.__subscriptionCache = null;
-      }
     } finally {
       lastFetchRef.current = Date.now();
       setIsLoading(false);
@@ -397,7 +393,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     } finally {
       setIsManaging(false);
     }
-  }, [isCustomerCenterAvailable, presentCustomerCenter, token]);
+  }, [isCustomerCenterAvailable, presentCustomerCenter]);
 
   const value = useMemo<SubscriptionContextValue>(
     () => ({

@@ -48,10 +48,9 @@ export function useRecipeVoiceNavigation(
     lastCommand: "",
   });
 
-  const _stepRefs = useRef<Array<View | null>>([]);
-  void _stepRefs; // reserved for future scroll-to-step feature
   const isReadingFullRecipeRef = useRef(false);
   const isMountedRef = useRef(true);
+  const executeCommandRef = useRef<(command: ParsedCommand) => void>(() => {});
 
   const updateState = useCallback((updates: Partial<RecipeVoiceState>) => {
     if (isMountedRef.current) {
@@ -88,9 +87,9 @@ export function useRecipeVoiceNavigation(
     (text: string) => {
       const command = parseVoiceCommand(text, "recipe_detail");
       updateState({ lastCommand: text });
-      executeCommand(command);
+      executeCommandRef.current(command);
     },
-    [recipe, state.currentStep],
+    [updateState],
   );
 
   const {
@@ -417,6 +416,8 @@ export function useRecipeVoiceNavigation(
       triggerHaptic,
     ],
   );
+
+  executeCommandRef.current = executeCommand;
 
   const promptForNextStep = useCallback(() => {
     if (state.handsFreeModeEnabled) {

@@ -29,7 +29,7 @@ export function useScreenOptions({
     },
     gestureEnabled: true,
     gestureDirection: "horizontal",
-    fullScreenGestureEnabled: isLiquidGlassAvailable() ? false : true,
+    fullScreenGestureEnabled: !isLiquidGlassAvailable(),
     contentStyle: {
       backgroundColor: transparent ? "transparent" : theme.backgroundRoot,
     },

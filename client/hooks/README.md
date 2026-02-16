@@ -1,6 +1,6 @@
 # Hooks Reference
 
-This directory contains 22 custom React hooks for the ChefSpAIce application. Below is each hook's purpose, key exports, and dependencies.
+This directory contains 21 custom React hooks for the ChefSpAIce application. Below is each hook's purpose, key exports, and dependencies.
 
 ---
 
@@ -17,16 +17,16 @@ This directory contains 22 custom React hooks for the ChefSpAIce application. Be
 
 ### useDeviceType
 **File:** `useDeviceType.ts`
-**Purpose:** Provides responsive breakpoint flags based on screen width (`isPhone`, `isTablet`, `isLargeTablet`), raw `screenWidth`, and `isLandscape` orientation detection via `Dimensions.addEventListener`.
+**Purpose:** Provides responsive breakpoint flags based on screen width (`isPhone`, `isTablet`, `isLargeTablet`), raw `screenWidth`, and `isLandscape` orientation detection derived from `useWindowDimensions`.
 **Exports:** `useDeviceType() → { isPhone, isTablet, isLargeTablet, screenWidth, isLandscape }`
-**Dependencies:** `react-native` (`useWindowDimensions`, `Dimensions`)
+**Dependencies:** `react-native` (`useWindowDimensions`)
 
 ---
 
 ### useTheme
 **File:** `useTheme.ts`
 **Purpose:** Stable wrapper around `ThemeContext`. Re-exports theme values (`theme`, `isDark`, `colorScheme`, `themePreference`) and setter (`setThemePreference` / `setTheme`) from the context. Provides a consistent import path used across 50+ components.
-**Exports:** `useTheme()`, `useAppTheme` (alias)
+**Exports:** `useTheme()`
 **Dependencies:** `@/contexts/ThemeContext`
 
 ---
@@ -71,21 +71,6 @@ This directory contains 22 custom React hooks for the ChefSpAIce application. Be
 **Exports:** `useStoreKit() → UseStoreKitReturn`
 **Dependencies:** `react-native-purchases`, `@/lib/storekit-service`, `@/contexts/AuthContext`
 
-### useTrialStatus
-**File:** `useTrialStatus.ts`
-**Purpose:** Manages local trial status for guest/unregistered users. Reads trial start date from local storage and calculates days remaining in a 7-day trial. Works without server. Complementary to server-side subscription trialing.
-**Exports:**
-- `useTrialStatus() → TrialStatus`
-- `checkTrialStatus(startDate) → boolean`
-- `getTrialDaysRemaining(startDate) → number`
-**Dependencies:** `@/lib/storage`, `@/contexts/AuthContext`, `react-native` (`AppState`)
-
-### usePaymentNotifications
-**File:** `usePaymentNotifications.ts`
-**Purpose:** Schedules local push notifications when a subscription payment fails — an immediate alert plus reminders at 3-day and 1-day marks before grace period ends. Cancels notifications when payment recovers.
-**Exports:** `usePaymentNotifications()` (side-effect hook, no return value)
-**Dependencies:** `@/hooks/useSubscription`, `expo-notifications`, `expo-constants`
-
 ---
 
 ## Voice & Audio Hooks
@@ -110,9 +95,9 @@ This directory contains 22 custom React hooks for the ChefSpAIce application. Be
 
 ### useVoiceChat
 **File:** `useVoiceChat.ts`
-**Purpose:** Full voice conversation loop — records user audio, sends to `/api/voice/chat`, plays back AI audio response. Maintains message history. Composes `useVoiceInput` and `useAIVoice`.
+**Purpose:** Full voice conversation loop — records user audio, sends to `/api/voice/chat`, plays back AI audio response. Maintains message history. Composes `useAIVoice` and `expo-audio`.
 **Exports:** `useVoiceChat(options?) → { startConversation, endConversation, cancelConversation, messages, isListening, isSpeaking, ... }`
-**Dependencies:** `useVoiceInput`, `useAIVoice`, `expo-audio`, `@/lib/query-client`
+**Dependencies:** `useAIVoice`, `expo-audio`, `@/lib/query-client`
 
 ### useRecipeVoiceNavigation
 **File:** `useRecipeVoiceNavigation.ts`
@@ -198,17 +183,14 @@ useSyncStatus ← sync-manager, offline-queue
 
 useStoreKit ← storekit-service, AuthContext
 useSubscription ← useStoreKit, AuthContext
-  ├── usePaymentNotifications ← useSubscription
   ├── useQuickRecipeGeneration ← useSubscription
   └── (handleManageSubscription merged in)
-
-useTrialStatus ← storage, AuthContext (local trial, independent of server)
 
 useTextToSpeech ← expo-speech
 useVoiceInput ← expo-audio
 useAIVoice ← expo-audio
 
-useVoiceChat ← useVoiceInput + useAIVoice
+useVoiceChat ← useAIVoice + expo-audio
 useRecipeVoiceNavigation ← useTextToSpeech + useVoiceInput
 ```
 

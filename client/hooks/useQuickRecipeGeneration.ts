@@ -53,14 +53,6 @@ function getMealTypeFromTime(): { mealType: string; greeting: string } {
 
 export type QuickRecipeProgressStage = "loading" | "recipe" | "image" | "done";
 
-interface _QuickRecipeGenerationState {
-  isGenerating: boolean;
-  progressStage: QuickRecipeProgressStage;
-  showUpgradePrompt: boolean;
-}
-// @ts-ignore - defined for future use
-type QuickRecipeGenerationState = _QuickRecipeGenerationState;
-
 export function useQuickRecipeGeneration() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();

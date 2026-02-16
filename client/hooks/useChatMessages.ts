@@ -305,7 +305,9 @@ export function useChatMessages() {
     };
     setMessages((prev) => {
       const updated = [...prev, chatMessage];
-      storage.setChatHistory(updated);
+      storage.setChatHistory(updated).catch((err) =>
+        logger.error("Failed to persist chat history:", err),
+      );
       return updated;
     });
     scrollToBottom();
