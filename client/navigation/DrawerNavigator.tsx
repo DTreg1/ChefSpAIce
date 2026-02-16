@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 
 import MainTabNavigator from "@/navigation/MainTabNavigator";
-import { DrawerContent } from "@/components/DrawerContent";
+import { DrawerContent } from "@/navigation/DrawerContent";
 import { useTheme } from "@/hooks/useTheme";
 
 type DrawerParamList = {

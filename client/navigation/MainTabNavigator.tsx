@@ -7,7 +7,7 @@ import RecipesStackNavigator from "@/navigation/RecipesStackNavigator";
 import MealPlanStackNavigator from "@/navigation/MealPlanStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import CookwareStackNavigator from "@/navigation/CookwareStackNavigator";
-import { CustomTabBar } from "@/components/CustomTabBar";
+import { CustomTabBar } from "@/navigation/CustomTabBar";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors } from "@/constants/theme";
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { withSuspense } from "@/lib/lazy-screen";
-import { HamburgerButton } from "@/components/HamburgerButton";
+import { HamburgerButton } from "@/navigation/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 const LazyMealPlanScreen = withSuspense(React.lazy(() => import("@/screens/MealPlanScreen")));
