@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
-import { ThemedText } from "./ThemedText";
+import { ThemedText } from "../ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import {
