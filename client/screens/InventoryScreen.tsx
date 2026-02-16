@@ -49,7 +49,6 @@ import { TrialExpiringModal } from "@/components/subscription/TrialExpiringModal
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
-import { useSubscription } from "@/hooks/useSubscription";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type { FoodGroup };
@@ -96,8 +95,6 @@ export default function InventoryScreen() {
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
-
-  const { isActive: hasActiveSubscription } = useSubscription();
 
   const [showExpiringModal, setShowExpiringModal] = useState(false);
 
@@ -222,9 +219,9 @@ export default function InventoryScreen() {
     });
   }, [filteredItems, storageLocations]);
 
-  const toggleSection = (key: string) => {
+  const toggleSection = useCallback((key: string) => {
     setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -235,7 +232,7 @@ export default function InventoryScreen() {
     setRefreshing(false);
   };
 
-  const handleMarkAsConsumed = async (item: FoodItem) => {
+  const handleMarkAsConsumed = useCallback(async (item: FoodItem) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
       "Mark as Consumed",
@@ -262,9 +259,25 @@ export default function InventoryScreen() {
         },
       ],
     );
-  };
+  }, [loadItems]);
 
-  const handleMarkAsWasted = async (item: FoodItem) => {
+  const logWaste = useCallback(async (item: FoodItem, reason: string) => {
+    const entry: WasteLogEntry = {
+      id: generateId(),
+      itemName: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      category: item.category,
+      reason: reason as "expired" | "spoiled" | "not_wanted" | "other",
+      date: new Date().toISOString(),
+    };
+    await storage.addWasteEntry(entry);
+    await storage.deleteInventoryItem(item.id);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    loadItems();
+  }, [loadItems]);
+
+  const handleMarkAsWasted = useCallback(async (item: FoodItem) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert("Mark as Wasted", "What happened to this item?", [
       { text: "Cancel", style: "cancel" },
@@ -281,23 +294,7 @@ export default function InventoryScreen() {
         onPress: () => logWaste(item, "not_wanted"),
       },
     ]);
-  };
-
-  const logWaste = async (item: FoodItem, reason: string) => {
-    const entry: WasteLogEntry = {
-      id: generateId(),
-      itemName: item.name,
-      quantity: item.quantity,
-      unit: item.unit,
-      category: item.category,
-      reason: reason as "expired" | "spoiled" | "not_wanted" | "other",
-      date: new Date().toISOString(),
-    };
-    await storage.addWasteEntry(entry);
-    await storage.deleteInventoryItem(item.id);
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    loadItems();
-  };
+  }, [logWaste]);
 
   const handleToggleFoodGroup = (groupKey: FoodGroup) => {
     setSelectedFoodGroups((prev) => {
@@ -310,13 +307,13 @@ export default function InventoryScreen() {
     });
   };
 
-  const handleItemPress = (itemId: string) => {
+  const handleItemPress = useCallback((itemId: string) => {
     if (isTablet) {
       setSelectedItemId(itemId);
     } else {
       navigation.navigate("ItemDetail", { itemId });
     }
-  };
+  }, [isTablet, navigation]);
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -325,7 +322,7 @@ export default function InventoryScreen() {
 
   const sidePanelWidth = isTablet && isLandscape ? 380 : 320;
 
-  const renderListHeader = () => (
+  const renderListHeader = useCallback(() => (
     <>
       
       <View
@@ -342,9 +339,9 @@ export default function InventoryScreen() {
         />
       </View>
     </>
-  );
+  ), [funFact, funFactLoading, funFactTimeRemaining, handleRefreshFunFact, theme, showFunFact]);
 
-  const renderListFooter = () => {
+  const renderListFooter = useCallback(() => {
     const showNutrition = items.length > 0 && nutritionTotals.itemsWithNutrition > 0;
 
     return (
@@ -396,7 +393,7 @@ export default function InventoryScreen() {
         )}
       </>
     );
-  };
+  }, [items.length, nutritionTotals, recentlyDeletedCount, navigation]);
 
   const renderGroupedSection = useCallback(({
     item,
@@ -431,7 +428,7 @@ export default function InventoryScreen() {
     );
   }, [collapsedSections, toggleSection, handleMarkAsConsumed, handleMarkAsWasted, handleItemPress, theme, showSwipeHint]);
 
-  const renderEmptyState = () => {
+  const renderEmptyState = useCallback(() => {
     if (loading) {
       return (
         <View accessibilityLiveRegion="polite" accessibilityLabel="Loading inventory">
@@ -451,7 +448,7 @@ export default function InventoryScreen() {
         />
       </View>
     );
-  };
+  }, [loading, navigation]);
 
   return (
     <View

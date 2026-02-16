@@ -146,7 +146,7 @@ export default function RecipeDetailScreen() {
     }
 
     setLoading(false);
-  }, [route.params.recipeId]);
+  }, [route.params.recipeId, route.params.initialRecipe]);
 
   const handleTermPress = useCallback((term: CookingTerm) => {
     setSelectedTerm(term);
@@ -304,14 +304,14 @@ export default function RecipeDetailScreen() {
     loadData();
   };
 
-  const isIngredientAvailable = (ingredientName: string): boolean => {
+  const isIngredientAvailable = useCallback((ingredientName: string): boolean => {
     const inventoryNames = inventory.map((i) => i.name.toLowerCase());
     return inventoryNames.some(
       (name) =>
         name.includes(ingredientName.toLowerCase()) ||
         ingredientName.toLowerCase().includes(name),
     );
-  };
+  }, [inventory]);
 
   const handleAddMissingToShoppingList = async () => {
     if (!recipe) return;

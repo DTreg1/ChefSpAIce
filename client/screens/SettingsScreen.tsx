@@ -1001,6 +1001,98 @@ export default function SettingsScreen() {
 
   const leftPaneWidth = isLandscape ? 320 : 280;
 
+  const addStorageModal = (
+    <Modal
+      visible={showAddStorageModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAddStorageModal(false)}
+      accessibilityViewIsModal={true}
+    >
+      <Pressable
+        style={[addStorageStyles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
+        onPress={() => setShowAddStorageModal(false)}
+        accessibilityRole="button"
+        accessibilityLabel="Close add storage modal"
+      >
+        <Pressable
+          style={[
+            addStorageStyles.modal,
+            { backgroundColor: theme.backgroundDefault },
+          ]}
+          onPress={(e) => e.stopPropagation()}
+          accessibilityRole="button"
+          accessibilityLabel="Add storage modal content"
+          onAccessibilityEscape={onStorageEscape}
+        >
+          <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
+            Add Storage Area
+          </ThemedText>
+          <ThemedText
+            type="caption"
+            style={[addStorageStyles.description, { color: theme.textSecondary }]}
+            accessibilityRole="text"
+            accessibilityLabel="Enter a name for your new storage area, for example Garage, Cellar, or Spice Rack"
+          >
+            Enter a name for your new storage area (e.g., Garage, Cellar, Spice Rack)
+          </ThemedText>
+          <TextInput
+            style={[
+              addStorageStyles.input,
+              {
+                backgroundColor: theme.backgroundSecondary,
+                color: theme.text,
+                borderColor: theme.border,
+              },
+            ]}
+            placeholder="Storage area name"
+            placeholderTextColor={theme.textSecondary}
+            value={newStorageAreaName}
+            onChangeText={setNewStorageAreaName}
+            autoFocus
+            onSubmitEditing={handleConfirmAddStorageArea}
+            testID="input-new-storage-area"
+            accessibilityLabel="Enter new storage area name"
+            accessibilityRole="text"
+          />
+          <View style={addStorageStyles.buttons}>
+            <Pressable
+              onPress={() => setShowAddStorageModal(false)}
+              style={[
+                addStorageStyles.button,
+                { backgroundColor: theme.backgroundSecondary },
+              ]}
+              testID="button-cancel-add-storage"
+              accessibilityRole="button"
+              accessibilityLabel="Cancel add storage area"
+            >
+              <ThemedText style={addStorageStyles.buttonText}>Cancel</ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={handleConfirmAddStorageArea}
+              style={[
+                addStorageStyles.button,
+                {
+                  backgroundColor: AppColors.primary,
+                  opacity: newStorageAreaName.trim() ? 1 : 0.5,
+                },
+              ]}
+              disabled={!newStorageAreaName.trim()}
+              testID="button-confirm-add-storage"
+              accessibilityRole="button"
+              accessibilityLabel="Add storage area"
+              accessibilityState={{ disabled: !newStorageAreaName.trim() }}
+            >
+              <ThemedText style={[addStorageStyles.buttonText, { color: theme.buttonText }]}>
+                Add
+              </ThemedText>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+
   if (isTablet) {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -1084,95 +1176,7 @@ export default function SettingsScreen() {
           theme={theme}
         />
 
-        <Modal
-          visible={showAddStorageModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowAddStorageModal(false)}
-          accessibilityViewIsModal={true}
-        >
-          <Pressable
-            style={[addStorageStyles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
-            onPress={() => setShowAddStorageModal(false)}
-            accessibilityRole="button"
-            accessibilityLabel="Close add storage modal"
-          >
-            <Pressable
-              style={[
-                addStorageStyles.modal,
-                { backgroundColor: theme.backgroundDefault },
-              ]}
-              onPress={(e) => e.stopPropagation()}
-              accessibilityRole="button"
-              accessibilityLabel="Add storage modal content"
-              onAccessibilityEscape={onStorageEscape}
-            >
-              <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
-                Add Storage Area
-              </ThemedText>
-              <ThemedText
-                type="caption"
-                style={[addStorageStyles.description, { color: theme.textSecondary }]}
-                accessibilityRole="text"
-                accessibilityLabel="Enter a name for your new storage area, for example Garage, Cellar, or Spice Rack"
-              >
-                Enter a name for your new storage area (e.g., Garage, Cellar, Spice Rack)
-              </ThemedText>
-              <TextInput
-                style={[
-                  addStorageStyles.input,
-                  {
-                    backgroundColor: theme.backgroundSecondary,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
-                placeholder="Storage area name"
-                placeholderTextColor={theme.textSecondary}
-                value={newStorageAreaName}
-                onChangeText={setNewStorageAreaName}
-                autoFocus
-                onSubmitEditing={handleConfirmAddStorageArea}
-                testID="input-new-storage-area"
-                accessibilityLabel="Enter new storage area name"
-                accessibilityRole="text"
-              />
-              <View style={addStorageStyles.buttons}>
-                <Pressable
-                  onPress={() => setShowAddStorageModal(false)}
-                  style={[
-                    addStorageStyles.button,
-                    { backgroundColor: theme.backgroundSecondary },
-                  ]}
-                  testID="button-cancel-add-storage"
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel add storage area"
-                >
-                  <ThemedText style={addStorageStyles.buttonText}>Cancel</ThemedText>
-                </Pressable>
-                <Pressable
-                  onPress={handleConfirmAddStorageArea}
-                  style={[
-                    addStorageStyles.button,
-                    {
-                      backgroundColor: AppColors.primary,
-                      opacity: newStorageAreaName.trim() ? 1 : 0.5,
-                    },
-                  ]}
-                  disabled={!newStorageAreaName.trim()}
-                  testID="button-confirm-add-storage"
-                  accessibilityRole="button"
-                  accessibilityLabel="Add storage area"
-                  accessibilityState={{ disabled: !newStorageAreaName.trim() }}
-                >
-                  <ThemedText style={[addStorageStyles.buttonText, { color: theme.buttonText }]}>
-                    Add
-                  </ThemedText>
-                </Pressable>
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
+        {addStorageModal}
       </View>
     );
   }
@@ -1354,95 +1358,7 @@ export default function SettingsScreen() {
         theme={theme}
       />
 
-      <Modal
-        visible={showAddStorageModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAddStorageModal(false)}
-        accessibilityViewIsModal={true}
-      >
-        <Pressable
-          style={[addStorageStyles.overlay, { backgroundColor: themeStyle.surface.overlaySubtle }]}
-          onPress={() => setShowAddStorageModal(false)}
-          accessibilityRole="button"
-          accessibilityLabel="Close add storage modal"
-        >
-          <Pressable
-            style={[
-              addStorageStyles.modal,
-              { backgroundColor: theme.backgroundDefault },
-            ]}
-            onPress={(e) => e.stopPropagation()}
-            accessibilityRole="button"
-            accessibilityLabel="Add storage modal content"
-            onAccessibilityEscape={onStorageEscape}
-          >
-            <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
-              Add Storage Area
-            </ThemedText>
-            <ThemedText
-              type="caption"
-              style={[addStorageStyles.description, { color: theme.textSecondary }]}
-              accessibilityRole="text"
-              accessibilityLabel="Enter a name for your new storage area, for example Garage, Cellar, or Spice Rack"
-            >
-              Enter a name for your new storage area (e.g., Garage, Cellar, Spice Rack)
-            </ThemedText>
-            <TextInput
-              style={[
-                addStorageStyles.input,
-                {
-                  backgroundColor: theme.backgroundSecondary,
-                  color: theme.text,
-                  borderColor: theme.border,
-                },
-              ]}
-              placeholder="Storage area name"
-              placeholderTextColor={theme.textSecondary}
-              value={newStorageAreaName}
-              onChangeText={setNewStorageAreaName}
-              autoFocus
-              onSubmitEditing={handleConfirmAddStorageArea}
-              testID="input-new-storage-area"
-              accessibilityLabel="Enter new storage area name"
-              accessibilityRole="text"
-            />
-            <View style={addStorageStyles.buttons}>
-              <Pressable
-                onPress={() => setShowAddStorageModal(false)}
-                style={[
-                  addStorageStyles.button,
-                  { backgroundColor: theme.backgroundSecondary },
-                ]}
-                testID="button-cancel-add-storage"
-                accessibilityRole="button"
-                accessibilityLabel="Cancel add storage area"
-              >
-                <ThemedText style={addStorageStyles.buttonText}>Cancel</ThemedText>
-              </Pressable>
-              <Pressable
-                onPress={handleConfirmAddStorageArea}
-                style={[
-                  addStorageStyles.button,
-                  {
-                    backgroundColor: AppColors.primary,
-                    opacity: newStorageAreaName.trim() ? 1 : 0.5,
-                  },
-                ]}
-                disabled={!newStorageAreaName.trim()}
-                testID="button-confirm-add-storage"
-                accessibilityRole="button"
-                accessibilityLabel="Add storage area"
-                accessibilityState={{ disabled: !newStorageAreaName.trim() }}
-              >
-                <ThemedText style={[addStorageStyles.buttonText, { color: theme.buttonText }]}>
-                  Add
-                </ThemedText>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {addStorageModal}
     </View>
   );
 }
