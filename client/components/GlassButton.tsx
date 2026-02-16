@@ -21,7 +21,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 
 type GlassButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 
@@ -84,44 +84,45 @@ export const GlassButton = memo(function GlassButton({
   const backgroundColor = useMemo(() => {
     switch (variant) {
       case "primary":
-        return AppColors.primary;
+        return themeStyle.button.primaryBg;
       case "secondary":
-        return AppColors.secondary;
+        return themeStyle.button.secondaryBg;
       case "outline":
         return themeStyle.button.outlineBg;
       case "ghost":
         return themeStyle.button.ghostBg;
       default:
-        return AppColors.primary;
+        return themeStyle.button.primaryBg;
     }
-  }, [variant, themeStyle.button.outlineBg, themeStyle.button.ghostBg]);
+  }, [variant, themeStyle.button]);
 
   const textColor = useMemo(() => {
     switch (variant) {
       case "primary":
+        return themeStyle.button.primaryText;
       case "secondary":
-        return "#FFFFFF";
+        return themeStyle.button.secondaryText;
       case "outline":
         return themeStyle.button.outlineText;
       case "ghost":
         return themeStyle.button.ghostText;
       default:
-        return "#FFFFFF";
+        return themeStyle.button.primaryText;
     }
-  }, [variant, themeStyle.button.outlineText, themeStyle.button.ghostText]);
+  }, [variant, themeStyle.button]);
 
   const borderStyle = useMemo(() => {
     if (variant === "outline") {
       return {
         borderWidth: 2,
-        borderColor: AppColors.primary,
+        borderColor: themeStyle.button.outlineBorder,
       };
     }
     return {
       borderWidth: themeStyle.glassEffect.borderWidth,
       borderColor: themeStyle.glass.border,
     };
-  }, [variant, themeStyle.glass.border]);
+  }, [variant, themeStyle.button.outlineBorder, themeStyle.glass.border]);
 
   const blurTint = useMemo(() => {
     switch (variant) {

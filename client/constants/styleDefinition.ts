@@ -40,10 +40,15 @@ export interface StyleDefinition {
     statusHint: string;
   };
   button: {
+    primaryBg: string;
+    primaryText: string;
+    secondaryBg: string;
+    secondaryText: string;
     outlineBg: string;
     ghostBg: string;
     outlineText: string;
     ghostText: string;
+    outlineBorder: string;
   };
   nutritionLabel: {
     text: string;
@@ -179,10 +184,15 @@ export function getGlassStyle(isDark: boolean): StyleDefinition {
     },
 
     button: {
+      primaryBg: isDark ? "#649344" : "#578136",
+      primaryText: "#FFFFFF",
+      secondaryBg: isDark ? "#E67E22" : "#b2611a",
+      secondaryText: "#FFFFFF",
       outlineBg: isDark ? "rgba(0, 0, 0, 0.55)" : "rgba(255, 255, 255, 0.85)",
       ghostBg: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)",
       outlineText: isDark ? "#8FBF5F" : "#3D6B1A",
       ghostText: isDark ? "#FFFFFF" : "#1a3a1a",
+      outlineBorder: isDark ? "#649344" : "#578136",
     },
 
     nutritionLabel: {
