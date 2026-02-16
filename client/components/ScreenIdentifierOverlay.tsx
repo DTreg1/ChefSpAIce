@@ -52,6 +52,11 @@ export function ScreenIdentifierOverlay({
         const authToken = await storage.getAuthToken();
         if (authToken) {
           try {
+            await apiClient.post<void>("/api/auth/logout").catch((err) => {
+              logger.warn("Logout API call failed during reset", {
+                error: err instanceof Error ? err.message : String(err),
+              });
+            });
             await apiClient.delete<void>("/api/auth/account");
             logger.log("[Reset] Account deleted from server");
           } catch (err) {
@@ -60,10 +65,6 @@ export function ScreenIdentifierOverlay({
             );
           }
         }
-
-        await apiClient.post<void>("/api/auth/logout").catch((err) => {
-          logger.warn("Logout API call failed during reset", { error: err instanceof Error ? err.message : String(err) });
-        });
 
         await storage.resetAllStorage();
         await syncManager.clearQueue();
@@ -83,7 +84,10 @@ export function ScreenIdentifierOverlay({
           try {
             await Updates.reloadAsync();
           } catch (err) {
-            logger.warn("[Reset] Updates.reloadAsync failed, showing manual restart alert", { error: err instanceof Error ? err.message : String(err) });
+            logger.warn(
+              "[Reset] Updates.reloadAsync failed, showing manual restart alert",
+              { error: err instanceof Error ? err.message : String(err) },
+            );
             Alert.alert(
               "App Reset",
               "All data has been cleared. Please close and reopen the app.",
