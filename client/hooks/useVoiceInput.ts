@@ -355,8 +355,13 @@ export function useVoiceInput(options: VoiceInputOptions = {}) {
         webRecognitionRef.current.abort();
         webRecognitionRef.current = null;
       }
+
+      if (isRecordingRef.current) {
+        audioRecorder.stop().catch(() => {});
+        isRecordingRef.current = false;
+      }
     };
-  }, []);
+  }, [audioRecorder]);
 
   return {
     ...state,

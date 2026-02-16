@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Platform, View } from "react-native";
+import { Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTextToSpeech } from "./useTextToSpeech";
 import { useVoiceInput } from "./useVoiceInput";

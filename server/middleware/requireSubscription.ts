@@ -64,11 +64,11 @@ export async function requireSubscription(
 
     if (subscriptionStatus === "trialing" && subscriptionTrialEnd) {
       if (new Date() > new Date(subscriptionTrialEnd)) {
-        await Promise.all([
-          subscriptionCache.delete(userId),
-          db.update(subscriptions).set({ status: "expired", updatedAt: new Date() }).where(eq(subscriptions.userId, userId)),
-          db.update(users).set({ subscriptionStatus: "expired" }).where(eq(users.id, userId)),
-        ]);
+        await subscriptionCache.delete(userId);
+        await db.transaction(async (tx) => {
+          await tx.update(subscriptions).set({ status: "expired", updatedAt: new Date() }).where(eq(subscriptions.userId, userId));
+          await tx.update(users).set({ subscriptionStatus: "expired" }).where(eq(users.id, userId));
+        });
         return next(AppError.forbidden(
           "Your free trial has expired. Please subscribe to continue using ChefSpAIce.",
           "TRIAL_EXPIRED"

@@ -57,26 +57,6 @@ export function useTextToSpeech(options: TTSOptions = {}) {
     });
   }, [updateState]);
 
-  const processQueue = useCallback(async () => {
-    if (isProcessingQueueRef.current || queueRef.current.length === 0) {
-      return;
-    }
-
-    isProcessingQueueRef.current = true;
-    const text = queueRef.current.shift();
-    updateState({ queueLength: queueRef.current.length });
-
-    if (text) {
-      await speakText(text);
-    }
-
-    isProcessingQueueRef.current = false;
-
-    if (queueRef.current.length > 0) {
-      processQueue();
-    }
-  }, []);
-
   const speakText = useCallback(
     (text: string): Promise<void> => {
       return new Promise((resolve) => {
@@ -125,6 +105,26 @@ export function useTextToSpeech(options: TTSOptions = {}) {
     [voice, rate, pitch, language, onStart, onDone, onError, updateState],
   );
 
+  const processQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current || queueRef.current.length === 0) {
+      return;
+    }
+
+    isProcessingQueueRef.current = true;
+    const text = queueRef.current.shift();
+    updateState({ queueLength: queueRef.current.length });
+
+    if (text) {
+      await speakText(text);
+    }
+
+    isProcessingQueueRef.current = false;
+
+    if (queueRef.current.length > 0) {
+      processQueue();
+    }
+  }, [speakText, updateState]);
+
   const speak = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
@@ -144,6 +144,18 @@ export function useTextToSpeech(options: TTSOptions = {}) {
     [state.isSpeaking, speakText, processQueue, updateState],
   );
 
+  const stop = useCallback(async () => {
+    queueRef.current = [];
+    isProcessingQueueRef.current = false;
+    await Speech.stop();
+    updateState({
+      isSpeaking: false,
+      isPaused: false,
+      currentText: "",
+      queueLength: 0,
+    });
+  }, [updateState]);
+
   const speakNow = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
@@ -151,7 +163,7 @@ export function useTextToSpeech(options: TTSOptions = {}) {
       await stop();
       await speakText(text);
     },
-    [speakText],
+    [speakText, stop],
   );
 
   const queueText = useCallback(
@@ -182,18 +194,6 @@ export function useTextToSpeech(options: TTSOptions = {}) {
     },
     [state.isSpeaking, processQueue, updateState],
   );
-
-  const stop = useCallback(async () => {
-    queueRef.current = [];
-    isProcessingQueueRef.current = false;
-    await Speech.stop();
-    updateState({
-      isSpeaking: false,
-      isPaused: false,
-      currentText: "",
-      queueLength: 0,
-    });
-  }, [updateState]);
 
   const pause = useCallback(() => {
     if (Platform.OS === "ios" && state.isSpeaking && !state.isPaused) {

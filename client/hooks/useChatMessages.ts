@@ -22,6 +22,9 @@ export function useChatMessages() {
   const flatListRef = useRef<FlatList>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesRef = useRef<ChatMessage[]>([]);
+
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -44,6 +47,7 @@ export function useChatMessages() {
 
     return items
       .filter((item) => {
+        if (!item.expirationDate) return false;
         const expiryDate = new Date(item.expirationDate);
         return expiryDate >= today && expiryDate <= fiveDaysFromNow;
       })
@@ -161,7 +165,7 @@ export function useChatMessages() {
       timestamp: new Date().toISOString(),
     };
 
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = [...messagesRef.current, userMessage];
     setMessages(updatedMessages);
     setInputText("");
     setSending(true);
