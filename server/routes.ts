@@ -289,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 2. User has active subscription or free trial (requireSubscription)
   // =========================================================================
   app.use("/api/user/export-data", requireAuth, dataExportRouter);
-  app.use("/api/notifications", requireAuth, notificationsRouter);
+  app.use("/api/notifications", notificationsRouter);
   app.use("/api/user/push-token", requireAuth, pushTokenRouter);
   app.use("/api/analytics/waste-summary", requireAuth, analyticsWasteRouter);
 
