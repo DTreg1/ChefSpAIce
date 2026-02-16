@@ -21,7 +21,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -161,7 +161,7 @@ export default function StorageLocationsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Storage Locations"
         screenKey="storageLocations"
         showSearch={false}

@@ -25,7 +25,7 @@ import { CookingTerm } from "@/components/TermHighlighter";
 import { TermTooltip } from "@/components/TermTooltip";
 import { IngredientSwapModal } from "@/components/IngredientSwapModal";
 import { RecipeDetailSkeleton } from "@/components/Skeleton";
-import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
+import { GlassHeader, MenuItemConfig } from "@/components/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useRecipeVoiceNavigation } from "@/hooks/useRecipeVoiceNavigation";
 import { Spacing } from "@/constants/theme";
@@ -443,7 +443,7 @@ export default function RecipeDetailScreen() {
       <View
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
-        <ExpoGlassHeader
+        <GlassHeader
           title="Recipe"
           screenKey="recipe-detail"
           showSearch={false}
@@ -471,7 +471,7 @@ export default function RecipeDetailScreen() {
       <View
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
-        <ExpoGlassHeader
+        <GlassHeader
           title="Recipe"
           screenKey="recipe-detail"
           showSearch={false}
@@ -533,7 +533,7 @@ export default function RecipeDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title={recipe.title}
         screenKey="recipe-detail"
         showSearch={false}

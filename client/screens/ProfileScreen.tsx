@@ -17,7 +17,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -187,7 +187,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Profile"
         screenKey="profile"
         showSearch={false}

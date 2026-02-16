@@ -28,7 +28,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { GlassButton } from "@/components/GlassButton";
@@ -650,7 +650,7 @@ export default function CookwareScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Cookware"
         materialIcon="silverware-fork-knife"
         screenKey="cookware"

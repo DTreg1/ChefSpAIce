@@ -17,7 +17,7 @@ import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, Recipe, MealPlan } from "@/lib/storage";
@@ -156,7 +156,7 @@ export default function SelectRecipeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Select Recipe"
         screenKey="selectRecipe"
         showSearch={false}

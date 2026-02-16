@@ -29,7 +29,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BUTTON_SIZE = 44;
 const HEADER_HEIGHT = 56;
 
-interface ExpoGlassHeaderProps {
+interface GlassHeaderProps {
   title: string;
   materialIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
   screenKey: string;
@@ -41,7 +41,7 @@ interface ExpoGlassHeaderProps {
   headerRight?: React.ReactNode;
 }
 
-export function ExpoGlassHeader({
+export function GlassHeader({
   title,
   materialIcon,
   screenKey,
@@ -51,7 +51,7 @@ export function ExpoGlassHeader({
   showMenu = true,
   showBackButton = false,
   headerRight,
-}: ExpoGlassHeaderProps) {
+}: GlassHeaderProps) {
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();

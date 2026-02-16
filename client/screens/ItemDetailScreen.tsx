@@ -21,7 +21,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { NutritionSection } from "@/components/NutritionSection";
-import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
+import { GlassHeader, MenuItemConfig } from "@/components/GlassHeader";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -195,7 +195,7 @@ export default function ItemDetailScreen() {
       <View
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
-        <ExpoGlassHeader
+        <GlassHeader
           title="Item Details"
           screenKey="item-detail"
           showSearch={false}
@@ -218,7 +218,7 @@ export default function ItemDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title={item.name || "Item Details"}
         screenKey="item-detail"
         showSearch={false}

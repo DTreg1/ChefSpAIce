@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { Spacing, AppColors } from "@/constants/theme";
 
 const STATIC_TERMS_SECTIONS = [
@@ -140,7 +140,7 @@ For full terms, please refer to Google Play's Terms of Service: https://play.goo
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Terms of Service"
         screenKey="terms"
         showSearch={false}

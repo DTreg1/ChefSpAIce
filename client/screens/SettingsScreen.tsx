@@ -59,7 +59,7 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
@@ -1004,7 +1004,7 @@ export default function SettingsScreen() {
   if (isTablet) {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-        <ExpoGlassHeader
+        <GlassHeader
           title="Settings"
           screenKey="settings"
           showSearch={false}
@@ -1179,7 +1179,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Settings"
         screenKey="settings"
         showSearch={false}

@@ -15,7 +15,7 @@ import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { Feather } from "@expo/vector-icons";
 import DateTimePicker, {
@@ -728,7 +728,7 @@ export default function AddItemScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Add Item"
         screenKey="addItem"
         showSearch={false}

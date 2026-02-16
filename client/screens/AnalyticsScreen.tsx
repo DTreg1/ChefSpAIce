@@ -6,7 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { subDays, isWithinInterval, parseISO } from "date-fns";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -239,7 +239,7 @@ export default function AnalyticsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Analytics"
         screenKey="analytics"
         showSearch={false}

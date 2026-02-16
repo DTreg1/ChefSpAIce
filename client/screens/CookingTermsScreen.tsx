@@ -17,7 +17,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
@@ -195,7 +195,7 @@ export default function CookingTermsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Cooking Terms"
         screenKey="cookingTerms"
         showSearch={false}

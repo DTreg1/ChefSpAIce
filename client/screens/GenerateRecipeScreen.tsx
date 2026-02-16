@@ -18,7 +18,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { ExpiryBadge } from "@/components/ExpiryBadge";
@@ -511,7 +511,7 @@ export default function GenerateRecipeScreen() {
     <ThemedView
       style={[styles.container, { paddingBottom: insets.bottom + Spacing.xl }]}
     >
-      <ExpoGlassHeader
+      <GlassHeader
         title="Generate Recipe"
         screenKey="generateRecipe"
         showSearch={false}

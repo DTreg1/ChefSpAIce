@@ -13,7 +13,7 @@ import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
@@ -204,7 +204,7 @@ export default function ScanHubScreen() {
 
   return (
     <>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Choose Scan Type"
         screenKey="scanHub"
         showSearch={false}

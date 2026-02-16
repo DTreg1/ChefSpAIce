@@ -22,7 +22,7 @@ import { syncManager } from "@/lib/sync-manager";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { EmptyState } from "@/components/EmptyState";
@@ -324,7 +324,7 @@ export default function MealPlanScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Meals"
         screenKey="mealplan"
         showSearch={false}

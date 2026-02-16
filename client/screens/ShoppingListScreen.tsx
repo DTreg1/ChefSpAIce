@@ -18,7 +18,7 @@ import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 import { syncManager } from "@/lib/sync-manager";
 import { ShoppingListSkeleton } from "@/components/shopping/ShoppingListSkeleton";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -225,7 +225,7 @@ export default function ShoppingListScreen() {
       testID="screen-shopping-list"
       accessibilityRole="none"
     >
-      <ExpoGlassHeader
+      <GlassHeader
         title="Shopping"
         screenKey="shopping"
         showSearch={false}

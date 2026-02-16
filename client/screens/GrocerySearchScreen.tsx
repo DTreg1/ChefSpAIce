@@ -17,7 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
@@ -266,7 +266,7 @@ export default function GrocerySearchScreen() {
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       testID="screen-grocery-search"
     >
-      <ExpoGlassHeader
+      <GlassHeader
         title="Search"
         screenKey="grocery-search"
         showSearch={false}

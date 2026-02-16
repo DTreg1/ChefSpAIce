@@ -57,7 +57,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
 import { EmptyState } from "@/components/EmptyState";
@@ -619,7 +619,7 @@ export default function RecipesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ExpoGlassHeader
+      <GlassHeader
         title="Recipes"
         materialIcon="notebook-heart-outline"
         screenKey="recipes"

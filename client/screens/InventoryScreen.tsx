@@ -16,7 +16,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 
 import * as Haptics from "expo-haptics";
-import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { InventorySkeleton } from "@/components/inventory/InventorySkeleton";
 import { EmptyState } from "@/components/EmptyState";
@@ -462,7 +462,7 @@ export default function InventoryScreen() {
       testID="screen-inventory"
       accessibilityRole="none"
     >
-      <ExpoGlassHeader
+      <GlassHeader
         title="Kitchen"
         materialIcon="stove"
         screenKey="inventory"
