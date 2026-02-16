@@ -21,7 +21,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing, AppColors } from "@/constants/theme";
 
 type GlassButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 
@@ -62,7 +62,7 @@ export const GlassButton = memo(function GlassButton({
   accessibilityHint,
   accessibilityRole,
 }: GlassButtonProps) {
-  const { theme, isDark, style } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -118,7 +118,7 @@ export const GlassButton = memo(function GlassButton({
       };
     }
     return {
-      borderWidth: style.glassEffect.borderWidth,
+      borderWidth: themeStyle.glassEffect.borderWidth,
       borderColor: theme.glass.border,
     };
   }, [variant, theme.glass.border]);
@@ -150,7 +150,7 @@ export const GlassButton = memo(function GlassButton({
         disabled={disabled || loading}
         style={[
           styles.glassButtonWrapper,
-          { opacity: disabled ? 0.5 : 1 },
+          { opacity: disabled ? 0.5 : 1, borderRadius: themeStyle.glassEffect.borderRadius.lg },
           style,
           animatedStyle,
         ]}
@@ -158,7 +158,7 @@ export const GlassButton = memo(function GlassButton({
         <BlurView
           intensity={40}
           tint={blurTint}
-          style={[styles.glassButton, { backgroundColor }, borderStyle]}
+          style={[styles.glassButton, { backgroundColor, borderRadius: themeStyle.glassEffect.borderRadius.lg }, borderStyle]}
         >
           {loading ? (
             <ActivityIndicator color={textColor} size="small" />
@@ -200,6 +200,7 @@ export const GlassButton = memo(function GlassButton({
         {
           backgroundColor,
           opacity: disabled ? 0.5 : 1,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
         borderStyle,
         style,
@@ -229,7 +230,6 @@ export const GlassButton = memo(function GlassButton({
 const styles = StyleSheet.create({
   button: {
     minHeight: Spacing.buttonHeight,
-    borderRadius: GlassEffect.borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
@@ -240,12 +240,10 @@ const styles = StyleSheet.create({
   },
   glassButtonWrapper: {
     minHeight: Spacing.buttonHeight,
-    borderRadius: GlassEffect.borderRadius.lg,
     overflow: "hidden",
   },
   glassButton: {
     flex: 1,
-    borderRadius: GlassEffect.borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

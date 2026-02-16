@@ -1,13 +1,13 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { SkeletonBox } from "@/components/SkeletonBox";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - Spacing.lg * 3) / 2;
 
 function RecipeCardSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
 
   return (
@@ -17,6 +17,7 @@ function RecipeCardSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
     >
@@ -59,7 +60,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   recipeCard: {
-    borderRadius: GlassEffect.borderRadius.lg,
     overflow: "hidden",
     borderWidth: 1,
   },

@@ -2,7 +2,8 @@ import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { useTheme } from "@/hooks/useTheme";
+import { Spacing, AppColors } from "@/constants/theme";
 import { FoodGroup, FOOD_GROUPS } from "./inventory-utils";
 import type { ThemeColors } from "@/lib/types";
 
@@ -20,6 +21,7 @@ export function InventoryFilters({
   onToggleFoodGroup,
   theme,
 }: InventoryFiltersProps) {
+  const { style: themeStyle } = useTheme();
   return (
     <View style={[styles.filterRow, styles.searchBlur]}>
       {FOOD_GROUPS.map((group) => {
@@ -40,6 +42,7 @@ export function InventoryFilters({
                 borderColor: isSelected
                   ? AppColors.primary
                   : theme.glass.border,
+                borderRadius: themeStyle.glassEffect.borderRadius.pill,
               },
             ]}
             onPress={() => onToggleFoodGroup(group.key)}
@@ -80,7 +83,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.sm,
     minHeight: 40,
-    borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
 });

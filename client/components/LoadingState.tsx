@@ -1,7 +1,7 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { Skeleton as MotiSkeleton } from "@/components/AccessibleSkeleton";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
@@ -30,7 +30,7 @@ export function LoadingState({ variant, count }: LoadingStateProps) {
 }
 
 function ListItemSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
@@ -41,6 +41,7 @@ function ListItemSkeleton() {
         {
           backgroundColor: theme.glass.backgroundStrong,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}
       testID="skeleton-list-item"
@@ -68,7 +69,7 @@ function ListSkeleton({ count }: { count: number }) {
 }
 
 function CardSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
 
@@ -79,6 +80,7 @@ function CardSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
       testID="skeleton-card"
@@ -111,7 +113,7 @@ function CardGridSkeleton({ count }: { count: number }) {
 }
 
 function DetailSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
 
   return (
@@ -125,6 +127,7 @@ function DetailSkeleton() {
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
       >
@@ -149,6 +152,7 @@ function DetailSkeleton() {
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
       >
@@ -168,7 +172,7 @@ function DetailSkeleton() {
 }
 
 function FullPageSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
 
   return (
@@ -188,6 +192,7 @@ function FullPageSkeleton() {
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
       >
@@ -211,7 +216,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   listItem: {
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     padding: Spacing.md,
   },
@@ -231,7 +235,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   card: {
-    borderRadius: GlassEffect.borderRadius.lg,
     overflow: "hidden",
     borderWidth: 1,
   },
@@ -248,7 +251,6 @@ const styles = StyleSheet.create({
   },
   detailSection: {
     padding: Spacing.lg,
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
   },
   detailRow: {
@@ -262,7 +264,6 @@ const styles = StyleSheet.create({
   },
   fullPageSection: {
     padding: Spacing.lg,
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
   },
 });

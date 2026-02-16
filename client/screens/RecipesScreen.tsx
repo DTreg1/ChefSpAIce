@@ -69,7 +69,6 @@ import {
   Spacing,
   BorderRadius,
   AppColors,
-  GlassEffect, // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";
@@ -84,7 +83,7 @@ import { syncManager } from "@/lib/sync-manager";
 export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation =
     useNavigation<RecipesNavigation>();
   const { isTablet, isLargeTablet, screenWidth, isLandscape } = useDeviceType();
@@ -658,6 +657,7 @@ export default function RecipesScreen() {
                 {
                   backgroundColor: theme.glass.background,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
             >
@@ -719,6 +719,7 @@ export default function RecipesScreen() {
                           borderColor: isSelected
                             ? AppColors.primary
                             : theme.glass.border,
+                          borderRadius: themeStyle.glassEffect.borderRadius.pill,
                           borderWidth: 1,
                         },
                       ]}
@@ -768,6 +769,7 @@ export default function RecipesScreen() {
                           borderColor: isSelected
                             ? AppColors.accent
                             : theme.glass.border,
+                          borderRadius: themeStyle.glassEffect.borderRadius.pill,
                           borderWidth: 1,
                         },
                       ]}
@@ -913,7 +915,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.md,
     height: 44,
-    borderRadius: GlassEffect.borderRadius.md,
     marginBottom: Spacing.md,
     borderWidth: 1,
   },
@@ -936,7 +937,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderRadius: GlassEffect.borderRadius.pill,
   },
   list: {
     flex: 1,

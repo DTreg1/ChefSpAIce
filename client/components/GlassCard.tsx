@@ -109,7 +109,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing } from "@/constants/theme";
 import { GlassProvider } from "@/contexts/GlassContext";
 
 interface GlassCardProps {
@@ -166,7 +166,7 @@ export function GlassCard({
   accessibilityHint,
   accessibilityRole,
 }: GlassCardProps) {
-  const { theme, isDark, style } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
 
   const blurIntensity = getBlurIntensity(intensity);
@@ -190,16 +190,18 @@ export function GlassCard({
     }
   };
 
+  const glassRadius = themeStyle.glassEffect.borderRadius.lg;
+
   const glassStyles = {
     borderColor: theme.glass.border,
-    borderWidth: useLiquidGlass ? 0 : style.glassEffect.borderWidth,
+    borderWidth: useLiquidGlass ? 0 : themeStyle.glassEffect.borderWidth,
   };
 
   const textBackingColor = isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)";
 
   const content = (
     <GlassProvider>
-      <View style={[styles.content, { backgroundColor: textBackingColor }, contentStyle]}>
+      <View style={[styles.content, { backgroundColor: textBackingColor, borderRadius: glassRadius }, contentStyle]}>
         {title ? (
           <ThemedText type="h4" style={styles.cardTitle}>
             {title}
@@ -229,6 +231,7 @@ export function GlassCard({
             {
               backgroundColor: theme.glass.background,
               borderColor: theme.glass.border,
+              borderRadius: glassRadius,
             },
             style,
           ]}
@@ -245,7 +248,7 @@ export function GlassCard({
           accessibilityRole={accessibilityRole as A11yRole}
           accessibilityLabel={accessibilityLabel}
           glassEffectStyle={glassEffectStyle}
-          style={[styles.card, style]}
+          style={[styles.card, { borderRadius: glassRadius }, style]}
         >
           {content}
         </GlassView>
@@ -257,7 +260,7 @@ export function GlassCard({
         <BlurView
           intensity={blurIntensity}
           tint={glassTint}
-          style={[styles.card, glassStyles, style]}
+          style={[styles.card, { borderRadius: glassRadius }, glassStyles, style]}
         >
           <View style={styles.glassOverlay}>{content}</View>
         </BlurView>
@@ -285,6 +288,7 @@ export function GlassCard({
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: glassRadius,
           },
           animatedStyle,
           style,
@@ -309,7 +313,7 @@ export function GlassCard({
       >
         <GlassView
           glassEffectStyle={glassEffectStyle}
-          style={[styles.card, style]}
+          style={[styles.card, { borderRadius: glassRadius }, style]}
         >
           {content}
         </GlassView>
@@ -331,7 +335,7 @@ export function GlassCard({
       <BlurView
         intensity={blurIntensity}
         tint={glassTint}
-        style={[styles.card, glassStyles, style]}
+        style={[styles.card, { borderRadius: glassRadius }, glassStyles, style]}
       >
         <View style={styles.glassOverlay}>{content}</View>
       </BlurView>
@@ -341,12 +345,10 @@ export function GlassCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: GlassEffect.borderRadius.lg,
     overflow: "hidden",
   },
   content: {
     padding: Spacing.lg,
-    borderRadius: GlassEffect.borderRadius.lg,
   },
   glassOverlay: {
     flex: 1,

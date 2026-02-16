@@ -1,7 +1,7 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { SkeletonBox } from "@/components/SkeletonBox";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
@@ -17,10 +17,12 @@ function WeekNavSkeleton() {
 }
 
 function DaySelectorSkeleton() {
+  const { style: themeStyle } = useTheme();
+
   return (
     <View style={styles.daySelector}>
       {Array.from({ length: 7 }).map((_, i) => (
-        <View key={i} style={styles.dayCard}>
+        <View key={i} style={[styles.dayCard, { borderRadius: themeStyle.glassEffect.borderRadius.md }]}>
           <SkeletonBox width={24} height={12} borderRadius={4} />
           <SkeletonBox width={20} height={20} borderRadius={6} />
           <SkeletonBox width={6} height={6} borderRadius={3} />
@@ -31,7 +33,7 @@ function DaySelectorSkeleton() {
 }
 
 function MealSlotSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View style={styles.mealSlot}>
@@ -45,6 +47,7 @@ function MealSlotSkeleton() {
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: themeStyle.glassEffect.borderRadius.md,
           },
         ]}
       >
@@ -73,7 +76,7 @@ function HintRowSkeleton() {
 }
 
 function SelectedDayCardSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View
@@ -82,6 +85,7 @@ function SelectedDayCardSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
     >
@@ -94,7 +98,7 @@ function SelectedDayCardSkeleton() {
 }
 
 function StatsCardSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View
@@ -103,6 +107,7 @@ function StatsCardSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
     >
@@ -150,7 +155,6 @@ const styles = StyleSheet.create({
   dayCard: {
     width: 44,
     height: 72,
-    borderRadius: GlassEffect.borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.xs,
@@ -165,7 +169,6 @@ const styles = StyleSheet.create({
   },
   mealContent: {
     padding: Spacing.md,
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
   },
   mealContentInner: {
@@ -184,13 +187,11 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   selectedDayCard: {
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
     padding: Spacing.lg,
     gap: Spacing.md,
   },
   statsCard: {
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
     padding: Spacing.lg,
     gap: Spacing.md,

@@ -34,7 +34,7 @@ import { MealPlanSkeleton } from "@/components/meal-plan/MealPlanSkeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing, AppColors } from "@/constants/theme";
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import type { MealPlanNavigation, RootNavigation } from "@/lib/types";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
@@ -49,7 +49,7 @@ interface DraggableSlotItem {
 export default function MealPlanScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation = useNavigation<MealPlanNavigation>();
   const { checkFeature } = useSubscription();
   const { isTablet, screenWidth, isLandscape } = useDeviceType();
@@ -288,6 +288,7 @@ export default function MealPlanScreen() {
                 {
                   backgroundColor: theme.glass.background,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
               accessibilityRole="button"
@@ -637,7 +638,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     minHeight: 44,
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",

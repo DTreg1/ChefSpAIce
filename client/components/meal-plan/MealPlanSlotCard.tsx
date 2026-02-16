@@ -8,7 +8,6 @@ import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
   BorderRadius,
-  GlassEffect, // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 } from "@/constants/theme";
 import { Recipe } from "@/lib/storage";
 
@@ -37,7 +36,7 @@ export function MealPlanSlotCard({
   onRemoveMeal,
   onSwapRecipe,
 }: MealPlanSlotCardProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View style={styles.mealSlot} {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as unknown as AccessibilityRole } : {})} accessibilityLabel={`${slot.name}${recipe ? `, ${recipe.title}` : ', empty'}`}>
@@ -58,6 +57,7 @@ export function MealPlanSlotCard({
             {
               backgroundColor: theme.glass.background,
               borderColor: theme.glass.border,
+              borderRadius: themeStyle.glassEffect.borderRadius.md,
             },
           ]}
           onPress={() =>
@@ -155,7 +155,6 @@ const styles = StyleSheet.create({
   },
   mealContent: {
     padding: Spacing.md,
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
   },
   mealContentInner: {

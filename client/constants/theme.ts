@@ -33,49 +33,6 @@ export const AppColors = {
   sourceLocal: "#6C757D",
 };
 
-export const GlassColors = {
-  light: {
-    background: "rgba(255, 255, 255, 0.75)",
-    backgroundStrong: "rgba(255, 255, 255, 0.9)",
-    backgroundSubtle: "rgba(255, 255, 255, 0.6)",
-    border: "rgba(160, 165, 175, 0.5)",
-    borderStrong: "rgba(140, 145, 155, 0.7)",
-    borderSubtle: "rgba(180, 185, 195, 0.4)",
-    overlay: "rgba(255, 255, 255, 0.4)",
-    shadowColor: "rgba(31, 38, 135, 0.15)",
-    insetHighlight: "rgba(255, 255, 255, 0.5)",
-  },
-  dark: {
-    background: "rgba(0, 0, 0, 0.45)",
-    backgroundStrong: "rgba(0, 0, 0, 0.55)",
-    backgroundSubtle: "rgba(0, 0, 0, 0.3)",
-    border: "rgba(255, 255, 255, 0.15)",
-    borderStrong: "rgba(255, 255, 255, 0.25)",
-    borderSubtle: "rgba(255, 255, 255, 0.08)",
-    overlay: "rgba(0, 0, 0, 0.15)",
-    shadowColor: "rgba(0, 0, 0, 0.4)",
-    insetHighlight: "rgba(255, 255, 255, 0.1)",
-  },
-};
-
-export const GlassEffect = {
-  blur: {
-    subtle: 4,
-    regular: 6,
-    strong: 10,
-    intense: 20,
-  },
-  saturation: 180,
-  borderWidth: 1,
-  borderRadius: {
-    sm: 12,
-    md: 16,
-    lg: 20,
-    xl: 24,
-    pill: 32,
-  },
-};
-
 export const Colors = {
   light: {
     text: "#1a3a1a",
@@ -98,7 +55,17 @@ export const Colors = {
     error: AppColors.error,
     border: AppColors.border,
     surface: "rgba(255, 255, 255, 0.9)",
-    glass: GlassColors.light,
+    glass: {
+      background: "rgba(255, 255, 255, 0.75)",
+      backgroundStrong: "rgba(255, 255, 255, 0.9)",
+      backgroundSubtle: "rgba(255, 255, 255, 0.6)",
+      border: "rgba(160, 165, 175, 0.5)",
+      borderStrong: "rgba(140, 145, 155, 0.7)",
+      borderSubtle: "rgba(180, 185, 195, 0.4)",
+      overlay: "rgba(255, 255, 255, 0.4)",
+      shadowColor: "rgba(31, 38, 135, 0.15)",
+      insetHighlight: "rgba(255, 255, 255, 0.5)",
+    },
     linkHighlight: "#2B6CA3",
     linkHighlightActive: "#cc4444",
     confidenceHigh: "#188841",
@@ -127,7 +94,17 @@ export const Colors = {
     error: "#E74C3C",
     border: AppColors.border,
     surface: "rgba(26, 26, 26, 0.9)",
-    glass: GlassColors.dark,
+    glass: {
+      background: "rgba(0, 0, 0, 0.45)",
+      backgroundStrong: "rgba(0, 0, 0, 0.55)",
+      backgroundSubtle: "rgba(0, 0, 0, 0.3)",
+      border: "rgba(255, 255, 255, 0.15)",
+      borderStrong: "rgba(255, 255, 255, 0.25)",
+      borderSubtle: "rgba(255, 255, 255, 0.08)",
+      overlay: "rgba(0, 0, 0, 0.15)",
+      shadowColor: "rgba(0, 0, 0, 0.4)",
+      insetHighlight: "rgba(255, 255, 255, 0.1)",
+    },
     linkHighlight: "#88ccff",
     linkHighlightActive: "#ff8888",
     confidenceHigh: "#22c55e",
@@ -279,17 +256,6 @@ export const TabBarColors = {
     pillBg: "rgba(28, 28, 30, 0.95)",
     pillBorder: "rgba(255, 255, 255, 0.1)",
   },
-};
-
-export const WebInfoColors = {
-  card: "rgba(255, 255, 255, 0.08)",
-  cardBorder: "rgba(255, 255, 255, 0.15)",
-  textPrimary: "rgba(255, 255, 255, 0.95)",
-  textSecondary: "rgba(255, 255, 255, 0.85)",
-  textMuted: "rgba(255, 255, 255, 0.7)",
-  footerBg: "rgba(0, 0, 0, 0.3)",
-  iconLight: "rgba(255, 255, 255, 0.8)",
-  brandGreen: "#1a2e05",
 };
 
 export const Fonts = Platform.select({

@@ -9,7 +9,7 @@ import { format, isSameDay } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing, AppColors } from "@/constants/theme";
 import { MealPlan } from "@/lib/storage";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -27,7 +27,7 @@ export function MealPlanDaySelector({
   mealPlans,
   onSelectDay,
 }: MealPlanDaySelectorProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
 
   return (
     <View style={styles.weekGrid}>
@@ -81,6 +81,7 @@ export function MealPlanDaySelector({
                   backgroundColor: AppColors.primary,
                   borderColor: isToday ? AppColors.primary : "transparent",
                   borderWidth: isToday && !isSelected ? 2 : 0,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
               onPress={() => onSelectDay(day)}
@@ -99,7 +100,7 @@ export function MealPlanDaySelector({
             <Pressable
               key={index}
               onPress={() => onSelectDay(day)}
-              style={[styles.dayCard, styles.dayCardGlass]}
+              style={[styles.dayCard, styles.dayCardGlass, { borderRadius: themeStyle.glassEffect.borderRadius.md }]}
               accessibilityRole="button"
               accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
               accessibilityState={{ selected: isSelected }}
@@ -115,6 +116,7 @@ export function MealPlanDaySelector({
                         ? AppColors.primary
                         : "transparent",
                       borderWidth: isToday ? 2 : 0,
+                      borderRadius: themeStyle.glassEffect.borderRadius.md,
                     },
                   ]}
                 />
@@ -130,6 +132,7 @@ export function MealPlanDaySelector({
                         ? AppColors.primary
                         : theme.glass.border,
                       borderWidth: isToday ? 2 : 1,
+                      borderRadius: themeStyle.glassEffect.borderRadius.md,
                     },
                   ]}
                 />
@@ -150,6 +153,7 @@ export function MealPlanDaySelector({
                   ? AppColors.primary
                   : theme.glass.border,
                 borderWidth: isToday ? 2 : 1,
+                borderRadius: themeStyle.glassEffect.borderRadius.md,
               },
             ]}
             onPress={() => onSelectDay(day)}
@@ -173,7 +177,6 @@ const styles = StyleSheet.create({
   dayCard: {
     width: 44,
     height: 72,
-    borderRadius: GlassEffect.borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.xs,
@@ -181,9 +184,7 @@ const styles = StyleSheet.create({
   dayCardGlass: {
     backgroundColor: "transparent",
   },
-  dayCardBlur: {
-    borderRadius: GlassEffect.borderRadius.md,
-  },
+  dayCardBlur: {},
   mealIndicator: {
     width: 6,
     height: 6,

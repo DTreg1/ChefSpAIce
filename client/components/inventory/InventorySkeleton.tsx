@@ -1,13 +1,13 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { SkeletonBox } from "@/components/SkeletonBox";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 function InventoryItemSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
   return (
@@ -17,6 +17,7 @@ function InventoryItemSkeleton() {
         {
           backgroundColor: theme.glass.backgroundStrong,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}
     >
@@ -39,7 +40,7 @@ function InventoryItemSkeleton() {
 }
 
 function InventorySectionSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View
@@ -48,6 +49,7 @@ function InventorySectionSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
     >
@@ -83,7 +85,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   inventorySection: {
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -104,7 +105,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   inventoryItem: {
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     overflow: "hidden",
   },

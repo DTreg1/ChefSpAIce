@@ -1,13 +1,13 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import { SkeletonBox } from "@/components/SkeletonBox";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 function ShoppingItemSkeleton() {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View
@@ -16,6 +16,7 @@ function ShoppingItemSkeleton() {
         {
           backgroundColor: theme.glass.backgroundStrong,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}
     >
@@ -47,7 +48,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   listItem: {
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     padding: Spacing.md,
   },

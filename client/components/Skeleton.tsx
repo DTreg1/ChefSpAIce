@@ -2,14 +2,14 @@ import React from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import { Skeleton as MotiSkeleton } from "@/components/AccessibleSkeleton";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - Spacing.lg * 3) / 2;
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
 function RecipeCardSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
 
@@ -20,6 +20,7 @@ function RecipeCardSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
     >
@@ -76,7 +77,7 @@ export function RecipeGridSkeleton({ count = 4 }: { count?: number }) {
 }
 
 function InventoryItemSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
@@ -87,6 +88,7 @@ function InventoryItemSkeleton() {
         {
           backgroundColor: theme.glass.backgroundStrong,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}
     >
@@ -134,7 +136,7 @@ function InventoryItemSkeleton() {
 }
 
 function InventorySectionSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
 
   return (
@@ -144,6 +146,7 @@ function InventorySectionSkeleton() {
         {
           backgroundColor: theme.glass.background,
           borderColor: theme.glass.border,
+          borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
     >
@@ -198,7 +201,7 @@ export function InventoryListSkeleton({
 }
 
 export function RecipeDetailSkeleton() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const sectionWidth = CONTENT_WIDTH - Spacing.lg * 2;
 
@@ -261,6 +264,7 @@ export function RecipeDetailSkeleton() {
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
       >
@@ -295,6 +299,7 @@ export function RecipeDetailSkeleton() {
           {
             backgroundColor: theme.glass.background,
             borderColor: theme.glass.border,
+            borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
       >
@@ -347,7 +352,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   recipeCard: {
-    borderRadius: GlassEffect.borderRadius.lg,
     overflow: "hidden",
     borderWidth: 1,
   },
@@ -364,7 +368,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   inventorySection: {
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -385,7 +388,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   inventoryItem: {
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -417,7 +419,6 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: Spacing.lg,
-    borderRadius: GlassEffect.borderRadius.lg,
     borderWidth: 1,
   },
   ingredientRow: {

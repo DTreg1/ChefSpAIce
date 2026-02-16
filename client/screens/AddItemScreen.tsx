@@ -44,7 +44,6 @@ import {
   Spacing,
   BorderRadius,
   AppColors,
-  GlassEffect, // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 } from "@/constants/theme";
 import {
   storage,
@@ -139,7 +138,7 @@ function getConfidenceIcon(
 
 export default function AddItemScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "AddItem">>();
   const { checkLimit, entitlements } = useSubscription();
@@ -798,6 +797,7 @@ export default function AddItemScreen() {
                   backgroundColor: theme.glass.backgroundSubtle,
                   color: theme.text,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
               value={name}
@@ -819,6 +819,7 @@ export default function AddItemScreen() {
                   backgroundColor: theme.glass.backgroundSubtle,
                   color: theme.text,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
               value={brand}
@@ -840,6 +841,7 @@ export default function AddItemScreen() {
                   backgroundColor: theme.glass.backgroundSubtle,
                   color: theme.text,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
               value={barcode}
@@ -911,6 +913,7 @@ export default function AddItemScreen() {
                         category === cat
                           ? AppColors.primary + "20"
                           : theme.glass.backgroundSubtle,
+                      borderRadius: themeStyle.glassEffect.borderRadius.pill,
                       borderColor:
                         category === cat
                           ? AppColors.primary
@@ -1017,6 +1020,7 @@ export default function AddItemScreen() {
                 {
                   backgroundColor: theme.glass.backgroundSubtle,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                   flex: 1,
                 },
               ]}
@@ -1045,6 +1049,7 @@ export default function AddItemScreen() {
                 {
                   backgroundColor: theme.glass.backgroundSubtle,
                   borderColor: theme.glass.border,
+                  borderRadius: themeStyle.glassEffect.borderRadius.md,
                   flex: 1,
                 },
               ]}
@@ -1103,6 +1108,7 @@ export default function AddItemScreen() {
                 backgroundColor: theme.glass.backgroundSubtle,
                 color: theme.text,
                 borderColor: theme.glass.border,
+                borderRadius: themeStyle.glassEffect.borderRadius.md,
               },
             ]}
             value={notes}
@@ -1260,7 +1266,6 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 48,
-    borderRadius: GlassEffect.borderRadius.md,
     paddingHorizontal: Spacing.md,
     fontSize: 16,
     borderWidth: 1,
@@ -1282,7 +1287,6 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
   scanButtonRow: {
@@ -1294,7 +1298,6 @@ const styles = StyleSheet.create({
   },
   dateButtonCompact: {
     padding: Spacing.sm,
-    borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     gap: Spacing.xs,
   },
