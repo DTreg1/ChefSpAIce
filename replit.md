@@ -12,7 +12,8 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 ## Design Token Constants
 - **`client/constants/theme.ts`**: Core design tokens — `AppColors` (brand + semantic colors), `Colors` (light/dark palettes), `Spacing`, `BorderRadius`, `Typography` (h1-button + micro/tiny), `Shadows`, `TabBarColors`, `Fonts`
 - **`client/constants/styleDefinition.ts`**: `StyleDefinition` interface with glass, surface, blur, button, chat, nutrition, landing tokens. Accessed via `useTheme().style`
-- **`client/constants/urls.ts`**: `AppUrls` — centralized website and support URLs
+- **`client/constants/urls.ts`**: `AppUrls` — centralized website, support URLs, `privacyEmail`, `supportEmail`
+- **`client/screens/web/sharedStyles.ts`**: Shared `webSharedStyles` (StyleSheet), `WebTypography`, and `NAV_LINKS` for all 5 web screens — eliminates duplicate layout/typography/navigation code
 - **`client/constants/animations.ts`**: `AnimationDurations` (instant→long) and `AnimationDelays` (focusInput, dismissCallback, copiedReset, funFactInterval)
 - Components access colors via `theme.*` (from Colors.light/dark) and `style.*` (from StyleDefinition). White text on primary backgrounds uses `theme.buttonText`. Shadow colors use `style.glass.shadowColor`. Modal overlays use `style.surface.overlay*`. Border colors use `style.glass.border*`.
 
