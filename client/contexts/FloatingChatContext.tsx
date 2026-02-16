@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 
@@ -32,19 +33,19 @@ export function FloatingChatProvider({ children }: { children: ReactNode }) {
   const closeChat = useCallback(() => setIsChatOpen(false), []);
   const setInitialMessage = useCallback((message: string | null) => setInitialMessageState(message), []);
 
+  const value = useMemo(() => ({
+    isVisible,
+    isChatOpen,
+    initialMessage,
+    showFloatingChat,
+    hideFloatingChat,
+    openChat,
+    closeChat,
+    setInitialMessage,
+  }), [isVisible, isChatOpen, initialMessage, showFloatingChat, hideFloatingChat, openChat, closeChat, setInitialMessage]);
+
   return (
-    <FloatingChatContext.Provider
-      value={{
-        isVisible,
-        isChatOpen,
-        initialMessage,
-        showFloatingChat,
-        hideFloatingChat,
-        openChat,
-        closeChat,
-        setInitialMessage,
-      }}
-    >
+    <FloatingChatContext.Provider value={value}>
       {children}
     </FloatingChatContext.Provider>
   );

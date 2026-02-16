@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 
 interface ScreenSearchState {
   query: string;
@@ -23,11 +23,14 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     Record<string, ScreenSearchState>
   >({});
 
+  const searchStatesRef = useRef(searchStates);
+  searchStatesRef.current = searchStates;
+
   const getSearchQuery = useCallback(
     (screenKey: string) => {
-      return searchStates[screenKey]?.query || "";
+      return searchStatesRef.current[screenKey]?.query || "";
     },
-    [searchStates],
+    [],
   );
 
   const setSearchQuery = useCallback((screenKey: string, query: string) => {
@@ -43,9 +46,9 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const isSearchOpen = useCallback(
     (screenKey: string) => {
-      return searchStates[screenKey]?.isOpen || false;
+      return searchStatesRef.current[screenKey]?.isOpen || false;
     },
-    [searchStates],
+    [],
   );
 
   const openSearch = useCallback((screenKey: string) => {
@@ -90,19 +93,19 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     setSearchStates({});
   }, []);
 
+  const value = useMemo(() => ({
+    getSearchQuery,
+    setSearchQuery,
+    isSearchOpen,
+    openSearch,
+    closeSearch,
+    collapseSearch,
+    clearSearch,
+    clearAllSearches,
+  }), [getSearchQuery, setSearchQuery, isSearchOpen, openSearch, closeSearch, collapseSearch, clearSearch, clearAllSearches]);
+
   return (
-    <SearchContext.Provider
-      value={{
-        getSearchQuery,
-        setSearchQuery,
-        isSearchOpen,
-        openSearch,
-        closeSearch,
-        collapseSearch,
-        clearSearch,
-        clearAllSearches,
-      }}
-    >
+    <SearchContext.Provider value={value}>
       {children}
     </SearchContext.Provider>
   );

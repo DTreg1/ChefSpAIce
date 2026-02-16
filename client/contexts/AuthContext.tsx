@@ -118,13 +118,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const [_googleRequest, _googleResponse, promptGoogleAsync] = useGoogleAuth();
-  void _googleRequest;
-  void _googleResponse;
+  const [, , promptGoogleAsync] = useGoogleAuth();
 
-  const [_appleWebRequest, _appleWebResponse, promptAppleWebAsync] = useAppleWebAuth();
-  void _appleWebRequest;
-  void _appleWebResponse;
+  const [, , promptAppleWebAsync] = useAppleWebAuth();
 
   useEffect(() => {
     const checkAppleAuth = async () => {
@@ -548,7 +544,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       ...state,
-      isAuthenticated: !!state.user && !!state.token,
+      isAuthenticated: !!state.user,
       isAppleAuthAvailable,
       isGoogleAuthAvailable,
       signIn,

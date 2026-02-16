@@ -55,6 +55,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (stored === "light" || stored === "dark" || stored === "system") {
         setThemePreferenceState(stored);
       }
+    }).catch(() => {
+      // Fallback to default theme on storage failure
+    }).finally(() => {
       setIsLoaded(true);
     });
   }, []);
@@ -79,7 +82,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setThemePreference = useCallback((preference: ThemePreference) => {
     setThemePreferenceState(preference);
-    AsyncStorage.setItem(THEME_STORAGE_KEY, preference);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, preference).catch(() => {
+      // Theme preference will reset to default on next launch
+    });
 
     if (
       Platform.OS === "web" &&
