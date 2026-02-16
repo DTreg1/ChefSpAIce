@@ -1,4 +1,4 @@
-import { StyleSheet, View, Platform, ViewStyle } from "react-native";
+import { View, Platform, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -17,7 +17,7 @@ export function GlassCard({
   accessibilityLabel?: string;
   accessibilityRole?: "button" | "summary" | "none";
 }) {
-  const { isDark, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
   const lc = themeStyle.landing;
   const ge = themeStyle.glassEffect;
 
@@ -45,7 +45,7 @@ export function GlassCard({
   return (
     <BlurView
       intensity={ge.blur.regular}
-      tint={isDark ? "dark" : "light"}
+      tint={themeStyle.blur.tintDefault}
       style={[{ borderRadius: ge.borderRadius.lg, overflow: "hidden" as const }, style]}
     >
       <View

@@ -99,16 +99,16 @@ const MenuItem = memo(function MenuItem({
   onPress,
   progress,
   scale,
-  isDark,
   glassColors,
+  blurTint,
   textColor,
 }: {
   item: MenuItemConfig;
   onPress: () => void;
   progress: SharedValue<number>;
   scale: SharedValue<number>;
-  isDark: boolean;
   glassColors: { background: string; backgroundStrong: string; backgroundSubtle: string; border: string; borderStrong: string; borderSubtle: string; overlay: string; shadowColor: string; insetHighlight: string };
+  blurTint: "dark" | "light";
   textColor: string;
 }) {
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
@@ -154,7 +154,7 @@ const MenuItem = memo(function MenuItem({
         {Platform.OS === "ios" ? (
           <BlurView
             intensity={20}
-            tint={isDark ? "dark" : "light"}
+            tint={blurTint}
             style={StyleSheet.absoluteFill}
           />
         ) : null}
@@ -202,7 +202,7 @@ export const AddMenu = memo(function AddMenu({
   onNavigate,
   tabBarHeight,
 }: AddMenuProps) {
-  const { isDark, theme, style } = useTheme();
+  const { theme, style } = useTheme();
   const overlayOpacity = useSharedValue(0);
   const [shouldRender, setShouldRender] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -351,9 +351,7 @@ export const AddMenu = memo(function AddMenu({
             style={[
               StyleSheet.absoluteFill,
               {
-                backgroundColor: isDark
-                  ? "rgba(0, 0, 0, 0.5)"
-                  : "rgba(0, 0, 0, 0.4)",
+                backgroundColor: style.surface.overlaySubtle,
               },
             ]}
           />
@@ -369,7 +367,7 @@ export const AddMenu = memo(function AddMenu({
       return (
         <BlurView
           intensity={40}
-          tint={isDark ? "dark" : "light"}
+          tint={style.blur.tintDefault}
           style={StyleSheet.absoluteFill}
         />
       );
@@ -380,7 +378,7 @@ export const AddMenu = memo(function AddMenu({
         style={[
           StyleSheet.absoluteFill,
           {
-            backgroundColor: isDark
+            backgroundColor: style.colorScheme === "dark"
               ? "rgba(0, 0, 0, 0.85)"
               : "rgba(0, 0, 0, 0.7)",
           },
@@ -419,8 +417,8 @@ export const AddMenu = memo(function AddMenu({
                 onPress={item.onPress}
                 progress={animRefs.current.progress[index]}
                 scale={animRefs.current.scale[index]}
-                isDark={isDark}
                 glassColors={glassColors}
+                blurTint={style.blur.tintDefault}
                 textColor={textColor}
               />
             ))}

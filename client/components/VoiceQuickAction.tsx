@@ -63,7 +63,7 @@ interface ParsedIntent {
 
 export function VoiceQuickAction() {
   const insets = useSafeAreaInsets();
-  const { isDark, theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { openChat, setInitialMessage } = useFloatingChat();
   const { checkFeature } = useSubscription();
 
@@ -398,7 +398,7 @@ export function VoiceQuickAction() {
         <View style={styles.fabBlurContainer}>
           <BlurView
             intensity={80}
-            tint={isDark ? "systemThickMaterialDark" : "systemThickMaterial"}
+            tint={themeStyle.blur.tintThickMaterial}
             style={StyleSheet.absoluteFill}
           />
           <View style={[StyleSheet.absoluteFill, styles.fabOverlay]} />
@@ -457,7 +457,7 @@ export function VoiceQuickAction() {
             <View
               style={[
                 styles.cancelButtonInner,
-                { backgroundColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)" },
+                { backgroundColor: themeStyle.surface.inputSubtle },
               ]}
             >
               <Feather name="x" size={24} color={theme.text} />
@@ -469,7 +469,7 @@ export function VoiceQuickAction() {
               <GlassView
                 style={[
                   styles.transcriptBubble,
-                  { backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)" },
+                  { backgroundColor: themeStyle.surface.modalHeader },
                 ]}
               >
                 <ThemedText type="small" style={{ color: theme.text, textAlign: "center" }}>
@@ -523,14 +523,14 @@ export function VoiceQuickAction() {
 
             <ThemedText
               type="body"
-              style={[styles.statusText, { color: isDark ? "#FFFFFF" : theme.text }]}
+              style={[styles.statusText, { color: themeStyle.button.ghostText }]}
             >
               {statusText}
             </ThemedText>
 
             <ThemedText
               type="small"
-              style={[styles.hintText, { color: isDark ? "rgba(255,255,255,0.6)" : theme.textSecondary }]}
+              style={[styles.hintText, { color: themeStyle.text.statusHint }]}
             >
               Try: "Add milk" or "What's expiring?"
             </ThemedText>

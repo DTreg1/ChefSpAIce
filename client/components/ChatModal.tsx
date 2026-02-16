@@ -46,7 +46,7 @@ const CHAT_MAX_HEIGHT_RATIO = 0.55;
 export function ChatModal() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { isChatOpen, closeChat } = useFloatingChat();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible: isChatOpen,
@@ -193,23 +193,21 @@ export function ChatModal() {
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => (
     <ChatMessageItem
       item={item}
-      isDark={isDark}
       theme={theme}
       isReplayLoading={isReplayLoading}
       replayVoiceSpeaking={replayVoice.isSpeaking}
       onReplayMessage={handleReplayMessage}
     />
-  ), [isDark, theme, isReplayLoading, replayVoice.isSpeaking, handleReplayMessage]);
+  ), [theme, isReplayLoading, replayVoice.isSpeaking, handleReplayMessage]);
 
   const renderEmptyState = useCallback(() => (
     <ChatEmptyState
-      isDark={isDark}
       theme={theme}
       isVoiceMode={isVoiceMode}
       setIsVoiceMode={setIsVoiceMode}
       setInputText={setInputText}
     />
-  ), [isDark, theme, isVoiceMode, setInputText]);
+  ), [theme, isVoiceMode, setInputText]);
 
   if (!isChatOpen) {
     return null;
@@ -217,7 +215,7 @@ export function ChatModal() {
 
   const chatContent = (
     <>
-      <GlassView style={[styles.header, { backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)" }]}>
+      <GlassView style={[styles.header, { backgroundColor: themeStyle.surface.modalHeader }]}>
         <GlassView style={styles.headerLeft}>
           <Image
             source={chefHatDark}
@@ -245,7 +243,6 @@ export function ChatModal() {
         currentTip={currentTip}
         tipLoading={tipLoading}
         expiringCount={expiringCount}
-        isDark={isDark}
         onRefreshTip={refreshTip}
       />
 
@@ -275,13 +272,12 @@ export function ChatModal() {
             styles.voiceInputWrapper,
             {
               borderTopColor: themeStyle.glass.border,
-              backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)",
+              backgroundColor: themeStyle.surface.modalHeader,
             },
           ]}
         >
           <VoiceModeView
             voiceChat={voiceChat}
-            isDark={isDark}
             theme={theme}
             pulseStyle={pulseStyle}
             onVoiceTap={handleVoiceTap}
@@ -293,9 +289,7 @@ export function ChatModal() {
               styles.modeToggleButton,
               styles.modeToggleButtonVoice,
               {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
+                backgroundColor: themeStyle.surface.feedbackBg,
               },
             ]}
             onPress={() => setIsVoiceMode(false)}
@@ -313,7 +307,7 @@ export function ChatModal() {
             styles.inputContainer,
             {
               borderTopColor: themeStyle.glass.border,
-              backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)",
+              backgroundColor: themeStyle.surface.modalHeader,
             },
           ]}
         >
@@ -322,9 +316,7 @@ export function ChatModal() {
               styles.input,
               {
                 color: theme.text,
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.05)",
+                backgroundColor: themeStyle.surface.feedbackBg,
               },
             ]}
             placeholder="Type a message..."
@@ -342,9 +334,7 @@ export function ChatModal() {
             style={[
               styles.modeToggleButton,
               {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.05)",
+                backgroundColor: themeStyle.surface.feedbackBg,
               },
             ]}
             onPress={() => setIsVoiceMode(true)}
@@ -427,7 +417,7 @@ export function ChatModal() {
               borderColor: themeStyle.glass.border,
               backgroundColor:
                 Platform.OS === "web"
-                  ? isDark
+                  ? themeStyle.colorScheme === "dark"
                     ? "rgba(30, 30, 30, 0.92)"
                     : "rgba(255, 255, 255, 0.92)"
                   : undefined,

@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
 export interface WasteTip {
@@ -34,7 +35,6 @@ interface TipBannerProps {
   currentTip: WasteTip | null;
   tipLoading: boolean;
   expiringCount: number;
-  isDark: boolean;
   onRefreshTip: () => void;
 }
 
@@ -42,9 +42,9 @@ export function TipBanner({
   currentTip,
   tipLoading,
   expiringCount,
-  isDark,
   onRefreshTip,
 }: TipBannerProps) {
+  const { style: themeStyle } = useTheme();
   if (!currentTip && !tipLoading && expiringCount <= 0) {
     return null;
   }
@@ -54,9 +54,7 @@ export function TipBanner({
       style={[
         styles.tipBanner,
         {
-          backgroundColor: isDark
-            ? "rgba(255,255,255,0.08)"
-            : "rgba(0,0,0,0.05)",
+          backgroundColor: themeStyle.surface.feedbackBg,
         },
       ]}
       onPress={onRefreshTip}

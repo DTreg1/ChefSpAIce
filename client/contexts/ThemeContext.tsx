@@ -28,7 +28,6 @@ interface ThemeContextType {
   colorScheme: ColorScheme;
   themePreference: ThemePreference;
   setThemePreference: (preference: ThemePreference) => void;
-  isDark: boolean;
   style: StyleDefinition;
 }
 
@@ -127,7 +126,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         colorScheme,
         themePreference,
         setThemePreference,
-        isDark,
         style,
       }}
     >

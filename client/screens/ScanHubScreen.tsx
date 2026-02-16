@@ -88,14 +88,13 @@ const SCAN_OPTIONS: ScanOption[] = [
 function ScanOptionCard({
   option,
   onPress,
-  isDark,
   isLocked,
 }: {
   option: ScanOption;
   onPress: () => void;
-  isDark: boolean;
   isLocked?: boolean;
 }) {
+  const { style } = useTheme();
   return (
     <Pressable
       testID={`scan-option-${option.id}`}
@@ -152,7 +151,7 @@ function ScanOptionCard({
           <Feather
             name={isLocked ? "lock" : "chevron-right"}
             size={24}
-            color={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)"}
+            color={style.text.statusHint}
           />
         </View>
       </GlassCard>
@@ -162,7 +161,6 @@ function ScanOptionCard({
 
 export default function ScanHubScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
   const navigation =
     useNavigation<RootNavigation>();
   const { checkFeature } = useSubscription();
@@ -227,7 +225,6 @@ export default function ScanHubScreen() {
               key={option.id}
               option={option}
               onPress={() => handleOptionPress(option)}
-              isDark={isDark}
               isLocked={isOptionLocked(option.id)}
             />
           ))}

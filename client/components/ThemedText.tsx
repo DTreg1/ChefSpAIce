@@ -26,15 +26,15 @@ export function ThemedText({
   type = "body",
   ...rest
 }: ThemedTextProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { isOnGlass } = useGlassContext();
 
   const getColor = () => {
-    if (isDark && darkColor) {
+    if (themeStyle.colorScheme === "dark" && darkColor) {
       return darkColor;
     }
 
-    if (!isDark && lightColor) {
+    if (themeStyle.colorScheme !== "dark" && lightColor) {
       return lightColor;
     }
 

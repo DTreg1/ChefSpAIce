@@ -36,15 +36,13 @@ const TAB_BORDER_RADIUS = 296;
 const ICON_SIZE = 22;
 const INDICATOR_PADDING = 4;
 
-const COLORS = TabBarColors;
-
 interface TabLayout {
   x: number;
   width: number;
 }
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
-  const { isDark } = useTheme();
+  const { style: themeStyle } = useTheme();
   const insets = useSafeAreaInsets();
   const { hideFloatingChat, showFloatingChat } = useFloatingChat();
   const { isStandardUser, usage, entitlements } = useSubscription();
@@ -55,7 +53,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
   const indicatorScale = useSharedValue(1);
-  const colors = isDark ? COLORS.dark : COLORS.light;
+  const colors = TabBarColors[themeStyle.colorScheme];
   const useLiquidGlass = isLiquidGlassAvailable();
 
   const maxAiRecipes =
@@ -296,9 +294,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           StyleSheet.absoluteFill,
           styles.pillBlur,
           {
-            backgroundColor: isDark
-              ? "rgba(28, 28, 30, 0.85)"
-              : "rgba(255, 255, 255, 0.85)",
+            backgroundColor: themeStyle.surface.tabBarBase,
           },
         ]}
       />
@@ -322,7 +318,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           {baseLayer}
           <BlurView
             intensity={60}
-            tint={isDark ? "dark" : "light"}
+            tint={themeStyle.blur.tintDefault}
             style={[StyleSheet.absoluteFill, styles.pillBlur]}
           />
           <View

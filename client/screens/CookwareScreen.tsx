@@ -125,7 +125,7 @@ const GroupedSection = React.memo(function GroupedSection({
   onToggleAppliance: (id: number) => void;
   isAtLimit: boolean;
 }) {
-  const { theme, style: themeStyle } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <GlassCard style={styles.groupCard} contentStyle={styles.groupCardContent}>
@@ -295,7 +295,7 @@ const CookwareItem = React.memo(function CookwareItem({
 export default function CookwareScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { entitlements } = useSubscription();
@@ -598,7 +598,7 @@ export default function CookwareScreen() {
     return (
       <BlurView
         intensity={15}
-        tint={isDark ? "dark" : "light"}
+        tint={themeStyle.blur.tintDefault}
         style={[styles.headerSection, styles.fixedHeader]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >

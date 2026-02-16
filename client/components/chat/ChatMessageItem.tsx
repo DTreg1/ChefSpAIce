@@ -9,6 +9,7 @@ import { Image } from "expo-image";
 import { GlassView } from "@/components/GlassViewWithContext";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { ChatMessage } from "@/lib/storage";
 
@@ -16,7 +17,6 @@ const chefHatDark = require("../../assets/images/transparent/chef-hat-dark-64.pn
 
 interface ChatMessageItemProps {
   item: ChatMessage;
-  isDark: boolean;
   theme: any;
   isReplayLoading: string | null;
   replayVoiceSpeaking: boolean;
@@ -25,12 +25,12 @@ interface ChatMessageItemProps {
 
 export function ChatMessageItem({
   item,
-  isDark,
   theme,
   isReplayLoading,
   replayVoiceSpeaking,
   onReplayMessage,
 }: ChatMessageItemProps) {
+  const { style: themeStyle } = useTheme();
   const isUser = item.role === "user";
 
   if (!isUser) {
@@ -44,9 +44,7 @@ export function ChatMessageItem({
             style={[
               styles.assistantBubble,
               {
-                backgroundColor: isDark
-                  ? "rgba(0, 0, 0, 0.6)"
-                  : "rgba(255, 255, 255, 0.7)",
+                backgroundColor: themeStyle.surface.modalHeader,
               },
             ]}
           >
@@ -58,9 +56,7 @@ export function ChatMessageItem({
             style={[
               styles.replayButton,
               {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
+                backgroundColor: themeStyle.surface.feedbackBg,
               },
             ]}
             onPress={() => onReplayMessage(item.id, item.content)}
@@ -102,7 +98,6 @@ export function ChatMessageItem({
 }
 
 interface ChatEmptyStateProps {
-  isDark: boolean;
   theme: any;
   isVoiceMode: boolean;
   setIsVoiceMode: (value: boolean) => void;
@@ -110,14 +105,14 @@ interface ChatEmptyStateProps {
 }
 
 export function ChatEmptyState({
-  isDark,
   theme,
   isVoiceMode,
   setIsVoiceMode,
   setInputText,
 }: ChatEmptyStateProps) {
+  const { style: emptyThemeStyle } = useTheme();
   return (
-    <GlassView style={[styles.emptyState, { backgroundColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.6)" }]}>
+    <GlassView style={[styles.emptyState, { backgroundColor: emptyThemeStyle.surface.overlaySubtle }]}>
       <Image
         source={chefHatDark}
         style={{ width: 32, height: 32, opacity: 0.7 }}
@@ -138,9 +133,7 @@ export function ChatEmptyState({
                 styles.suggestionChip,
                 {
                   borderWidth: 1,
-                  borderColor: isDark
-                    ? "rgba(255,255,255,0.2)"
-                    : "rgba(0,0,0,0.12)",
+                  borderColor: emptyThemeStyle.glass.border,
                 },
               ]}
               onPress={() => {
@@ -171,18 +164,18 @@ export function ChatEmptyState({
                 borderWidth: 1,
                 borderColor:
                   suggestion === "Report Bug"
-                    ? isDark
+                    ? emptyThemeStyle.colorScheme === "dark"
                       ? "rgba(255,100,100,0.4)"
                       : "rgba(200,50,50,0.3)"
-                    : isDark
+                    : emptyThemeStyle.colorScheme === "dark"
                       ? "rgba(100,200,255,0.4)"
                       : "rgba(50,150,200,0.3)",
                 backgroundColor:
                   suggestion === "Report Bug"
-                    ? isDark
+                    ? emptyThemeStyle.colorScheme === "dark"
                       ? "rgba(255,100,100,0.1)"
                       : "rgba(200,50,50,0.08)"
-                    : isDark
+                    : emptyThemeStyle.colorScheme === "dark"
                       ? "rgba(100,200,255,0.1)"
                       : "rgba(50,150,200,0.08)",
               },

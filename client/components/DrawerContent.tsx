@@ -120,7 +120,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
 }
 
 export function DrawerContent(props: DrawerContentComponentProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { signOut, isAuthenticated } = useAuth();
   const insets = useSafeAreaInsets();
   const { navigation, state } = props;
@@ -214,7 +214,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
       return (
         <BlurView
           intensity={80}
-          tint={isDark ? "systemChromeMaterialDark" : "systemChromeMaterial"}
+          tint={themeStyle.blur.tintChromeMaterial}
           style={StyleSheet.absoluteFill}
         />
       );

@@ -166,11 +166,11 @@ export function GlassCard({
   accessibilityHint,
   accessibilityRole,
 }: GlassCardProps) {
-  const { isDark, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
 
   const blurIntensity = getBlurIntensity(intensity);
-  const glassTint = tint === "default" ? (isDark ? "dark" : "light") : tint;
+  const glassTint = tint === "default" ? themeStyle.blur.tintDefault : tint;
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
   const glassEffectStyle = intensity === "subtle" ? "clear" : "regular";
 
@@ -197,7 +197,7 @@ export function GlassCard({
     borderWidth: useLiquidGlass ? 0 : themeStyle.glassEffect.borderWidth,
   };
 
-  const textBackingColor = isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)";
+  const textBackingColor = themeStyle.surface.overlayStrong;
 
   const content = (
     <GlassProvider>

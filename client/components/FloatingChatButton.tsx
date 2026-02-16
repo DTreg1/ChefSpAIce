@@ -31,7 +31,7 @@ const TAB_BAR_HEIGHT = 55;
 
 export function FloatingChatButton() {
   const insets = useSafeAreaInsets();
-  const { isDark, theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { isVisible, isChatOpen, openChat, closeChat } = useFloatingChat();
   const scale = useSharedValue(1);
 
@@ -94,7 +94,7 @@ export function FloatingChatButton() {
         <View style={styles.buttonBlurContainer}>
           <BlurView
             intensity={80}
-            tint={isDark ? "systemThickMaterialDark" : "systemThickMaterial"}
+            tint={themeStyle.blur.tintThickMaterial}
             style={StyleSheet.absoluteFill}
           />
           <View style={[StyleSheet.absoluteFill, styles.buttonOverlay]} />

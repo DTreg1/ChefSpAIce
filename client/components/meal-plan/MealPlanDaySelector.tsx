@@ -27,7 +27,7 @@ export function MealPlanDaySelector({
   mealPlans,
   onSelectDay,
 }: MealPlanDaySelectorProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View style={styles.weekGrid}>
@@ -123,7 +123,7 @@ export function MealPlanDaySelector({
               ) : (
                 <BlurView
                   intensity={40}
-                  tint={isDark ? "dark" : "light"}
+                  tint={themeStyle.blur.tintDefault}
                   style={[
                     StyleSheet.absoluteFill,
                     styles.dayCardBlur,

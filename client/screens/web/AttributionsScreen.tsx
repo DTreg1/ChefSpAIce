@@ -15,19 +15,6 @@ import { webClickable } from "@/lib/types";
 const BRAND_GREEN = "#1a2e05";
 const isWeb = Platform.OS === "web";
 
-function getThemeColors(isDark: boolean) {
-  return {
-    background: isDark ? "#0F1419" : "#F8FAFC",
-    backgroundGradient: isDark ? "#0A0F14" : "#EDF2F7",
-    card: isDark ? "#1A1F25" : "#FFFFFF",
-    cardBorder: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.08)",
-    textPrimary: isDark ? "#FFFFFF" : "#1A202C",
-    textSecondary: isDark ? "#A0AEC0" : "#4A5568",
-    textMuted: isDark ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.5)",
-    footerBg: isDark ? "#0A0D10" : "#F1F5F9",
-  };
-}
-
 function useNavigationSafe() {
   try {
     return useNavigation();
@@ -37,9 +24,8 @@ function useNavigationSafe() {
 }
 
 export default function AttributionsScreen() {
-  const { isDark, setThemePreference } = useTheme();
-  const toggleTheme = () => setThemePreference(isDark ? "light" : "dark");
-  const colors = getThemeColors(isDark);
+  const { setThemePreference, style: themeStyle } = useTheme();
+  const toggleTheme = () => setThemePreference(themeStyle.colorScheme === "dark" ? "light" : "dark");
   const navigation = useNavigationSafe();
 
   const handleGoHome = () => {
@@ -90,11 +76,11 @@ export default function AttributionsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: themeStyle.webPage.background }]}
       contentContainerStyle={styles.contentContainer}
     >
       <LinearGradient
-        colors={[colors.background, colors.backgroundGradient]}
+        colors={[themeStyle.webPage.background, themeStyle.webPage.backgroundGradient]}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -106,7 +92,7 @@ export default function AttributionsScreen() {
               size={32}
               color={BRAND_GREEN}
             />
-            <Text style={[styles.logoText, { color: colors.textPrimary }]}>
+            <Text style={[styles.logoText, { color: themeStyle.webPage.textPrimary }]}>
               ChefSpAIce
             </Text>
           </Pressable>
@@ -115,28 +101,22 @@ export default function AttributionsScreen() {
             style={[
               styles.themeToggle,
               {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
+                backgroundColor: themeStyle.webPage.toggleBg,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel="Toggle theme"
           >
-            {isDark ? (
-              <Feather name="sun" size={20} color={colors.textPrimary} />
-            ) : (
-              <Feather name="moon" size={20} color={colors.textPrimary} />
-            )}
+            <Feather name={themeStyle.icon.themeToggle === "moon" ? "sun" : "moon"} size={20} color={themeStyle.webPage.textPrimary} />
           </Pressable>
         </View>
       )}
 
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+        <Text style={[styles.title, { color: themeStyle.webPage.textPrimary }]}>
           Attributions
         </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.subtitle, { color: themeStyle.webPage.textSecondary }]}>
           ChefSpAIce is built with the help of these amazing open-source
           projects and services.
         </Text>
@@ -146,14 +126,14 @@ export default function AttributionsScreen() {
             key={index}
             style={[
               styles.card,
-              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              { backgroundColor: themeStyle.webPage.card, borderColor: themeStyle.webPage.cardBorder },
             ]}
           >
-            <Text style={[styles.itemName, { color: colors.textPrimary }]}>
+            <Text style={[styles.itemName, { color: themeStyle.webPage.textPrimary }]}>
               {item.name}
             </Text>
             <Text
-              style={[styles.itemDescription, { color: colors.textSecondary }]}
+              style={[styles.itemDescription, { color: themeStyle.webPage.textSecondary }]}
             >
               {item.description}
             </Text>
@@ -166,13 +146,13 @@ export default function AttributionsScreen() {
         <View
           style={[
             styles.card,
-            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            { backgroundColor: themeStyle.webPage.card, borderColor: themeStyle.webPage.cardBorder },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text style={[styles.sectionTitle, { color: themeStyle.webPage.textPrimary }]}>
             Special Thanks
           </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+          <Text style={[styles.paragraph, { color: themeStyle.webPage.textSecondary }]}>
             Thank you to the open-source community for making projects like
             ChefSpAIce possible. Your contributions to libraries, frameworks,
             and tools help developers build better software every day.
@@ -188,8 +168,8 @@ export default function AttributionsScreen() {
       </View>
 
       {isWeb && (
-        <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
-          <Text style={[styles.copyright, { color: colors.textMuted }]}>
+        <View style={[styles.footer, { backgroundColor: themeStyle.webPage.footerBg }]}>
+          <Text style={[styles.copyright, { color: themeStyle.webPage.textMuted }]}>
             © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
           </Text>
         </View>

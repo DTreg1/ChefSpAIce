@@ -63,7 +63,7 @@ export function RecipeVoiceControls({
   onStopListening,
   onReadRecipe,
 }: RecipeVoiceControlsProps) {
-  const { isDark, theme, style } = useTheme();
+  const { theme, style } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const speakingAnim = useRef(new Animated.Value(0)).current;
 
@@ -495,7 +495,7 @@ export function RecipeVoiceControls({
   return (
     <BlurView
       intensity={style.glassEffect.blur.regular}
-      tint={isDark ? "dark" : "light"}
+      tint={style.blur.tintDefault}
       style={containerStyle}
       accessibilityLabel={`Voice controls, step ${currentStep + 1} of ${totalSteps}`}
       onMagicTap={handleMagicTap}

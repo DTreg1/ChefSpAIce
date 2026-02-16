@@ -44,7 +44,7 @@ export function IngredientSwapModal({
   inventory,
   onSelectSwap,
 }: IngredientSwapModalProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -334,7 +334,7 @@ export function IngredientSwapModal({
           ) : Platform.OS === "ios" ? (
             <BlurView
               intensity={80}
-              tint={isDark ? "dark" : "light"}
+              tint={themeStyle.blur.tintDefault}
               style={styles.modalContent}
             >
               {renderContent()}
@@ -344,7 +344,7 @@ export function IngredientSwapModal({
               style={[
                 styles.modalContent,
                 {
-                  backgroundColor: isDark
+                  backgroundColor: themeStyle.colorScheme === "dark"
                     ? "rgba(30, 30, 30, 0.98)"
                     : "rgba(255, 255, 255, 0.98)",
                 },

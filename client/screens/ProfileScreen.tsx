@@ -42,7 +42,7 @@ import type { ProfileNavigation } from "@/lib/types";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, colorScheme, themePreference, setThemePreference, style: themeStyle } =
+  const { theme, colorScheme, themePreference, setThemePreference, style: themeStyle } =
     useTheme();
   const navigation = useNavigation<ProfileNavigation>();
   const { user, isAuthenticated, signOut } = useAuth();
@@ -323,7 +323,7 @@ export default function ProfileScreen() {
                 ]}
               >
                 <Feather
-                  name={isDark ? "moon" : "sun"}
+                  name={themeStyle.icon.themeToggle}
                   size={20}
                   color={AppColors.accent}
                 />

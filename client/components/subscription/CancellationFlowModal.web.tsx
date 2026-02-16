@@ -71,7 +71,7 @@ export function CancellationFlowModal({
   onClose,
   onCanceled,
 }: CancellationFlowModalProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -195,7 +195,7 @@ export function CancellationFlowModal({
           style={[
             styles.stepDot,
             {
-              backgroundColor: s === step ? AppColors.primary : (isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)"),
+              backgroundColor: s === step ? AppColors.primary : themeStyle.surface.inputSubtle,
             },
             s === step && styles.stepDotActive,
           ]}
@@ -251,7 +251,7 @@ export function CancellationFlowModal({
             {
               color: theme.text,
               borderColor: theme.border,
-              backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
+              backgroundColor: themeStyle.surface.feedbackBg,
             },
           ]}
           placeholder="Tell us more..."
@@ -416,7 +416,7 @@ export function CancellationFlowModal({
           {
             color: theme.text,
             borderColor: theme.border,
-            backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
+            backgroundColor: themeStyle.surface.feedbackBg,
           },
         ]}
         placeholder="Tell us what features you'd like to see"
@@ -459,7 +459,7 @@ export function CancellationFlowModal({
       </View>
 
       {details ? (
-        <View style={[styles.feedbackDisplay, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)", borderColor: theme.border }]}>
+        <View style={[styles.feedbackDisplay, { backgroundColor: themeStyle.surface.feedbackBg, borderColor: theme.border }]}>
           <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>Your feedback:</ThemedText>
           <ThemedText type="body">{details}</ThemedText>
         </View>
@@ -569,13 +569,11 @@ export function CancellationFlowModal({
           ref={containerRef}
           onAccessibilityEscape={onAccessibilityEscape}
           intensity={80}
-          tint={isDark ? "dark" : "light"}
+          tint={themeStyle.blur.tintDefault}
           style={[
             styles.modal,
             {
-              backgroundColor: isDark
-                ? "rgba(26, 26, 26, 0.95)"
-                : "rgba(255, 255, 255, 0.95)",
+              backgroundColor: themeStyle.surface.modalHeader,
             },
           ]}
         >

@@ -62,7 +62,7 @@ export const GlassButton = memo(function GlassButton({
   accessibilityHint,
   accessibilityRole,
 }: GlassButtonProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -88,13 +88,13 @@ export const GlassButton = memo(function GlassButton({
       case "secondary":
         return AppColors.secondary;
       case "outline":
-        return isDark ? "rgba(0, 0, 0, 0.55)" : "rgba(255, 255, 255, 0.85)";
+        return themeStyle.button.outlineBg;
       case "ghost":
-        return isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)";
+        return themeStyle.button.ghostBg;
       default:
         return AppColors.primary;
     }
-  }, [variant, isDark]);
+  }, [variant, themeStyle.button.outlineBg, themeStyle.button.ghostBg]);
 
   const textColor = useMemo(() => {
     switch (variant) {
@@ -102,13 +102,13 @@ export const GlassButton = memo(function GlassButton({
       case "secondary":
         return "#FFFFFF";
       case "outline":
-        return isDark ? "#8FBF5F" : "#3D6B1A";
+        return themeStyle.button.outlineText;
       case "ghost":
-        return isDark ? "#FFFFFF" : theme.text;
+        return themeStyle.button.ghostText;
       default:
         return "#FFFFFF";
     }
-  }, [variant, isDark, theme.text]);
+  }, [variant, themeStyle.button.outlineText, themeStyle.button.ghostText]);
 
   const borderStyle = useMemo(() => {
     if (variant === "outline") {
@@ -129,9 +129,9 @@ export const GlassButton = memo(function GlassButton({
       case "secondary":
         return "dark";
       default:
-        return isDark ? "dark" : "light";
+        return themeStyle.blur.tintDefault;
     }
-  }, [variant, isDark]);
+  }, [variant, themeStyle.blur.tintDefault]);
 
   if (Platform.OS !== "web") {
     return (

@@ -28,7 +28,7 @@ type SelectRecipeRouteProp = RouteProp<MealPlanStackParamList, "SelectRecipe">;
 
 export default function SelectRecipeScreen() {
   const insets = useSafeAreaInsets();
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
   const route = useRoute<SelectRecipeRouteProp>();
@@ -172,7 +172,7 @@ export default function SelectRecipeScreen() {
           {Platform.OS === "ios" ? (
             <BlurView
               intensity={40}
-              tint={isDark ? "dark" : "light"}
+              tint={themeStyle.blur.tintDefault}
               style={[
                 styles.searchBar,
                 { borderColor: themeStyle.glass.border, borderWidth: 1 },

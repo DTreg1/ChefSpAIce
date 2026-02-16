@@ -5,7 +5,6 @@ export function useTheme() {
 
   return {
     theme: context.theme,
-    isDark: context.isDark,
     colorScheme: context.colorScheme,
     themePreference: context.themePreference,
     setThemePreference: context.setThemePreference,

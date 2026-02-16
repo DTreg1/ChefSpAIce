@@ -111,11 +111,11 @@ export const NutritionLabel = memo(function NutritionLabel({
   compact = false,
   style,
 }: NutritionLabelProps) {
-  const { isDark } = useTheme();
+  const { style: themeStyle } = useTheme();
 
-  const textColor = isDark ? "#FFFFFF" : "#000000";
-  const borderColor = isDark ? "#FFFFFF" : "#000000";
-  const backgroundColor = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = themeStyle.nutritionLabel.text;
+  const borderColor = themeStyle.nutritionLabel.border;
+  const backgroundColor = themeStyle.nutritionLabel.background;
 
   const scaled = useMemo(
     () => (quantity !== 1 ? scaleNutrition(nutrition, quantity) : nutrition),

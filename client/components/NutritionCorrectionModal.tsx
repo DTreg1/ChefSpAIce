@@ -50,7 +50,7 @@ export function NutritionCorrectionModal({
   originalNutrition,
 }: NutritionCorrectionModalProps) {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -195,7 +195,7 @@ export function NutritionCorrectionModal({
     >
       <BlurView
         intensity={30}
-        tint={isDark ? "dark" : "light"}
+        tint={themeStyle.blur.tintDefault}
         style={styles.backdrop}
       >
         <Pressable style={styles.backdropPressable} onPress={handleClose} accessibilityLabel="Close nutrition correction" accessibilityRole="button" />

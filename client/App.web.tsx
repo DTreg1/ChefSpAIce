@@ -97,12 +97,12 @@ function WebRoutes() {
 }
 
 function ThemeAttributeSetter() {
-  const { isDark } = useTheme();
+  const { style: themeStyle } = useTheme();
   React.useEffect(() => {
     if (typeof document !== "undefined") {
-      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+      document.documentElement.dataset.theme = themeStyle.colorScheme;
     }
-  }, [isDark]);
+  }, [themeStyle.colorScheme]);
   return null;
 }
 

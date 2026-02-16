@@ -8,6 +8,7 @@ import {
 import Animated from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
 interface VoiceModeViewProps {
@@ -20,7 +21,6 @@ interface VoiceModeViewProps {
     error: string | null;
     cancelConversation: () => void;
   };
-  isDark: boolean;
   theme: any;
   pulseStyle: any;
   onVoiceTap: () => void;
@@ -30,13 +30,13 @@ interface VoiceModeViewProps {
 
 export function VoiceModeView({
   voiceChat,
-  isDark,
   theme,
   pulseStyle,
   onVoiceTap,
   onVoicePressIn,
   onVoicePressOut,
 }: VoiceModeViewProps) {
+  const { style: themeStyle } = useTheme();
   const getVoiceState = () => {
     if (voiceChat.isSpeaking) return "speaking";
     if (voiceChat.isProcessing) return "processing";
@@ -99,9 +99,7 @@ export function VoiceModeView({
           style={[
             styles.voiceMicButton,
             {
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.05)",
+              backgroundColor: themeStyle.surface.feedbackBg,
               borderColor:
                 voiceState === "listening"
                   ? AppColors.error
@@ -160,9 +158,7 @@ export function VoiceModeView({
           style={[
             styles.transcriptPreview,
             {
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.08)"
-                : "rgba(0,0,0,0.05)",
+              backgroundColor: themeStyle.surface.feedbackBg,
             },
           ]}
           accessibilityLiveRegion="polite"
@@ -194,7 +190,7 @@ export function VoiceModeView({
           style={[
             styles.cancelVoiceButton,
             {
-              backgroundColor: isDark
+              backgroundColor: themeStyle.colorScheme === "dark"
                 ? "rgba(255,100,100,0.2)"
                 : "rgba(200,50,50,0.1)",
             },

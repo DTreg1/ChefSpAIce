@@ -74,7 +74,7 @@ export function RecipeSettingsModal({
   onClose,
   onGenerate,
 }: RecipeSettingsModalProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -227,7 +227,7 @@ export function RecipeSettingsModal({
     >
       <BlurView
         intensity={20}
-        tint={isDark ? "dark" : "light"}
+        tint={themeStyle.blur.tintDefault}
         style={styles.overlay}
       >
         <View

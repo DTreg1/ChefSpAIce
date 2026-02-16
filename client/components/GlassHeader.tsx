@@ -52,7 +52,7 @@ export function GlassHeader({
   showBackButton = false,
   headerRight,
 }: GlassHeaderProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const inputRef = useRef<TextInput>(null);
@@ -163,8 +163,8 @@ export function GlassHeader({
           paddingTop: insets.top,
           backgroundColor: Platform.select({
             ios: "transparent",
-            android: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.8)",
-            web: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.8)",
+            android: themeStyle.surface.overlaySubtle,
+            web: themeStyle.surface.overlaySubtle,
           }),
         },
       ]}

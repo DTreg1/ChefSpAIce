@@ -137,8 +137,7 @@ function getActiveRouteName(
  * - Screen identifier overlay (for development)
  */
 function MobileAppContent() {
-  const colorScheme = useTheme();
-  const isDark = colorScheme.isDark;
+  const { style: themeStyle } = useTheme();
   const {
     isAuthenticated,
     isLoading: isAuthLoading,
@@ -164,7 +163,7 @@ function MobileAppContent() {
   }, []);
 
   const navigationTheme: Theme = useMemo(() => {
-    const baseTheme = isDark ? DarkTheme : DefaultTheme;
+    const baseTheme = themeStyle.colorScheme === "dark" ? DarkTheme : DefaultTheme;
     return {
       ...baseTheme,
       colors: {
@@ -173,7 +172,7 @@ function MobileAppContent() {
         card: "transparent",
       },
     };
-  }, [isDark]);
+  }, [themeStyle.colorScheme]);
 
   const onStateChange = useCallback((state: NavigationState | undefined) => {
     const routeName = getActiveRouteName(state);
