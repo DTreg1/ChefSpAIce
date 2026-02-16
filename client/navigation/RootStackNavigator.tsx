@@ -31,8 +31,8 @@
  * NAVIGATION PRIORITY:
  * 1. Web + unauthenticated → Landing
  * 2. Not authenticated → Auth
- * 3. Authenticated + needsOnboarding → Onboarding
- * 4. Authenticated + subscription inactive → Subscription
+ * 3. Authenticated + subscription inactive → Subscription
+ * 4. Authenticated + needsOnboarding → Onboarding
  * 5. Otherwise → Main
  *
  * @module navigation/RootStackNavigator
@@ -228,35 +228,37 @@ function AuthGuardedNavigator() {
     }
 
     // Authenticated user lost subscription - redirect to Subscription screen
-    // This allows users to resubscribe instead of being stuck in an auth loop
+    // Subscription always comes before onboarding in the flow
     if (isAuthenticated && wasActive && !isActive) {
-      const target = needsOnboarding ? "Onboarding" : "Subscription";
       logger.log(
-        `[Nav] Subscription lost, redirecting to ${target} (needsOnboarding: ${needsOnboarding})`,
+        "[Nav] Subscription lost, redirecting to Subscription",
       );
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: target, params: { reason: "expired" } }],
+          routes: [{ name: "Subscription", params: { reason: "expired" } }],
         }),
       );
     }
 
-    // Authenticated user gained subscription - redirect to Main (unless onboarding is needed)
+    // Authenticated user gained subscription - redirect to Onboarding or Main
+    // Subscription comes before onboarding: Auth → Subscription → Onboarding → Main
     if (isAuthenticated && !wasActive && isActive) {
-      // Only redirect to Main if onboarding is complete
-      // This prevents bypassing onboarding for new users who just activated their trial
-      if (!needsOnboarding) {
+      if (needsOnboarding) {
+        logger.log("[Nav] Subscription gained, redirecting to Onboarding");
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Onboarding" }],
+          }),
+        );
+      } else {
         logger.log("[Nav] Subscription gained, redirecting to Main");
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
             routes: [{ name: "Main" }],
           }),
-        );
-      } else {
-        logger.log(
-          "[Nav] Subscription gained but needs onboarding, staying in current flow",
         );
       }
     }
@@ -379,14 +381,14 @@ function AuthGuardedNavigator() {
       return "Auth";
     }
 
-    if (needsOnboarding) {
-      logger.log("[Nav] Initial route: Onboarding (authenticated, needsOnboarding=true)");
-      return "Onboarding";
-    }
-
     if (!isActive) {
       logger.log("[Nav] Initial route: Subscription (authenticated, inactive subscription)");
       return "Subscription";
+    }
+
+    if (needsOnboarding) {
+      logger.log("[Nav] Initial route: Onboarding (authenticated, needsOnboarding=true)");
+      return "Onboarding";
     }
 
     logger.log("[Nav] Initial route: Main (authenticated, active subscription)");
