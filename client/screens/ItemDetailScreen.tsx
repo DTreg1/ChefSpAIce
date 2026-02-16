@@ -20,7 +20,7 @@ import DateTimePicker, {
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { NutritionSection } from "@/components/NutritionSection";
+import { NutritionSection } from "@/components/nutrition/NutritionSection";
 import { GlassHeader, MenuItemConfig } from "@/components/GlassHeader";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";

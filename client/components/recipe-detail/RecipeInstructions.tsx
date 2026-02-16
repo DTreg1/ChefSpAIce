@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { TermHighlighter, CookingTerm } from "@/components/TermHighlighter";
+import { TermHighlighter, CookingTerm } from "./TermHighlighter";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { Recipe } from "@/lib/storage";
 import type { ThemeColors } from "@/lib/types";

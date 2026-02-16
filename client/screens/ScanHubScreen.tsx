@@ -15,7 +15,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassHeader } from "@/components/GlassHeader";
 import { GlassCard } from "@/components/GlassCard";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";

@@ -3,7 +3,7 @@ import { View, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
-import { TermHighlighter, CookingTerm } from "@/components/TermHighlighter";
+import { TermHighlighter, CookingTerm } from "./TermHighlighter";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type { Recipe } from "@/lib/storage";
 import type { ThemeColors } from "@/lib/types";

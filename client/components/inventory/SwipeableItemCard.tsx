@@ -20,8 +20,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassView } from "@/components/GlassViewWithContext";
 
 import { ThemedText } from "@/components/ThemedText";
-import { NutritionBadge } from "@/components/NutritionBadge";
-import { NutritionScoreBadge } from "@/components/NutritionScoreBadge";
+import { NutritionBadge } from "@/components/nutrition/NutritionBadge";
+import { NutritionScoreBadge } from "@/components/nutrition/NutritionScoreBadge";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
   FoodItem,

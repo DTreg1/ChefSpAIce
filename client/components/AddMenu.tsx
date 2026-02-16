@@ -35,7 +35,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors, Spacing } from "@/constants/theme";
 import { useSubscription } from "@/hooks/useSubscription";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 import { useOnlineStatus } from "@/hooks/useSyncStatus";
 import { useFocusTrap } from "@/hooks/useFocusTrap";

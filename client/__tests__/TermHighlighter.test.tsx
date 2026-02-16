@@ -43,7 +43,7 @@ jest.mock("@/hooks/useTheme", () => ({
   }),
 }));
 
-import { TermHighlighter } from "../components/TermHighlighter";
+import { TermHighlighter } from "../components/recipe-detail/TermHighlighter";
 
 describe("TermHighlighter", () => {
   const mockOnTermPress = jest.fn();

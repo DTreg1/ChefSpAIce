@@ -45,7 +45,7 @@ import { InventoryFunFact } from "@/components/inventory/InventoryFunFact";
 import { InventoryNutritionSummary } from "@/components/inventory/InventoryNutritionSummary";
 import { InventoryGroupSection } from "@/components/inventory/InventoryGroupSection";
 import { useFunFact } from "@/components/inventory/useFunFact";
-import { TrialExpiringModal } from "@/components/TrialExpiringModal";
+import { TrialExpiringModal } from "@/components/subscription/TrialExpiringModal";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";

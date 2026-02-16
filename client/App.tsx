@@ -84,9 +84,9 @@ import {
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "./hooks/useSubscription";
 import { NetworkStatusProvider } from "@/hooks/useNetworkStatus";
-import { FloatingChatButton } from "@/components/FloatingChatButton";
+import { FloatingChatButton } from "@/components/chat/FloatingChatButton";
 import { ChatModal } from "@/components/chat/ChatModal";
-import { VoiceQuickAction } from "@/components/VoiceQuickAction";
+import { VoiceQuickAction } from "@/components/chat/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { initOfflineProcessor } from "@/lib/offline-processor";
 import { navigationRef } from "@/lib/navigationRef";

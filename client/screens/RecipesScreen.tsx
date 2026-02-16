@@ -61,8 +61,8 @@ import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { RecipesSkeleton } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
-import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { RecipeSettingsModal } from "@/components/recipe-detail/RecipeSettingsModal";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 import {

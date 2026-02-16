@@ -26,9 +26,9 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { StorageSuggestionBadge } from "@/components/StorageSuggestionBadge";
-import { NutritionSection } from "@/components/NutritionSection";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { StorageSuggestionBadge } from "@/components/inventory/StorageSuggestionBadge";
+import { NutritionSection } from "@/components/nutrition/NutritionSection";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import {

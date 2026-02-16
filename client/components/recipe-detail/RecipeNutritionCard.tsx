@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { NutritionBadge } from "@/components/NutritionBadge";
+import { NutritionBadge } from "@/components/nutrition/NutritionBadge";
 import { Spacing, AppColors } from "@/constants/theme";
 import type { NutritionInfo } from "@/lib/storage";
 import type { ThemeColors } from "@/lib/types";

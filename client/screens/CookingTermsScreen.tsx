@@ -25,7 +25,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import type { CookingTerm } from "@/components/TermHighlighter";
+import type { CookingTerm } from "@/components/recipe-detail/TermHighlighter";
 
 const CATEGORIES = [
   { id: "all", label: "All" },

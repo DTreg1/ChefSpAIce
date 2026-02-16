@@ -24,7 +24,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassHeader } from "@/components/GlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { EmptyState } from "@/components/EmptyState";
 import { MealPlanWeekNav } from "@/components/meal-plan/MealPlanWeekNav";
 import { MealPlanDaySelector } from "@/components/meal-plan/MealPlanDaySelector";

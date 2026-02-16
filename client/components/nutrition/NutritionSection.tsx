@@ -8,8 +8,8 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 
-import { ThemedText } from "./ThemedText";
-import { GlassCard } from "./GlassCard";
+import { ThemedText } from "@/components/ThemedText";
+import { GlassCard } from "@/components/GlassCard";
 import { NutritionLabel } from "./NutritionLabel";
 import {
   NutritionScoreBadge,
