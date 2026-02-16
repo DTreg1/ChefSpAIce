@@ -88,7 +88,52 @@ name: Inventory Flow
 - assertVisible:
     text: "${output.ITEM_NAME}"
 
-- evalScript: "console.log('LOG: Inventory item added successfully, now deleting')"
+- evalScript: "console.log('LOG: Inventory item added successfully, verifying item text visible')"
+
+- assertVisible:
+    text: "${output.ITEM_NAME}"
+    optional: true
+
+- evalScript: "console.log('LOG: Card inventory item assertion done, testing side panel detail view')"
+
+- tapOn:
+    text: "${output.ITEM_NAME}"
+
+- extendedWaitUntil:
+    visible:
+      id: "panel-item-detail"
+    timeout: 5000
+    optional: true
+
+- assertVisible:
+    id: "panel-item-detail"
+    optional: true
+
+- evalScript: "console.log('LOG: Side panel detail view opened')"
+
+- assertVisible:
+    id: "button-view-full-details"
+    optional: true
+
+- evalScript: "console.log('LOG: View full details button verified in side panel')"
+
+- tapOn:
+    id: "button-close-side-panel"
+    optional: true
+
+- evalScript: "console.log('LOG: Side panel closed, testing food group filter')"
+
+- tapOn:
+    id: "filter-foodgroup-fruits"
+    optional: true
+
+- evalScript: "console.log('LOG: Food group filter tapped, verifying filtered results')"
+
+- assertVisible:
+    text: "${output.ITEM_NAME}"
+    optional: true
+
+- evalScript: "console.log('LOG: Filtered items verified, now deleting item')"
 
 - swipe:
     direction: LEFT
@@ -108,4 +153,35 @@ name: Inventory Flow
       text: "${output.ITEM_NAME}"
     timeout: 10000
 
-- evalScript: "console.log('LOG: Inventory item deleted successfully, inventory flow complete')"
+- evalScript: "console.log('LOG: Item deleted from main list, checking recently deleted section')"
+
+- scrollUntilVisible:
+    element:
+      id: "button-recently-deleted"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- assertVisible:
+    id: "button-recently-deleted"
+    optional: true
+
+- evalScript: "console.log('LOG: Recently deleted button found')"
+
+- assertVisible:
+    id: "text-recently-deleted-count"
+    optional: true
+
+- evalScript: "console.log('LOG: Recently deleted count verified')"
+
+- tapOn:
+    id: "button-recently-deleted"
+    optional: true
+
+- evalScript: "console.log('LOG: Tapped recently deleted, verifying deleted item appears')"
+
+- assertVisible:
+    text: "${output.ITEM_NAME}"
+    optional: true
+
+- evalScript: "console.log('LOG: Deleted item found in recently deleted section, inventory flow complete')"

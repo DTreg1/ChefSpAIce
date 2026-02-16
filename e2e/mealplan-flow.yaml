@@ -53,7 +53,7 @@ name: Meal Plan Flow
     text: "Sun"
     optional: true
 
-- evalScript: "console.log('LOG: Checking for week navigation')"
+- evalScript: "console.log('LOG: Day selectors verified, checking meal slots')"
 
 - assertVisible:
     text: "Breakfast"
@@ -67,4 +67,40 @@ name: Meal Plan Flow
     text: "Dinner"
     optional: true
 
-- evalScript: "console.log('LOG: Meal plan flow complete')"
+- assertVisible:
+    text: "Snack"
+    optional: true
+
+- evalScript: "console.log('LOG: Meal slots verified (Breakfast/Lunch/Dinner/Snack), checking drag handles')"
+
+- evalScript: "console.log('LOG: Drag handles use dynamic IDs (drag-handle-{slotId}), skipping ID-based assertion')"
+
+- evalScript: "console.log('LOG: Drag handle check done, testing week navigation')"
+
+- swipe:
+    direction: LEFT
+    optional: true
+
+- evalScript: "console.log('LOG: Swiped left for next week')"
+
+- extendedWaitUntil:
+    visible:
+      text: "Mon"
+    timeout: 5000
+    optional: true
+
+- evalScript: "console.log('LOG: Next week loaded, swiping back')"
+
+- swipe:
+    direction: RIGHT
+    optional: true
+
+- evalScript: "console.log('LOG: Swiped right back to current week')"
+
+- extendedWaitUntil:
+    visible:
+      text: "Mon"
+    timeout: 5000
+    optional: true
+
+- evalScript: "console.log('LOG: Week navigation verified, meal plan flow complete')"

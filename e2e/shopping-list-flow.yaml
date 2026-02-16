@@ -1,0 +1,101 @@
+appId: com.chefspaice.chefspaice
+name: Shopping List Flow
+---
+
+- evalScript: "console.log('LOG: Starting shopping list flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to shopping list')"
+
+- tapOn:
+    id: "button-open-drawer"
+
+- extendedWaitUntil:
+    visible:
+      text: "Shopping List"
+    timeout: 5000
+
+- tapOn:
+    text: "Shopping List"
+
+- evalScript: "console.log('LOG: Tapped shopping list navigation, waiting for screen')"
+
+- extendedWaitUntil:
+    visible:
+      id: "screen-shopping-list"
+    timeout: 10000
+
+- evalScript: "console.log('LOG: Shopping list screen visible')"
+
+- assertVisible:
+    id: "container-shopping-header"
+    optional: true
+
+- evalScript: "console.log('LOG: Shopping header container check done')"
+
+- assertVisible:
+    id: "text-items-remaining"
+    optional: true
+
+- evalScript: "console.log('LOG: Items remaining text check done')"
+
+- runFlow:
+    when:
+      visible:
+        id: "button-grocery-search"
+    commands:
+      - evalScript: "console.log('LOG: Grocery search button visible, tapping it')"
+
+      - tapOn:
+          id: "button-grocery-search"
+
+      - extendedWaitUntil:
+          visible:
+            id: "screen-grocery-search"
+          timeout: 10000
+
+      - evalScript: "console.log('LOG: Grocery search screen loaded')"
+
+      - assertVisible:
+          id: "input-grocery-search"
+          optional: true
+
+      - evalScript: "console.log('LOG: Grocery search input check done')"
+
+      - assertVisible:
+          id: "text-top-searches-title"
+          optional: true
+
+      - evalScript: "console.log('LOG: Top searches title check done')"
+
+      - assertVisible:
+          id: "text-trending-title"
+          optional: true
+
+      - evalScript: "console.log('LOG: Trending title check done')"
+
+      - back
+
+      - evalScript: "console.log('LOG: Returned to shopping list from grocery search')"
+
+- runFlow:
+    when:
+      notVisible:
+        id: "button-grocery-search"
+    commands:
+      - evalScript: "console.log('LOG: Grocery search button not visible, skipping grocery search test')"
+
+- assertVisible:
+    id: "button-order-instacart"
+    optional: true
+
+- evalScript: "console.log('LOG: Instacart order button check done')"
+
+- assertVisible:
+    id: "button-clear-checked"
+    optional: true
+
+- evalScript: "console.log('LOG: Clear checked button check done')"
+
+- evalScript: "console.log('LOG: Shopping list flow complete')"

@@ -21,6 +21,71 @@ name: Recipe Flow
 
 - evalScript: "console.log('LOG: Recipes screen visible with search input')"
 
+- evalScript: "console.log('LOG: Testing recipe search functionality')"
+
+- tapOn:
+    id: "input-recipe-search"
+
+- waitForAnimationToEnd
+- inputText: "pasta"
+
+- evalScript: "console.log('LOG: Typed pasta in search, waiting for results')"
+
+- extendedWaitUntil:
+    visible:
+      text: "pasta"
+    timeout: 5000
+    optional: true
+
+- evalScript: "console.log('LOG: Search results checked, testing clear search')"
+
+- tapOn:
+    id: "button-clear-recipe-search"
+    optional: true
+
+- hideKeyboard
+
+- evalScript: "console.log('LOG: Search cleared, testing cuisine filter')"
+
+- tapOn:
+    id: "filter-cuisine-italian"
+    optional: true
+
+- evalScript: "console.log('LOG: Cuisine filter tapped, testing dietary filter')"
+
+- tapOn:
+    id: "filter-dietary-vegetarian"
+    optional: true
+
+- evalScript: "console.log('LOG: Dietary filter tapped, checking for recipe cards')"
+
+- runFlow:
+    when:
+      visible:
+        text: ".*"
+    commands:
+      - evalScript: "console.log('LOG: Recipe card found, tapping first visible recipe')"
+      - tapOn:
+          index: 0
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: "button-share-recipe"
+          timeout: 10000
+          optional: true
+      - assertVisible:
+          id: "button-share-recipe"
+          optional: true
+      - evalScript: "console.log('LOG: Recipe detail view loaded, checking share button')"
+      - assertVisible:
+          id: "button-order-instacart-recipe"
+          optional: true
+      - evalScript: "console.log('LOG: Instacart order button check done on recipe detail')"
+      - back
+      - evalScript: "console.log('LOG: Navigated back from recipe detail')"
+
+- evalScript: "console.log('LOG: Testing recipe generation button')"
+
 - tapOn:
     id: "button-generate-recipe"
     optional: true

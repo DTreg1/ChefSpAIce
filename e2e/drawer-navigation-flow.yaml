@@ -1,0 +1,79 @@
+appId: com.chefspaice.chefspaice
+name: Drawer Navigation Flow
+---
+
+- evalScript: "console.log('LOG: Starting drawer navigation flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, opening drawer menu')"
+
+- tapOn:
+    id: "button-open-drawer"
+
+- extendedWaitUntil:
+    visible:
+      id: "button-drawer-sign-out"
+    timeout: 10000
+    optional: true
+
+- evalScript: "console.log('LOG: Drawer opened, checking menu items')"
+
+- assertVisible:
+    text: "Profile"
+    optional: true
+
+- evalScript: "console.log('LOG: Profile menu item check done')"
+
+- assertVisible:
+    text: "Settings"
+    optional: true
+
+- evalScript: "console.log('LOG: Settings menu item check done')"
+
+- assertVisible:
+    text: "Shopping List"
+    optional: true
+
+- evalScript: "console.log('LOG: Shopping List menu item check done')"
+
+- assertVisible:
+    text: "Analytics"
+    optional: true
+
+- evalScript: "console.log('LOG: Analytics menu item check done')"
+
+- assertVisible:
+    id: "drawer-past-due-badge"
+    optional: true
+
+- evalScript: "console.log('LOG: Past due badge check done')"
+
+- assertVisible:
+    id: "drawer-canceling-badge"
+    optional: true
+
+- evalScript: "console.log('LOG: Canceling badge check done')"
+
+- assertVisible:
+    id: "button-drawer-sign-out"
+    optional: true
+
+- evalScript: "console.log('LOG: Sign out button check done')"
+
+- assertVisible:
+    id: "button-drawer-create-account"
+    optional: true
+
+- evalScript: "console.log('LOG: Create account button check done (only for guest users)')"
+
+- back
+
+- evalScript: "console.log('LOG: Drawer closed')"
+
+- extendedWaitUntil:
+    visible:
+      id: "tab-kitchen"
+    timeout: 5000
+
+- evalScript: "console.log('LOG: Drawer navigation flow complete')"

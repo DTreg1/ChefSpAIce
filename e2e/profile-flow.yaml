@@ -16,6 +16,8 @@ name: Profile Flow
     id: "button-open-drawer"
     optional: true
 
+- evalScript: "console.log('LOG: Hamburger menu / drawer toggle attempted')"
+
 - tapOn:
     text: "Profile"
     optional: true
@@ -39,6 +41,63 @@ name: Profile Flow
 - assertVisible:
     id: "button-theme-light"
     optional: true
+
+- assertVisible:
+    id: "button-theme-system"
+    optional: true
+
+- evalScript: "console.log('LOG: Theme toggle options checked (dark/light/system)')"
+
+- evalScript: "console.log('LOG: Checking subscription section')"
+
+- assertVisible:
+    id: "link-subscription"
+    optional: true
+
+- assertVisible:
+    id: "button-manage-subscription"
+    optional: true
+
+- assertVisible:
+    id: "button-upgrade-subscription"
+    optional: true
+
+- evalScript: "console.log('LOG: Subscription section check done')"
+
+- evalScript: "console.log('LOG: Checking biometric login toggle')"
+
+- scrollUntilVisible:
+    element:
+      id: "switch-biometric-login"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- assertVisible:
+    id: "switch-biometric-login"
+    optional: true
+
+- evalScript: "console.log('LOG: Biometric login toggle check done')"
+
+- evalScript: "console.log('LOG: Checking active sessions section')"
+
+- assertVisible:
+    id: "session-card"
+    optional: true
+
+- evalScript: "console.log('LOG: Active sessions check done')"
+
+- evalScript: "console.log('LOG: Checking Instacart settings section')"
+
+- assertVisible:
+    id: "container-preferred-retailer"
+    optional: true
+
+- assertVisible:
+    id: "input-postal-code"
+    optional: true
+
+- evalScript: "console.log('LOG: Instacart settings check done')"
 
 - evalScript: "console.log('LOG: Checking for sign out button')"
 

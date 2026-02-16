@@ -32,7 +32,37 @@ name: Authentication Flow
       visible:
         id: "input-email"
     commands:
-      - evalScript: "console.log('LOG: Auth screen visible, attempting sign in first')"
+      - evalScript: "console.log('LOG: Auth screen visible, checking social sign-in buttons')"
+
+      - assertVisible:
+          id: "button-signin-apple"
+          optional: true
+
+      - evalScript: "console.log('LOG: Apple sign-in button check done')"
+
+      - assertVisible:
+          id: "button-signin-google"
+          optional: true
+
+      - evalScript: "console.log('LOG: Google sign-in button check done')"
+
+      - assertVisible:
+          id: "button-forgot-password"
+          optional: true
+
+      - evalScript: "console.log('LOG: Forgot password button check done')"
+
+      - assertVisible:
+          id: "link-auth-privacy-policy"
+          optional: true
+
+      - assertVisible:
+          id: "link-auth-terms-of-use"
+          optional: true
+
+      - evalScript: "console.log('LOG: Privacy policy and terms links check done')"
+
+      - evalScript: "console.log('LOG: Attempting sign in first')"
 
       - tapOn:
           text: "Sign In"

@@ -1,0 +1,115 @@
+appId: com.chefspaice.chefspaice
+name: Item Detail Flow
+---
+
+- evalScript: "console.log('LOG: Starting item detail flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to kitchen tab')"
+
+- tapOn:
+    id: "tab-kitchen"
+
+- extendedWaitUntil:
+    visible:
+      id: "screen-inventory"
+    timeout: 10000
+
+- evalScript: "console.log('LOG: Inventory screen visible, looking for items')"
+
+- runFlow:
+    when:
+      visible:
+        text: ".*"
+    commands:
+      - evalScript: "console.log('LOG: Found inventory items, tapping first item in list')"
+
+      - tapOn:
+          index: 0
+          optional: true
+
+      - extendedWaitUntil:
+          visible:
+            id: "input-item-name"
+          timeout: 10000
+
+      - evalScript: "console.log('LOG: Item detail screen loaded')"
+
+      - assertVisible:
+          id: "input-item-name"
+
+      - evalScript: "console.log('LOG: Item name input visible')"
+
+      - assertVisible:
+          id: "input-item-quantity"
+          optional: true
+
+      - evalScript: "console.log('LOG: Item quantity input check done')"
+
+      - assertVisible:
+          id: "input-item-unit"
+          optional: true
+
+      - evalScript: "console.log('LOG: Item unit input check done')"
+
+      - assertVisible:
+          id: "button-lookup-nutrition"
+          optional: true
+
+      - evalScript: "console.log('LOG: Nutrition lookup button check done')"
+
+      - assertVisible:
+          id: "button-storage-fridge"
+          optional: true
+
+      - assertVisible:
+          id: "button-storage-freezer"
+          optional: true
+
+      - assertVisible:
+          id: "button-storage-pantry"
+          optional: true
+
+      - assertVisible:
+          id: "button-storage-counter"
+          optional: true
+
+      - evalScript: "console.log('LOG: Storage location buttons check done')"
+
+      - assertVisible:
+          id: "button-purchase-date"
+          optional: true
+
+      - evalScript: "console.log('LOG: Purchase date button check done')"
+
+      - assertVisible:
+          id: "button-expiration-date"
+          optional: true
+
+      - evalScript: "console.log('LOG: Expiration date button check done')"
+
+      - assertVisible:
+          id: "input-item-notes"
+          optional: true
+
+      - evalScript: "console.log('LOG: Item notes field check done')"
+
+      - assertVisible:
+          id: "button-remove-item"
+          optional: true
+
+      - evalScript: "console.log('LOG: Remove item button check done')"
+
+      - back
+
+      - evalScript: "console.log('LOG: Returned to inventory from item detail')"
+
+- runFlow:
+    when:
+      notVisible:
+        text: ".*"
+    commands:
+      - evalScript: "console.log('LOG: No inventory items found, skipping item detail test')"
+
+- evalScript: "console.log('LOG: Item detail flow complete')"

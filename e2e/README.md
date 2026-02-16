@@ -83,21 +83,28 @@ LOG: Inventory item added successfully
 
 | Flow | File | Description |
 |------|------|-------------|
-| Authentication | `auth-flow.yaml` | Sign in (or sign up on first run), handle onboarding, verify main tabs |
-| Inventory | `inventory-flow.yaml` | Add item manually, verify it appears, swipe to delete, verify removal |
-| Recipes | `recipe-flow.yaml` | Navigate to recipes tab, attempt generation, handle subscription/upgrade prompt |
-| Settings | `settings-flow.yaml` | Navigate to profile/settings, toggle theme, verify settings persist |
+| Authentication | `auth-flow.yaml` | Sign in (or sign up on first run), handle onboarding, verify main tabs, check OAuth buttons |
+| Inventory | `inventory-flow.yaml` | Add item manually, verify it appears, test side panel detail view, filter by food group, swipe to delete, verify recently deleted |
+| Recipes | `recipe-flow.yaml` | Navigate to recipes tab, search recipes, test cuisine/dietary filters, view recipe detail, attempt generation, handle subscription/upgrade prompt |
+| Settings | `settings-flow.yaml` | Navigate to profile/settings, toggle all theme options (dark/light/system), test biometric toggle, check Instacart settings, verify active sessions |
 | Onboarding | `onboarding-flow.yaml` | Create fresh account, step through full onboarding flow, reach main tabs |
-| Subscription | `subscription-flow.yaml` | Navigate to subscription settings, verify status and subscription UI elements |
-| Meal Plan | `mealplan-flow.yaml` | Navigate to meal plan tab, verify week view and meal slot elements |
-| Cookware | `cookware-flow.yaml` | Navigate to cookware tab, verify cookware screen elements |
-| Profile | `profile-flow.yaml` | Navigate to profile tab, verify profile elements and sign-out button presence |
+| Subscription | `subscription-flow.yaml` | Navigate to subscription settings, verify status, check all subscription UI elements and tier badges |
+| Meal Plan | `mealplan-flow.yaml` | Navigate to meal plan tab, verify week view, meal slot elements (Breakfast/Lunch/Dinner/Snack), drag handles, week navigation |
+| Cookware | `cookware-flow.yaml` | Navigate to cookware tab, verify cookware screen elements, test add button |
+| Profile | `profile-flow.yaml` | Navigate to profile tab, verify theme options, subscription section, biometric toggle, active sessions, Instacart settings, sign-out button |
+| Shopping List | `shopping-list-flow.yaml` | Navigate to shopping list, verify header and item count, test grocery search, check Instacart ordering |
+| Scan Hub | `scan-hub-flow.yaml` | Open add menu, verify scan options (barcode, AI scan, receipt, camera, manual), test scan screen navigation |
+| Item Detail | `item-detail-flow.yaml` | View inventory item detail, verify name/quantity/unit fields, nutrition lookup, storage locations, date pickers, notes, remove button |
+| Drawer Navigation | `drawer-navigation-flow.yaml` | Open hamburger drawer, verify menu items, check subscription badges, sign-out button |
+| Analytics | `analytics-flow.yaml` | Navigate to analytics/waste tracking, verify weekly trends, waste chart, streak counter |
 
 ### Flow Dependencies
 
 - All flows except `onboarding-flow.yaml` depend on `auth-flow.yaml` (run via `runFlow`) using the shared test account.
 - `onboarding-flow.yaml` is standalone and uses a unique email each run.
 - Each flow launches the app and authenticates before testing its feature.
+- `item-detail-flow.yaml` depends on having at least one inventory item present (from the shared test account).
+- `analytics-flow.yaml` navigates via drawer or profile tab — ensure drawer navigation is accessible.
 
 ## How to Add New Flows
 

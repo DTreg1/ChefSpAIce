@@ -65,6 +65,20 @@ name: Subscription Flow
     id: "button-refresh-subscription"
     optional: true
 
+- evalScript: "console.log('LOG: Core subscription buttons checked')"
+
+- assertVisible:
+    id: "button-continue-to-app"
+    optional: true
+
+- evalScript: "console.log('LOG: Continue to app button check done')"
+
+- assertVisible:
+    id: "button-cancel-subscription"
+    optional: true
+
+- evalScript: "console.log('LOG: Cancel subscription button check done')"
+
 - evalScript: "console.log('LOG: Checking for trial-related badges or banners')"
 
 - assertVisible:
@@ -83,4 +97,30 @@ name: Subscription Flow
     text: "Premium"
     optional: true
 
-- evalScript: "console.log('LOG: Subscription flow complete')"
+- evalScript: "console.log('LOG: Checking subscription status text elements')"
+
+- assertVisible:
+    text: "Active"
+    optional: true
+
+- assertVisible:
+    text: "Expired"
+    optional: true
+
+- assertVisible:
+    text: "Cancelled"
+    optional: true
+
+- assertVisible:
+    text: "Monthly"
+    optional: true
+
+- assertVisible:
+    text: "Annual"
+    optional: true
+
+- assertVisible:
+    text: "Yearly"
+    optional: true
+
+- evalScript: "console.log('LOG: Subscription status text elements checked, subscription flow complete')"

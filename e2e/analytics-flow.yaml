@@ -1,0 +1,94 @@
+appId: com.chefspaice.chefspaice
+name: Analytics Flow
+---
+
+- evalScript: "console.log('LOG: Starting analytics flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, navigating to analytics')"
+
+- tapOn:
+    id: "button-open-drawer"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Analytics"
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    text: "Analytics"
+    optional: true
+
+- runFlow:
+    when:
+      notVisible:
+        text: "Analytics"
+    commands:
+      - evalScript: "console.log('LOG: Analytics not in drawer, trying profile tab')"
+
+      - back
+
+      - tapOn:
+          id: "tab-profile"
+          optional: true
+
+      - extendedWaitUntil:
+          visible:
+            id: "screen-profile"
+          timeout: 5000
+          optional: true
+
+      - tapOn:
+          text: "Analytics"
+          optional: true
+
+      - tapOn:
+          id: "button-analytics"
+          optional: true
+
+- evalScript: "console.log('LOG: Waiting for analytics screen to load')"
+
+- extendedWaitUntil:
+    visible:
+      id: "section-weekly-trends"
+    timeout: 10000
+    optional: true
+
+- evalScript: "console.log('LOG: Analytics screen check done, verifying elements')"
+
+- assertVisible:
+    id: "section-weekly-trends"
+    optional: true
+
+- evalScript: "console.log('LOG: Weekly trends section check done')"
+
+- assertVisible:
+    id: "chart-waste-trends"
+    optional: true
+
+- evalScript: "console.log('LOG: Waste trends chart check done')"
+
+- assertVisible:
+    id: "section-streak"
+    optional: true
+
+- evalScript: "console.log('LOG: Streak section check done')"
+
+- assertVisible:
+    id: "text-streak-count"
+    optional: true
+
+- evalScript: "console.log('LOG: Streak count check done')"
+
+- assertVisible:
+    id: "text-longest-streak"
+    optional: true
+
+- evalScript: "console.log('LOG: Longest streak check done')"
+
+- back
+
+- evalScript: "console.log('LOG: Analytics flow complete')"

@@ -1,0 +1,112 @@
+appId: com.chefspaice.chefspaice
+name: Scan Hub Flow
+---
+
+- evalScript: "console.log('LOG: Starting scan hub flow')"
+
+- runFlow: auth-flow.yaml
+
+- evalScript: "console.log('LOG: Auth complete, tapping add button to open menu')"
+
+- tapOn:
+    id: "add-button"
+
+- evalScript: "console.log('LOG: Add button tapped, waiting for menu options')"
+
+- extendedWaitUntil:
+    visible:
+      id: "menu-barcode"
+    timeout: 5000
+    optional: true
+
+- assertVisible:
+    id: "menu-barcode"
+    optional: true
+
+- evalScript: "console.log('LOG: Barcode scan option check done')"
+
+- assertVisible:
+    id: "menu-ai-scan"
+    optional: true
+
+- evalScript: "console.log('LOG: AI scan option check done')"
+
+- assertVisible:
+    id: "menu-receipt"
+    optional: true
+
+- evalScript: "console.log('LOG: Receipt scan option check done')"
+
+- assertVisible:
+    id: "menu-camera"
+    optional: true
+
+- evalScript: "console.log('LOG: Camera option check done')"
+
+- assertVisible:
+    id: "menu-manual"
+    optional: true
+
+- evalScript: "console.log('LOG: Manual entry option check done')"
+
+- runFlow:
+    when:
+      visible:
+        id: "menu-barcode"
+    commands:
+      - evalScript: "console.log('LOG: Tapping barcode scan option')"
+
+      - tapOn:
+          id: "menu-barcode"
+          optional: true
+
+      - extendedWaitUntil:
+          visible:
+            id: "screen-barcode-scanner"
+          timeout: 5000
+          optional: true
+
+      - evalScript: "console.log('LOG: Barcode scanner screen check done (may be blocked by camera permissions)')"
+
+      - back
+
+      - evalScript: "console.log('LOG: Returned from barcode scanner')"
+
+- runFlow:
+    when:
+      notVisible:
+        id: "menu-barcode"
+    commands:
+      - evalScript: "console.log('LOG: Barcode option not found, trying scan hub')"
+
+      - tapOn:
+          id: "menu-ai-scan"
+          optional: true
+
+      - extendedWaitUntil:
+          visible:
+            id: "screen-scan-hub"
+          timeout: 5000
+          optional: true
+
+      - evalScript: "console.log('LOG: Scan hub screen check done')"
+
+      - assertVisible:
+          id: "scan-option-barcode"
+          optional: true
+
+      - assertVisible:
+          id: "scan-option-receipt"
+          optional: true
+
+      - assertVisible:
+          id: "scan-option-camera"
+          optional: true
+
+      - evalScript: "console.log('LOG: Scan hub options check done')"
+
+      - back
+
+      - evalScript: "console.log('LOG: Returned from scan hub')"
+
+- evalScript: "console.log('LOG: Scan hub flow complete')"

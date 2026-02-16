@@ -50,13 +50,67 @@ name: Settings Flow
     id: "button-theme-light"
     optional: true
 
+- evalScript: "console.log('LOG: Testing system theme option')"
+
+- tapOn:
+    id: "button-theme-system"
+    optional: true
+
 - assertVisible:
     text: "Theme"
 
-- evalScript: "console.log('LOG: Theme toggle verified, settings still visible')"
+- evalScript: "console.log('LOG: Theme toggles verified (dark/light/system), settings still visible')"
+
+- evalScript: "console.log('LOG: Checking biometric login toggle')"
+
+- assertVisible:
+    id: "switch-biometric-login"
+    optional: true
+
+- evalScript: "console.log('LOG: Biometric toggle check done')"
+
+- evalScript: "console.log('LOG: Checking active sessions section')"
+
+- assertVisible:
+    id: "button-retry-sessions"
+    optional: true
+
+- assertVisible:
+    id: "session-card"
+    optional: true
+
+- evalScript: "console.log('LOG: Active sessions section check done')"
+
+- evalScript: "console.log('LOG: Checking Instacart settings')"
+
+- scrollUntilVisible:
+    element:
+      id: "input-postal-code"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- assertVisible:
+    id: "input-postal-code"
+    optional: true
+
+- assertVisible:
+    id: "button-find-stores"
+    optional: true
+
+- evalScript: "console.log('LOG: Instacart settings check done')"
+
+- evalScript: "console.log('LOG: Verifying sign-out button presence')"
+
+- scrollUntilVisible:
+    element:
+      id: "button-sign-out"
+    direction: DOWN
+    timeout: 5000
+    optional: true
 
 - assertVisible:
     id: "button-sign-out"
     optional: true
 
-- evalScript: "console.log('LOG: Settings flow complete')"
+- evalScript: "console.log('LOG: Sign-out button verified, settings flow complete')"

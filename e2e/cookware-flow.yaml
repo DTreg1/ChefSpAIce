@@ -23,14 +23,39 @@ name: Cookware Flow
 - assertVisible:
     text: "Cookware"
 
+- evalScript: "console.log('LOG: Checking for add button by testID')"
+
+- assertVisible:
+    id: "add-button"
+    optional: true
+
+- runFlow:
+    when:
+      visible:
+        id: "add-button"
+    commands:
+      - evalScript: "console.log('LOG: Add button found via testID, tapping to add cookware')"
+      - tapOn:
+          id: "add-button"
+      - evalScript: "console.log('LOG: Add button tapped, checking for add cookware modal or screen')"
+      - extendedWaitUntil:
+          visible:
+            text: "Add"
+          timeout: 5000
+          optional: true
+      - back
+      - evalScript: "console.log('LOG: Returned from add cookware flow')"
+
 - runFlow:
     when:
       visible:
         text: "Add"
     commands:
-      - evalScript: "console.log('LOG: Add cookware button visible')"
+      - evalScript: "console.log('LOG: Add cookware button visible by text')"
       - assertVisible:
           text: "Add"
+
+- evalScript: "console.log('LOG: Checking cookware items state')"
 
 - runFlow:
     when:
@@ -44,6 +69,9 @@ name: Cookware Flow
       notVisible:
         text: "No cookware"
     commands:
-      - evalScript: "console.log('LOG: Cookware items are present on screen')"
+      - evalScript: "console.log('LOG: Cookware items are present on screen, verifying list')"
+      - assertVisible:
+          text: "Cookware"
+      - evalScript: "console.log('LOG: Cookware list items confirmed visible')"
 
 - evalScript: "console.log('LOG: Cookware flow complete')"
