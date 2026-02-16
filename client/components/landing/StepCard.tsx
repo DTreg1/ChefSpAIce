@@ -1,13 +1,12 @@
 import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import { GlassCard } from "./GlassCard";
 import { AppColors } from "@/constants/theme";
-import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 interface StepCardProps {
   number: string;
   title: string;
   description: string;
-  isDark: boolean;
   isWide?: boolean;
 }
 
@@ -15,10 +14,10 @@ export function StepCard({
   number,
   title,
   description,
-  isDark,
   isWide,
 }: StepCardProps) {
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
 
   return (
     <GlassCard

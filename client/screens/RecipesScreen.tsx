@@ -69,7 +69,7 @@ import {
   Spacing,
   BorderRadius,
   AppColors,
-  GlassEffect,
+  GlassEffect, // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
 import { apiClient } from "@/lib/api-client";

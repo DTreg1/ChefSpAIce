@@ -34,7 +34,7 @@ import { MealPlanSkeleton } from "@/components/meal-plan/MealPlanSkeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
+import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import type { MealPlanNavigation, RootNavigation } from "@/lib/types";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";

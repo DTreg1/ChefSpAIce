@@ -5,7 +5,6 @@ import { AppColors } from "@/constants/theme";
 import { PricingCard } from "./PricingCard";
 import { SUBSCRIPTION_FEATURES } from "@/data/landing-data";
 import { sharedStyles, getLandingTextStyles } from "./shared-styles";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 interface PricingSectionProps {
@@ -15,9 +14,9 @@ interface PricingSectionProps {
 
 export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
   const [isAnnual, setIsAnnual] = useState(false);
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
-  const textStyles = getLandingTextStyles(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
+  const textStyles = getLandingTextStyles(style.landing);
 
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return null;

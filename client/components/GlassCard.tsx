@@ -109,7 +109,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, GlassEffect } from "@/constants/theme";
+import { Spacing, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 import { GlassProvider } from "@/contexts/GlassContext";
 
 interface GlassCardProps {
@@ -166,7 +166,7 @@ export function GlassCard({
   accessibilityHint,
   accessibilityRole,
 }: GlassCardProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style } = useTheme();
   const scale = useSharedValue(1);
 
   const blurIntensity = getBlurIntensity(intensity);
@@ -192,7 +192,7 @@ export function GlassCard({
 
   const glassStyles = {
     borderColor: theme.glass.border,
-    borderWidth: useLiquidGlass ? 0 : GlassEffect.borderWidth,
+    borderWidth: useLiquidGlass ? 0 : style.glassEffect.borderWidth,
   };
 
   const textBackingColor = isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)";

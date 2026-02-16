@@ -8,7 +8,7 @@ import {
   Image,
 } from "react-native";
 import { GradientBackground } from "@/components/GradientBackground.web";
-import { WebInfoColors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "@/lib/web-router";
 import { webClickable } from "@/lib/types";
 
@@ -24,7 +24,8 @@ const NAV_LINKS = [
 ];
 
 export default function TermsScreen() {
-  const colors = WebInfoColors;
+  const { style } = useTheme();
+  const colors = style.webInfo;
   const currentPath = "/terms";
   const navigate = useNavigate();
 

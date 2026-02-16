@@ -9,7 +9,7 @@ import { format, isSameDay } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
+import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 import { MealPlan } from "@/lib/storage";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

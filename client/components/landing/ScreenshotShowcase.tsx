@@ -2,7 +2,6 @@ import { StyleSheet, View, Text, ScrollView, Platform } from "react-native";
 import { useState } from "react";
 import { DeviceMockup } from "./DeviceMockup";
 import { showcaseScreenshots, getShowcaseImageUrl } from "@/data/landing-data";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 const isWeb = Platform.OS === "web";
@@ -13,8 +12,8 @@ interface ScreenshotShowcaseProps {
 
 export function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
 
   if (isWeb) {
     return (

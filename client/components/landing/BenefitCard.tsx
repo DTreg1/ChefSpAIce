@@ -1,5 +1,4 @@
 import { StyleSheet, View, Text } from "react-native";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 interface BenefitCardProps {
@@ -17,8 +16,8 @@ export function BenefitCard({
   testId,
   isWide,
 }: BenefitCardProps) {
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
 
   return (
     <View

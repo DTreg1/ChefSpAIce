@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/theme";
+import { getGlassStyle, type StyleDefinition } from "@/constants/styleDefinition";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
 
@@ -28,6 +29,7 @@ interface ThemeContextType {
   themePreference: ThemePreference;
   setThemePreference: (preference: ThemePreference) => void;
   isDark: boolean;
+  style: StyleDefinition;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -98,6 +100,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const isDark = colorScheme === "dark";
 
+  const style = useMemo(() => getGlassStyle(isDark), [isDark]);
+
   useEffect(() => {
     if (
       Platform.OS === "web" &&
@@ -124,6 +128,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         themePreference,
         setThemePreference,
         isDark,
+        style,
       }}
     >
       {children}

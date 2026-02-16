@@ -8,7 +8,6 @@ import { donationAmounts } from "@/data/landing-data";
 import { sharedStyles, getLandingTextStyles } from "./shared-styles";
 import { logger } from "@/lib/logger";
 import { apiClient } from "@/lib/api-client";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 const isWeb = Platform.OS === "web";
@@ -19,9 +18,9 @@ interface DonationSectionProps {
 
 export function DonationSection({ isWide }: DonationSectionProps) {
   const [isDonating, setIsDonating] = useState(false);
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
-  const textStyles = getLandingTextStyles(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
+  const textStyles = getLandingTextStyles(style.landing);
 
   const handleDonate = async (amount: number) => {
     if (isDonating) return;

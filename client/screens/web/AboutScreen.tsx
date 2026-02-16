@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GradientBackground } from "@/components/GradientBackground.web";
-import { WebInfoColors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "@/lib/web-router";
 import { webClickable } from "@/lib/types";
 
@@ -23,7 +23,8 @@ const NAV_LINKS = [
 ];
 
 export default function AboutScreen() {
-  const colors = WebInfoColors;
+  const { style } = useTheme();
+  const colors = style.webInfo;
   const currentPath = "/about";
   const navigate = useNavigate();
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Dimensions, View, PixelRatio } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
-import { AppColors } from "@/constants/theme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -35,6 +34,7 @@ interface BubbleProps {
 }
 
 function Bubble({ config }: BubbleProps) {
+  const { style } = useTheme();
   const progress = useSharedValue(0);
   const wobble = useSharedValue(0);
 
@@ -104,6 +104,8 @@ function Bubble({ config }: BubbleProps) {
           height: config.size,
           borderRadius: config.size / 2,
           left: config.startX,
+          backgroundColor: style.animatedBackground.bubbleBg,
+          borderColor: style.animatedBackground.bubbleBorder,
         },
         animatedStyle,
       ]}
@@ -111,9 +113,10 @@ function Bubble({ config }: BubbleProps) {
   );
 }
 
-function GradientBackground({ isDark }: { isDark: boolean }) {
-  const baseColor = isDark ? AppColors.backgroundBase : AppColors.backgroundHighlight;
-  const highlightColor = isDark ? AppColors.backgroundHighlight : AppColors.backgroundHighlightLight;
+function GradientBackground() {
+  const { style } = useTheme();
+  const baseColor = style.animatedBackground.base.native;
+  const highlightColor = style.animatedBackground.highlight.native;
 
   return (
     <View style={[styles.gradient, { backgroundColor: baseColor }]}>
@@ -136,7 +139,7 @@ export function AnimatedBackground({
   bubbleCount = defaultBubbleCount,
   enabled = true,
 }: AnimatedBackgroundProps) {
-  const { isDark } = useTheme();
+  const { style } = useTheme();
   const reduceMotion = useReducedMotion();
 
   const cappedCount = Math.min(bubbleCount, Math.floor(MAX_ANIMATED_VALUES / 2));
@@ -160,14 +163,14 @@ export function AnimatedBackground({
   if (!enabled || reduceMotion) {
     return (
       <View style={[styles.container, styles.noPointerEvents]}>
-        <GradientBackground isDark={isDark} />
+        <GradientBackground />
       </View>
     );
   }
 
   return (
     <View style={[styles.container, styles.noPointerEvents]}>
-      <GradientBackground isDark={isDark} />
+      <GradientBackground />
       {bubbles.map((config) => (
         <Bubble key={config.id} config={config} />
       ))}
@@ -188,8 +191,6 @@ const styles = StyleSheet.create({
   },
   bubble: {
     position: "absolute",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
   },
 });

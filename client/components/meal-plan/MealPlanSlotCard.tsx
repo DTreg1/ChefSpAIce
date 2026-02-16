@@ -8,7 +8,7 @@ import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
   BorderRadius,
-  GlassEffect,
+  GlassEffect, // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 } from "@/constants/theme";
 import { Recipe } from "@/lib/storage";
 

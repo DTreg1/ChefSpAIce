@@ -33,7 +33,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { AppColors, Spacing, GlassColors, Colors } from "@/constants/theme";
+import { AppColors, Spacing } from "@/constants/theme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
@@ -108,7 +108,7 @@ const MenuItem = memo(function MenuItem({
   progress: SharedValue<number>;
   scale: SharedValue<number>;
   isDark: boolean;
-  glassColors: typeof GlassColors.dark;
+  glassColors: { background: string; backgroundStrong: string; backgroundSubtle: string; border: string; borderStrong: string; borderSubtle: string; overlay: string; shadowColor: string; insetHighlight: string };
   textColor: string;
 }) {
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
@@ -202,7 +202,7 @@ export const AddMenu = memo(function AddMenu({
   onNavigate,
   tabBarHeight,
 }: AddMenuProps) {
-  const { isDark } = useTheme();
+  const { isDark, theme, style } = useTheme();
   const overlayOpacity = useSharedValue(0);
   const [shouldRender, setShouldRender] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -232,14 +232,8 @@ export const AddMenu = memo(function AddMenu({
     scale: [s0, s1, s2],
   });
 
-  const glassColors = useMemo(
-    () => (isDark ? GlassColors.dark : GlassColors.light),
-    [isDark],
-  );
-  const textColor = useMemo(
-    () => (isDark ? Colors.dark.text : Colors.light.text),
-    [isDark],
-  );
+  const glassColors = style.glass;
+  const textColor = theme.text;
 
   useEffect(() => {
     if (isOpen) {

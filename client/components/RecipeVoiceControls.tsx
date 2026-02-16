@@ -11,10 +11,8 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import {
-  Colors,
   Spacing,
   BorderRadius,
-  GlassEffect,
   AppColors,
 } from "@/constants/theme";
 
@@ -65,7 +63,7 @@ export function RecipeVoiceControls({
   onStopListening,
   onReadRecipe,
 }: RecipeVoiceControlsProps) {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, style } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const speakingAnim = useRef(new Animated.Value(0)).current;
 
@@ -207,12 +205,8 @@ export function RecipeVoiceControls({
   const containerStyle = [
     styles.container,
     {
-      backgroundColor: isDark
-        ? Colors.dark.glass.background
-        : Colors.light.glass.background,
-      borderColor: isDark
-        ? Colors.dark.glass.border
-        : Colors.light.glass.border,
+      backgroundColor: style.glass.background,
+      borderColor: style.glass.border,
     },
   ];
 
@@ -500,7 +494,7 @@ export function RecipeVoiceControls({
 
   return (
     <BlurView
-      intensity={GlassEffect.blur.regular}
+      intensity={style.glassEffect.blur.regular}
       tint={isDark ? "dark" : "light"}
       style={containerStyle}
       accessibilityLabel={`Voice controls, step ${currentStep + 1} of ${totalSteps}`}

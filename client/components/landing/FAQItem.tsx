@@ -2,7 +2,6 @@ import { StyleSheet, View, Text, Pressable } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { Feather } from "@expo/vector-icons";
 import { GlassCard } from "./GlassCard";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 interface FAQItemProps {
@@ -14,8 +13,8 @@ interface FAQItemProps {
 }
 
 export function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
 
   return (
     <Pressable onPress={onToggle} {...webAccessibilityProps(onToggle)} data-testid={`faq-item-${testId}`} accessibilityRole="button" accessibilityLabel={`${question}, ${isOpen ? 'collapse' : 'expand'} answer`} accessibilityState={{ expanded: isOpen }}>

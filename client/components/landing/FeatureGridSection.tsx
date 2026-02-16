@@ -3,14 +3,15 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { AppColors } from "@/constants/theme";
 import { FeatureCard } from "./FeatureCard";
 import { sharedStyles, getLandingTextStyles } from "./shared-styles";
+import { useTheme } from "@/hooks/useTheme";
 
 interface FeatureGridSectionProps {
   isWide: boolean;
-  isDark: boolean;
 }
 
-export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) {
-  const textStyles = getLandingTextStyles(isDark);
+export function FeatureGridSection({ isWide }: FeatureGridSectionProps) {
+  const { style } = useTheme();
+  const textStyles = getLandingTextStyles(style.landing);
 
   return (
     <View style={sharedStyles.section} data-testid="section-features">
@@ -29,7 +30,6 @@ export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) 
       >
         <FeatureCard
           testId="barcode"
-          isDark={isDark}
           isWide={isWide}
           icon={
             <MaterialCommunityIcons
@@ -43,7 +43,6 @@ export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) 
         />
         <FeatureCard
           testId="ai-recipes"
-          isDark={isDark}
           isWide={isWide}
           icon={
             <MaterialCommunityIcons
@@ -57,7 +56,6 @@ export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) 
         />
         <FeatureCard
           testId="expiration"
-          isDark={isDark}
           isWide={isWide}
           icon={
             <Feather name="clock" size={28} color={AppColors.primary} />
@@ -67,7 +65,6 @@ export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) 
         />
         <FeatureCard
           testId="meal-planning"
-          isDark={isDark}
           isWide={isWide}
           icon={
             <Feather name="calendar" size={28} color={AppColors.primary} />
@@ -77,7 +74,6 @@ export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) 
         />
         <FeatureCard
           testId="shopping"
-          isDark={isDark}
           isWide={isWide}
           icon={
             <Feather
@@ -91,7 +87,6 @@ export function FeatureGridSection({ isWide, isDark }: FeatureGridSectionProps) 
         />
         <FeatureCard
           testId="analytics"
-          isDark={isDark}
           isWide={isWide}
           icon={
             <Feather

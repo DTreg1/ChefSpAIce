@@ -9,12 +9,11 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { GlassEffect } from "@/constants/theme";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/data/landing-data";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
 import { useTheme } from "@/hooks/useTheme";
-import { getLandingColors } from "./landing-colors";
+import type { StyleDefinition } from "@/constants/styleDefinition";
 
 const DISMISS_KEY = "@chefspaice/download_banner_dismissed";
 
@@ -25,7 +24,7 @@ function StoreBadge({
 }: {
   store: "ios" | "android";
   onPress: () => void;
-  colors: ReturnType<typeof getLandingColors>;
+  colors: StyleDefinition['landing'];
 }) {
   const isIOS = store === "ios";
   return (
@@ -65,8 +64,9 @@ export function DownloadBanner() {
     return false;
   });
   const { width } = useWindowDimensions();
-  const { isDark } = useTheme();
-  const colors = getLandingColors(isDark);
+  const { style } = useTheme();
+  const colors = style.landing;
+  const ge = style.glassEffect;
   const isWide = width > 600;
 
   const handleDismiss = () => {
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: GlassEffect.borderRadius.md,
+    borderRadius: 16,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",

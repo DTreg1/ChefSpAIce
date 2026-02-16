@@ -29,7 +29,7 @@ export default function LandingScreen({
   onSupport,
 }: LandingScreenProps) {
   const { width } = useWindowDimensions();
-  const { isDark } = useTheme();
+  const { style } = useTheme();
   const isWide = width > 768;
 
   const handleDownloadApp = (store: "ios" | "android") => {
@@ -39,18 +39,16 @@ export default function LandingScreen({
     });
   };
 
+  const gradientColors = [
+    ...(Platform.OS === "web" 
+      ? style.landing.backgrounds.gradient.web 
+      : style.landing.backgrounds.gradient.native)
+  ] as [string, string, ...string[]];
+
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={
-          isDark
-            ? (Platform.OS === "web" 
-                ? ["oklch(24% 0.06 132)", "oklch(27.4% 0.072 132.109)", "oklch(21% 0.055 132)"]
-                : ["#1a3510", "#1f3a0e", "#152c0b"])
-            : (Platform.OS === "web"
-                ? ["oklch(92.5% 0.084 155.995)", "oklch(90% 0.075 155)", "oklch(94% 0.07 155)"]
-                : ["#d4eec8", "#c5e4b5", "#ddf4d4"])
-        }
+        colors={gradientColors}
       />
 
       <ScrollView
@@ -58,10 +56,10 @@ export default function LandingScreen({
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <HeroSection isWide={isWide} isDark={isDark} onSupport={onSupport} />
+        <HeroSection isWide={isWide} onSupport={onSupport} />
         <BenefitsSection isWide={isWide} />
-        <HowItWorksSection isWide={isWide} isDark={isDark} />
-        <FeatureGridSection isWide={isWide} isDark={isDark} />
+        <HowItWorksSection isWide={isWide} />
+        <FeatureGridSection isWide={isWide} />
         <PricingSection isWide={isWide} onDownloadApp={handleDownloadApp} />
         <FAQSection />
         {Platform.OS === "web" && <DonationSection isWide={isWide} />}

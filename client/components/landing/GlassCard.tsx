@@ -1,8 +1,6 @@
 import { StyleSheet, View, Platform, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/hooks/useTheme";
-import { GlassEffect } from "@/constants/theme";
-import { getLandingColors } from "./landing-colors";
 
 const isWeb = Platform.OS === "web";
 
@@ -19,15 +17,17 @@ export function GlassCard({
   accessibilityLabel?: string;
   accessibilityRole?: "button" | "summary" | "none";
 }) {
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { isDark, style: themeStyle } = useTheme();
+  const lc = themeStyle.landing;
+  const ge = themeStyle.glassEffect;
 
   if (isWeb) {
     return (
       <View
         style={[
-          styles.glassCardWeb,
           {
+            borderRadius: ge.borderRadius.lg,
+            borderWidth: 1,
             backgroundColor: lc.glassBg,
             borderColor: lc.glassBorder,
           },
@@ -44,14 +44,16 @@ export function GlassCard({
 
   return (
     <BlurView
-      intensity={GlassEffect.blur.regular}
+      intensity={ge.blur.regular}
       tint={isDark ? "dark" : "light"}
-      style={[styles.glassCard, style]}
+      style={[{ borderRadius: ge.borderRadius.lg, overflow: "hidden" as const }, style]}
     >
       <View
         style={[
-          styles.glassCardInner,
           {
+            borderRadius: ge.borderRadius.lg,
+            borderWidth: 1,
+            padding: 20,
             backgroundColor: lc.glassBg,
             borderColor: lc.glassBorder,
           },
@@ -65,19 +67,3 @@ export function GlassCard({
     </BlurView>
   );
 }
-
-const styles = StyleSheet.create({
-  glassCard: {
-    borderRadius: GlassEffect.borderRadius.lg,
-    overflow: "hidden",
-  },
-  glassCardWeb: {
-    borderRadius: GlassEffect.borderRadius.lg,
-    borderWidth: 1,
-  },
-  glassCardInner: {
-    borderRadius: GlassEffect.borderRadius.lg,
-    borderWidth: 1,
-    padding: 20,
-  },
-});

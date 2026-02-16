@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import { Skeleton as MotiSkeleton } from "@/components/AccessibleSkeleton";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme";
+import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - Spacing.lg * 3) / 2;

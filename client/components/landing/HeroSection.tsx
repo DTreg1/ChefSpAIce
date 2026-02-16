@@ -1,23 +1,23 @@
 import { StyleSheet, View, Text, Pressable, Image, Platform } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { GlassEffect } from "@/constants/theme";
 import { HeroDeviceMockup } from "./HeroDeviceMockup";
 import { ScreenshotShowcase } from "./ScreenshotShowcase";
 import { ReplitLogo } from "./ReplitLogo";
 import { trustLogos } from "@/data/landing-data";
-import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 const logoImage = require("../../assets/images/transparent/chef-hat-light-256.png");
 
 interface HeroSectionProps {
   isWide: boolean;
-  isDark: boolean;
   onSupport?: () => void;
 }
 
-export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
-  const lc = getLandingColors(isDark);
+export function HeroSection({ isWide, onSupport }: HeroSectionProps) {
+  const { style } = useTheme();
+  const lc = style.landing;
+  const ge = style.glassEffect;
 
   return (
     <>
@@ -32,7 +32,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
           <Pressable
             style={({ pressed }) => [
               styles.signInButton,
-              { borderColor: lc.borderStrong, backgroundColor: lc.surfaceMedium },
+              { borderColor: lc.borderStrong, backgroundColor: lc.surfaceMedium, borderRadius: ge.borderRadius.pill },
               pressed && styles.buttonPressed,
             ]}
             onPress={onSupport}
@@ -54,7 +54,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
           <View
             style={[styles.heroContent, isWide && styles.heroContentWide]}
           >
-            <View style={[styles.tagline, { backgroundColor: lc.taglineBg, borderColor: lc.taglineBorder }]}>
+            <View style={[styles.tagline, { backgroundColor: lc.taglineBg, borderColor: lc.taglineBorder, borderRadius: ge.borderRadius.pill }]}>
               <MaterialCommunityIcons name="leaf" size={14} color={lc.taglineIcon} />
               <Text style={[styles.taglineText, { color: lc.textPrimary }]} data-testid="text-tagline">
                 Reduce Food Waste, Save Money
@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
   signInButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
   signInButtonText: {
@@ -190,7 +189,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
     marginBottom: 24,
   },

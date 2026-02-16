@@ -10,5 +10,6 @@ export function useTheme() {
     themePreference: context.themePreference,
     setThemePreference: context.setThemePreference,
     setTheme: context.setThemePreference,
+    style: context.style,
   };
 }

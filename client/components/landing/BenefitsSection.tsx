@@ -10,8 +10,8 @@ interface BenefitsSectionProps {
 }
 
 export function BenefitsSection({ isWide }: BenefitsSectionProps) {
-  const { isDark } = useTheme();
-  const textStyles = getLandingTextStyles(isDark);
+  const { style } = useTheme();
+  const textStyles = getLandingTextStyles(style.landing);
 
   return (
     <View style={sharedStyles.section} data-testid="section-benefits">

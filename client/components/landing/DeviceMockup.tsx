@@ -1,6 +1,5 @@
 import { StyleSheet, View, Text, Platform } from "react-native";
 import { PhoneFrame } from "./PhoneFrame";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 const isWeb = Platform.OS === "web";
@@ -30,8 +29,8 @@ export function DeviceMockup({
   onHover,
   totalCount = 4,
 }: DeviceMockupProps) {
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
   const frameWidth = isWide ? 220 : 160;
 
   const centerIndex = (totalCount - 1) / 2;

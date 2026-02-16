@@ -1,13 +1,12 @@
 import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import { GlassCard } from "./GlassCard";
-import { getLandingColors } from "./landing-colors";
+import { useTheme } from "@/hooks/useTheme";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
   testId: string;
-  isDark: boolean;
   isWide?: boolean;
 }
 
@@ -16,10 +15,10 @@ export function FeatureCard({
   title,
   description,
   testId,
-  isDark,
   isWide,
 }: FeatureCardProps) {
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
 
   return (
     <GlassCard

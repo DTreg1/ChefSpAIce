@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
+import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 import { FoodGroup, FOOD_GROUPS } from "./inventory-utils";
 import type { ThemeColors } from "@/lib/types";
 

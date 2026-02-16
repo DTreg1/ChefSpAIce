@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { GradientBackground } from "@/components/GradientBackground.web";
-import { WebInfoColors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "@/lib/web-router";
 import { webClickable } from "@/lib/types";
 import { apiClient } from "@/lib/api-client";
@@ -34,7 +34,8 @@ const NAV_LINKS = [
 ];
 
 export default function SupportScreen() {
-  const colors = WebInfoColors;
+  const { style } = useTheme();
+  const colors = style.webInfo;
   const currentPath = "/support";
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);

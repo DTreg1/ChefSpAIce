@@ -21,7 +21,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
+import { Spacing, AppColors, GlassEffect } from "@/constants/theme"; // TODO: migrate GlassEffect in StyleSheet to style.glassEffect
 
 type GlassButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 
@@ -62,7 +62,7 @@ export const GlassButton = memo(function GlassButton({
   accessibilityHint,
   accessibilityRole,
 }: GlassButtonProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -118,7 +118,7 @@ export const GlassButton = memo(function GlassButton({
       };
     }
     return {
-      borderWidth: GlassEffect.borderWidth,
+      borderWidth: style.glassEffect.borderWidth,
       borderColor: theme.glass.border,
     };
   }, [variant, theme.glass.border]);

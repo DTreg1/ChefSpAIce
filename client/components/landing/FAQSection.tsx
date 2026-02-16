@@ -7,8 +7,8 @@ import { useTheme } from "@/hooks/useTheme";
 
 export function FAQSection() {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
-  const { isDark } = useTheme();
-  const textStyles = getLandingTextStyles(isDark);
+  const { style } = useTheme();
+  const textStyles = getLandingTextStyles(style.landing);
 
   return (
     <View style={sharedStyles.section} data-testid="section-faq">

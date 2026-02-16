@@ -1,14 +1,15 @@
 import { StyleSheet, View, Text } from "react-native";
 import { StepCard } from "./StepCard";
 import { sharedStyles, getLandingTextStyles } from "./shared-styles";
+import { useTheme } from "@/hooks/useTheme";
 
 interface HowItWorksSectionProps {
   isWide: boolean;
-  isDark: boolean;
 }
 
-export function HowItWorksSection({ isWide, isDark }: HowItWorksSectionProps) {
-  const textStyles = getLandingTextStyles(isDark);
+export function HowItWorksSection({ isWide }: HowItWorksSectionProps) {
+  const { style } = useTheme();
+  const textStyles = getLandingTextStyles(style.landing);
 
   return (
     <View style={sharedStyles.section} data-testid="section-how-it-works">
@@ -29,21 +30,18 @@ export function HowItWorksSection({ isWide, isDark }: HowItWorksSectionProps) {
           number="1"
           title="Add Your Food"
           description="Scan barcodes, take photos, or manually add items to your inventory."
-          isDark={isDark}
           isWide={isWide}
         />
         <StepCard
           number="2"
           title="Get AI Recipes"
           description="Tell us what you're craving and we'll create recipes using your ingredients."
-          isDark={isDark}
           isWide={isWide}
         />
         <StepCard
           number="3"
           title="Plan & Cook"
           description="Add recipes to your meal plan and follow step-by-step instructions."
-          isDark={isDark}
           isWide={isWide}
         />
       </View>

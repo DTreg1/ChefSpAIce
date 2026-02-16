@@ -1,7 +1,6 @@
 import { StyleSheet, View, Text, Pressable, Image } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import QRCode from "react-native-qrcode-svg";
-import { getLandingColors } from "./landing-colors";
 import { useTheme } from "@/hooks/useTheme";
 
 const logoImage = require("../../assets/images/transparent/chef-hat-light-256.png");
@@ -21,8 +20,8 @@ export function FooterSection({
   onTerms,
   onSupport,
 }: FooterSectionProps) {
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
 
   return (
     <View style={[styles.footer, { backgroundColor: lc.footerBg }]} data-testid="footer" role="contentinfo">

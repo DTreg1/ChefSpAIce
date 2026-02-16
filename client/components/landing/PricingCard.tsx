@@ -3,8 +3,7 @@ import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassCard } from "./GlassCard";
-import { AppColors, GlassEffect } from "@/constants/theme";
-import { getLandingColors } from "./landing-colors";
+import { AppColors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 
 interface PricingCardProps {
@@ -38,8 +37,9 @@ export function PricingCard({
   onDownloadiOS,
   onDownloadAndroid,
 }: PricingCardProps) {
-  const { isDark } = useTheme();
-  const lc = getLandingColors(isDark);
+  const { style } = useTheme();
+  const lc = style.landing;
+  const ge = style.glassEffect;
 
   return (
     <GlassCard
@@ -51,7 +51,7 @@ export function PricingCard({
       testId={`card-pricing-${testId}`}
     >
       {isPopular && (
-        <View style={styles.popularBadge}>
+        <View style={[styles.popularBadge, { borderRadius: ge.borderRadius.pill }]}>
           <Text style={styles.popularBadgeText}>Most Popular</Text>
         </View>
       )}
@@ -91,7 +91,7 @@ export function PricingCard({
             <Pressable
               style={({ pressed }) => [
                 styles.downloadButton,
-                { borderColor: lc.borderMedium, backgroundColor: lc.surfaceMedium },
+                { borderColor: lc.borderMedium, backgroundColor: lc.surfaceMedium, borderRadius: ge.borderRadius.pill },
                 pressed && styles.buttonPressed,
               ]}
               onPress={onDownloadiOS}
@@ -106,7 +106,7 @@ export function PricingCard({
             <Pressable
               style={({ pressed }) => [
                 styles.downloadButton,
-                { borderColor: lc.borderMedium, backgroundColor: lc.surfaceMedium },
+                { borderColor: lc.borderMedium, backgroundColor: lc.surfaceMedium, borderRadius: ge.borderRadius.pill },
                 pressed && styles.buttonPressed,
               ]}
               onPress={onDownloadAndroid}
@@ -128,8 +128,8 @@ export function PricingCard({
         <Pressable
           style={({ pressed }) => [
             isPopular
-              ? styles.pricingButtonPrimary
-              : [styles.pricingButtonSecondary, { borderColor: lc.borderStrong, backgroundColor: lc.surfaceSubtle }],
+              ? [styles.pricingButtonPrimary, { borderRadius: ge.borderRadius.pill }]
+              : [styles.pricingButtonSecondary, { borderColor: lc.borderStrong, backgroundColor: lc.surfaceSubtle, borderRadius: ge.borderRadius.pill }],
             pressed && styles.buttonPressed,
           ]}
           onPress={onPress}
@@ -178,7 +178,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.primary,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    borderRadius: GlassEffect.borderRadius.pill,
   },
   popularBadgeText: {
     color: "rgba(255, 255, 255, 0.95)",
@@ -222,13 +221,11 @@ const styles = StyleSheet.create({
   },
   pricingButtonPrimary: {
     width: "100%",
-    borderRadius: GlassEffect.borderRadius.pill,
     overflow: "hidden",
   },
   pricingButtonSecondary: {
     width: "100%",
     paddingVertical: 14,
-    borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
     alignItems: "center",
   },
@@ -266,7 +263,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
   downloadButtonText: {

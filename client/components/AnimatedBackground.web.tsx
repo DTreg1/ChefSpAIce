@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
-import { LandingBackgrounds } from "@/components/landing/landing-colors";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -23,14 +22,13 @@ interface AnimatedBackgroundProps {
 export function AnimatedBackground({
   bubbleCount = 15,
 }: AnimatedBackgroundProps) {
-  const { isDark } = useTheme();
+  const { style } = useTheme();
 
-  const bg = isDark ? LandingBackgrounds.dark : LandingBackgrounds.light;
-  const baseColor = bg.animated.base;
-  const highlightColor = bg.animated.highlight;
+  const baseColor = style.animatedBackground.base.web;
+  const highlightColor = style.animatedBackground.highlight.web;
 
-  const bubbleBgColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 80, 30, 0.08)";
-  const bubbleBorderColor = isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 80, 30, 0.12)";
+  const bubbleBgColor = style.animatedBackground.bubbleBg;
+  const bubbleBorderColor = style.animatedBackground.bubbleBorder;
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];
