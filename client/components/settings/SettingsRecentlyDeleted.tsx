@@ -12,6 +12,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { storage, FoodItem } from "@/lib/storage";
 import { logger } from "@/lib/logger";
+import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
 
 interface SettingsRecentlyDeletedProps {
@@ -39,6 +40,7 @@ function daysUntilPurge(dateStr: string): number {
 }
 
 export function SettingsRecentlyDeleted({ theme }: SettingsRecentlyDeletedProps) {
+  const { style: themeStyle } = useTheme();
   const [deletedItems, setDeletedItems] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [restoringId, setRestoringId] = useState<string | null>(null);
@@ -137,7 +139,7 @@ export function SettingsRecentlyDeleted({ theme }: SettingsRecentlyDeletedProps)
             return (
               <View
                 key={item.id}
-                style={[styles.deletedItem, { borderColor: theme.glass.border }]}
+                style={[styles.deletedItem, { borderColor: themeStyle.glass.border }]}
                 testID={`card-deleted-item-${item.id}`}
               >
                 <View style={styles.itemInfo}>

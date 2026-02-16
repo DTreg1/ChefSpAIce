@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import type { ProfileNavigation, ThemeColors } from "@/lib/types";
 
 interface SettingsIntegrationsProps {
@@ -15,6 +16,7 @@ export function SettingsIntegrations({
   navigation,
   theme,
 }: SettingsIntegrationsProps) {
+  const { style: themeStyle } = useTheme();
   return (
     <GlassCard style={styles.section}>
       <ThemedText type="h4" style={styles.sectionTitle}>
@@ -22,7 +24,7 @@ export function SettingsIntegrations({
       </ThemedText>
 
       <Pressable
-        style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+        style={[styles.legalMenuItem, { borderColor: themeStyle.glass.border }]}
         onPress={() => navigation.navigate("SiriShortcutsGuide")}
         testID="button-siri-shortcuts"
         accessibilityRole="button"

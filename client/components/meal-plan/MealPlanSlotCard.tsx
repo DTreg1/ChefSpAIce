@@ -55,8 +55,8 @@ export function MealPlanSlotCard({
           style={[
             styles.mealContent,
             {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
+              backgroundColor: themeStyle.glass.background,
+              borderColor: themeStyle.glass.border,
               borderRadius: themeStyle.glassEffect.borderRadius.md,
             },
           ]}
@@ -111,7 +111,7 @@ export function MealPlanSlotCard({
         <Pressable
           style={[
             styles.addMealButton,
-            { borderColor: theme.glass.border },
+            { borderColor: themeStyle.glass.border },
           ]}
           onPress={() => {
             onAddMeal(

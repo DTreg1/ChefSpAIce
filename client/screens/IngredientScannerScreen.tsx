@@ -69,7 +69,7 @@ interface ScanResult {
 
 export default function IngredientScannerScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "IngredientScanner">>();
@@ -400,7 +400,7 @@ export default function IngredientScannerScreen() {
                     : theme.backgroundDefault,
                   borderColor: selectedIngredients.has(index)
                     ? AppColors.primary
-                    : theme.glass.border,
+                    : themeStyle.glass.border,
                 },
               ]}
               accessibilityRole="button"

@@ -52,7 +52,7 @@ const AVAILABLE_ICONS = [
 
 export default function StorageLocationsScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { checkFeature } = useSubscription();
   const navigation = useNavigation<RootNavigation>();
 
@@ -216,7 +216,7 @@ export default function StorageLocationsScreen() {
                 <View
                   style={[
                     styles.divider,
-                    { backgroundColor: theme.glass.border },
+                    { backgroundColor: themeStyle.glass.border },
                   ]}
                 />
               ) : null}
@@ -271,7 +271,7 @@ export default function StorageLocationsScreen() {
                   <View
                     style={[
                       styles.divider,
-                      { backgroundColor: theme.glass.border },
+                      { backgroundColor: themeStyle.glass.border },
                     ]}
                   />
                 ) : null}
@@ -299,9 +299,9 @@ export default function StorageLocationsScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
                     color: theme.text,
-                    borderColor: theme.glass.border,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
                 value={newLocationName}
@@ -320,7 +320,7 @@ export default function StorageLocationsScreen() {
                     key={icon}
                     style={[
                       styles.iconOption,
-                      { backgroundColor: theme.glass.backgroundSubtle },
+                      { backgroundColor: themeStyle.glass.backgroundSubtle },
                       selectedIcon === icon && {
                         backgroundColor: AppColors.primary,
                         borderColor: AppColors.primary,

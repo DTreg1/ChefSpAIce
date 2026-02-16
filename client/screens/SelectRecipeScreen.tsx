@@ -28,7 +28,7 @@ type SelectRecipeRouteProp = RouteProp<MealPlanStackParamList, "SelectRecipe">;
 
 export default function SelectRecipeScreen() {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
   const route = useRoute<SelectRecipeRouteProp>();
@@ -118,7 +118,7 @@ export default function SelectRecipeScreen() {
                 style={[
                   styles.recipeImage,
                   styles.placeholderImage,
-                  { backgroundColor: theme.glass.background },
+                  { backgroundColor: themeStyle.glass.background },
                 ]}
               >
                 <Feather
@@ -175,7 +175,7 @@ export default function SelectRecipeScreen() {
               tint={isDark ? "dark" : "light"}
               style={[
                 styles.searchBar,
-                { borderColor: theme.glass.border, borderWidth: 1 },
+                { borderColor: themeStyle.glass.border, borderWidth: 1 },
               ]}
             >
               <Feather name="search" size={18} color={theme.textSecondary} />
@@ -192,8 +192,8 @@ export default function SelectRecipeScreen() {
               style={[
                 styles.searchBar,
                 {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.background,
+                  borderColor: themeStyle.glass.border,
                   borderWidth: 1,
                 },
               ]}

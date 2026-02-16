@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import type { ProfileNavigation, ThemeColors } from "@/lib/types";
 
 interface SettingsLegalSupportProps {
@@ -15,6 +16,7 @@ export function SettingsLegalSupport({
   navigation,
   theme,
 }: SettingsLegalSupportProps) {
+  const { style: themeStyle } = useTheme();
   return (
     <GlassCard style={styles.section}>
       <ThemedText type="h4" style={styles.sectionTitle}>
@@ -22,7 +24,7 @@ export function SettingsLegalSupport({
       </ThemedText>
 
       <Pressable
-        style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+        style={[styles.legalMenuItem, { borderColor: themeStyle.glass.border }]}
         onPress={() => navigation.navigate("PrivacyPolicy")}
         testID="button-privacy-policy"
         accessibilityRole="button"
@@ -43,7 +45,7 @@ export function SettingsLegalSupport({
       </Pressable>
 
       <Pressable
-        style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+        style={[styles.legalMenuItem, { borderColor: themeStyle.glass.border }]}
         onPress={() => navigation.navigate("TermsOfService")}
         testID="button-terms-of-service"
         accessibilityRole="button"
@@ -64,7 +66,7 @@ export function SettingsLegalSupport({
       </Pressable>
 
       <Pressable
-        style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+        style={[styles.legalMenuItem, { borderColor: themeStyle.glass.border }]}
         onPress={() => Linking.openURL("https://chefspaice.com/support")}
         testID="button-support"
         accessibilityRole="button"
@@ -85,7 +87,7 @@ export function SettingsLegalSupport({
       </Pressable>
 
       <View
-        style={[styles.retentionInfo, { borderColor: theme.glass.border }]}
+        style={[styles.retentionInfo, { borderColor: themeStyle.glass.border }]}
         testID="info-data-retention"
       >
         <View style={styles.legalMenuIcon}>

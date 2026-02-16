@@ -38,10 +38,10 @@ export function InventoryFilters({
               {
                 backgroundColor: isSelected
                   ? AppColors.primary
-                  : theme.glass.background,
+                  : themeStyle.glass.background,
                 borderColor: isSelected
                   ? AppColors.primary
-                  : theme.glass.border,
+                  : themeStyle.glass.border,
                 borderRadius: themeStyle.glassEffect.borderRadius.pill,
               },
             ]}

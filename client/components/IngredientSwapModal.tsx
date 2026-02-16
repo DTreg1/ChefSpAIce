@@ -44,7 +44,7 @@ export function IngredientSwapModal({
   inventory,
   onSelectSwap,
 }: IngredientSwapModalProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -155,7 +155,7 @@ export function IngredientSwapModal({
                       : theme.backgroundSecondary,
                     borderColor: isSelected
                       ? AppColors.primary
-                      : theme.glass.border,
+                      : themeStyle.glass.border,
                   },
                 ]}
                 accessibilityRole="button"
@@ -225,7 +225,7 @@ export function IngredientSwapModal({
                         : theme.backgroundDefault,
                       borderColor: inStock
                         ? AppColors.success + "50"
-                        : theme.glass.border,
+                        : themeStyle.glass.border,
                     },
                   ]}
                   accessibilityRole="button"

@@ -13,6 +13,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
 
 interface SettingsAccountDataProps {
@@ -60,6 +61,7 @@ export function SettingsAccountData({
   onDeletionLevelsClose,
   theme,
 }: SettingsAccountDataProps) {
+  const { style: themeStyle } = useTheme();
   const modalBg = theme.surface;
   const { focusTargetRef: focusTargetRef1, triggerRef: triggerRef1, containerRef: containerRef1, onAccessibilityEscape: onAccessibilityEscape1 } = useFocusTrap({
     visible: showDeletionLevelsModal,
@@ -85,7 +87,7 @@ export function SettingsAccountData({
           <Pressable
             style={[
               styles.legalMenuItem,
-              { borderColor: theme.glass.border },
+              { borderColor: themeStyle.glass.border },
             ]}
             onPress={onExportData}
             disabled={isExporting}
@@ -113,7 +115,7 @@ export function SettingsAccountData({
           <Pressable
             style={[
               styles.legalMenuItem,
-              { borderColor: theme.glass.border },
+              { borderColor: themeStyle.glass.border },
             ]}
             onPress={onImportFilePick}
             disabled={isImporting}
@@ -141,7 +143,7 @@ export function SettingsAccountData({
           <Pressable
             style={[
               styles.legalMenuItem,
-              { borderColor: theme.glass.border },
+              { borderColor: themeStyle.glass.border },
             ]}
             onPress={onDownloadMyData}
             disabled={isDownloadingData}
@@ -178,7 +180,7 @@ export function SettingsAccountData({
         ref={triggerRef1}
         style={[
           styles.dangerMenuItem,
-          { borderColor: theme.glass.border },
+          { borderColor: themeStyle.glass.border },
         ]}
         onPress={onDeletionLevelsPress}
         testID="button-manage-account-data"
@@ -216,7 +218,7 @@ export function SettingsAccountData({
             <Pressable
               style={[
                 styles.dangerMenuItem,
-                { borderColor: theme.glass.border, marginBottom: Spacing.sm },
+                { borderColor: themeStyle.glass.border, marginBottom: Spacing.sm },
               ]}
               onPress={() => handleDeletionOption(onClearData)}
               testID="button-clear-app-data"
@@ -263,7 +265,7 @@ export function SettingsAccountData({
               <Pressable
                 style={[
                   styles.dangerMenuItem,
-                  { borderColor: theme.glass.border, marginBottom: Spacing.sm },
+                  { borderColor: themeStyle.glass.border, marginBottom: Spacing.sm },
                 ]}
                 onPress={() => handleDeletionOption(onResetForTesting)}
                 testID="button-reset-app-level"
@@ -344,8 +346,8 @@ export function SettingsAccountData({
                 styles.deleteConfirmInput,
                 {
                   color: theme.text,
-                  borderColor: deleteConfirmText === "DELETE" ? AppColors.error : theme.glass.border,
-                  backgroundColor: theme.glass.background,
+                  borderColor: deleteConfirmText === "DELETE" ? AppColors.error : themeStyle.glass.border,
+                  backgroundColor: themeStyle.glass.background,
                 },
               ]}
               value={deleteConfirmText}

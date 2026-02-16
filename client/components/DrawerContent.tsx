@@ -88,14 +88,14 @@ interface DrawerItemProps {
 }
 
 function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.drawerItem,
-        isActive ? { backgroundColor: theme.glass.backgroundStrong } : null,
+        isActive ? { backgroundColor: themeStyle.glass.backgroundStrong } : null,
         pressed ? { opacity: 0.7 } : null,
       ]}
       accessibilityRole="menuitem"
@@ -120,7 +120,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
 }
 
 export function DrawerContent(props: DrawerContentComponentProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const { signOut, isAuthenticated } = useAuth();
   const insets = useSafeAreaInsets();
   const { navigation, state } = props;
@@ -259,7 +259,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           </View>
 
           <View
-            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+            style={[styles.divider, { backgroundColor: themeStyle.glass.border }]}
           />
 
           <View style={styles.menuSection}>
@@ -285,7 +285,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           </View>
 
           <View
-            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+            style={[styles.divider, { backgroundColor: themeStyle.glass.border }]}
           />
 
           <View style={styles.menuSection}>
@@ -343,16 +343,16 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}
         >
           <View
-            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+            style={[styles.divider, { backgroundColor: themeStyle.glass.border }]}
           />
           {isAuthenticated ? (
             <Pressable
               style={({ pressed }) => [
                 styles.addItemButton,
                 {
-                  backgroundColor: theme.glass.backgroundStrong,
+                  backgroundColor: themeStyle.glass.backgroundStrong,
                   borderWidth: 1,
-                  borderColor: theme.glass.border,
+                  borderColor: themeStyle.glass.border,
                 },
                 pressed ? { opacity: 0.8 } : null,
               ]}

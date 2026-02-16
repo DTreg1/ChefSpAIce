@@ -102,7 +102,7 @@ interface NutritionScoreDetailProps {
 }
 
 export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const scoreResult = calculateNutritionScore(nutrition);
   const description = getScoreDescription(scoreResult);
 
@@ -112,8 +112,8 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
         style={[
           styles.incompleteContainer,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
           },
         ]}
       >
@@ -140,8 +140,8 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
       style={[
         styles.detailContainer,
         {
-          backgroundColor: theme.glass.background,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.background,
+          borderColor: themeStyle.glass.border,
         },
       ]}
     >
@@ -163,7 +163,7 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
         </View>
       </View>
 
-      <View style={[styles.scoreBar, { backgroundColor: theme.glass.backgroundSubtle }]}>
+      <View style={[styles.scoreBar, { backgroundColor: themeStyle.glass.backgroundSubtle }]}>
         <View
           style={[
             styles.scoreBarFill,

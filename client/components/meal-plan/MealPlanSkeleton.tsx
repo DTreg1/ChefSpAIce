@@ -45,8 +45,8 @@ function MealSlotSkeleton() {
         style={[
           styles.mealContent,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
             borderRadius: themeStyle.glassEffect.borderRadius.md,
           },
         ]}
@@ -83,8 +83,8 @@ function SelectedDayCardSkeleton() {
       style={[
         styles.selectedDayCard,
         {
-          backgroundColor: theme.glass.background,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.background,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
@@ -105,8 +105,8 @@ function StatsCardSkeleton() {
       style={[
         styles.statsCard,
         {
-          backgroundColor: theme.glass.background,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.background,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}

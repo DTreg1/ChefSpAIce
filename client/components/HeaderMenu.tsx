@@ -31,7 +31,7 @@ export function HeaderMenu({
   items,
   testID = "button-header-menu",
 }: HeaderMenuProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const { focusTargetRef, triggerRef, containerRef, onAccessibilityEscape } = useFocusTrap({
     visible: isOpen,
@@ -81,7 +81,7 @@ export function HeaderMenu({
                   styles.dropdown,
                   {
                     backgroundColor: theme.backgroundSecondary,
-                    borderColor: theme.glass.border,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
                 accessibilityRole="menu"
@@ -95,7 +95,7 @@ export function HeaderMenu({
                       styles.menuItem,
                       index < items.length - 1 && {
                         borderBottomWidth: 1,
-                        borderBottomColor: theme.glass.border,
+                        borderBottomColor: themeStyle.glass.border,
                       },
                       item.disabled && styles.menuItemDisabled,
                     ]}

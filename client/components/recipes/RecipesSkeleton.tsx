@@ -15,8 +15,8 @@ function RecipeCardSkeleton() {
       style={[
         styles.recipeCard,
         {
-          backgroundColor: theme.glass.background,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.background,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}

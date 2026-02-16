@@ -14,8 +14,8 @@ function ShoppingItemSkeleton() {
       style={[
         styles.listItem,
         {
-          backgroundColor: theme.glass.backgroundStrong,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.backgroundStrong,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}

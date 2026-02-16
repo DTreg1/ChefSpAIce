@@ -11,7 +11,7 @@ interface SkeletonBoxProps {
 }
 
 export function SkeletonBox({ width, height, borderRadius = 8, style }: SkeletonBoxProps) {
-  const { theme } = useTheme();
+  const { style: themeStyle } = useTheme();
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(0.3);
 
@@ -25,7 +25,7 @@ export function SkeletonBox({ width, height, borderRadius = 8, style }: Skeleton
     return (
       <View
         style={[
-          { width: width as import("react-native").DimensionValue, height, borderRadius, backgroundColor: theme.glass.border, opacity: 0.5 },
+          { width: width as import("react-native").DimensionValue, height, borderRadius, backgroundColor: themeStyle.glass.border, opacity: 0.5 },
           style,
         ]}
       />
@@ -39,7 +39,7 @@ export function SkeletonBox({ width, height, borderRadius = 8, style }: Skeleton
   return (
     <Animated.View
       style={[
-        { width: width as import("react-native").DimensionValue, height, borderRadius, backgroundColor: theme.glass.border },
+        { width: width as import("react-native").DimensionValue, height, borderRadius, backgroundColor: themeStyle.glass.border },
         animatedStyle,
         style,
       ]}

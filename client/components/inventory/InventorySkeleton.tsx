@@ -15,8 +15,8 @@ function InventoryItemSkeleton() {
       style={[
         styles.inventoryItem,
         {
-          backgroundColor: theme.glass.backgroundStrong,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.backgroundStrong,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}
@@ -47,8 +47,8 @@ function InventorySectionSkeleton() {
       style={[
         styles.inventorySection,
         {
-          backgroundColor: theme.glass.background,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.background,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}

@@ -794,9 +794,9 @@ export default function AddItemScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
                   color: theme.text,
-                  borderColor: theme.glass.border,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
@@ -816,9 +816,9 @@ export default function AddItemScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
                   color: theme.text,
-                  borderColor: theme.glass.border,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
@@ -838,9 +838,9 @@ export default function AddItemScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
                   color: theme.text,
-                  borderColor: theme.glass.border,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
@@ -862,9 +862,9 @@ export default function AddItemScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
                     color: theme.text,
-                    borderColor: theme.glass.border,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
                 value={quantity}
@@ -883,9 +883,9 @@ export default function AddItemScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
                     color: theme.text,
-                    borderColor: theme.glass.border,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
                 value={unit}
@@ -912,12 +912,12 @@ export default function AddItemScreen() {
                       backgroundColor:
                         category === cat
                           ? AppColors.primary + "20"
-                          : theme.glass.backgroundSubtle,
+                          : themeStyle.glass.backgroundSubtle,
                       borderRadius: themeStyle.glassEffect.borderRadius.pill,
                       borderColor:
                         category === cat
                           ? AppColors.primary
-                          : theme.glass.border,
+                          : themeStyle.glass.border,
                     },
                   ]}
                   testID={`chip-category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
@@ -1018,8 +1018,8 @@ export default function AddItemScreen() {
               style={[
                 styles.dateButtonCompact,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                   flex: 1,
                 },
@@ -1047,8 +1047,8 @@ export default function AddItemScreen() {
               style={[
                 styles.dateButtonCompact,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                   flex: 1,
                 },
@@ -1105,9 +1105,9 @@ export default function AddItemScreen() {
               styles.input,
               styles.textArea,
               {
-                backgroundColor: theme.glass.backgroundSubtle,
+                backgroundColor: themeStyle.glass.backgroundSubtle,
                 color: theme.text,
-                borderColor: theme.glass.border,
+                borderColor: themeStyle.glass.border,
                 borderRadius: themeStyle.glassEffect.borderRadius.md,
               },
             ]}

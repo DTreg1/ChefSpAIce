@@ -74,7 +74,7 @@ export function RecipeSettingsModal({
   onClose,
   onGenerate,
 }: RecipeSettingsModalProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible,
     onDismiss: onClose,
@@ -199,8 +199,8 @@ export function RecipeSettingsModal({
         {
           backgroundColor: selected
             ? AppColors.primary
-            : theme.glass.background,
-          borderColor: selected ? AppColors.primary : theme.glass.border,
+            : themeStyle.glass.background,
+          borderColor: selected ? AppColors.primary : themeStyle.glass.border,
         },
       ]}
       onPress={onPress}
@@ -461,10 +461,10 @@ export function RecipeSettingsModal({
                     {
                       backgroundColor: prioritizeExpiring
                         ? AppColors.primary
-                        : theme.glass.background,
+                        : themeStyle.glass.background,
                       borderColor: prioritizeExpiring
                         ? AppColors.primary
-                        : theme.glass.border,
+                        : themeStyle.glass.border,
                     },
                   ]}
                 >

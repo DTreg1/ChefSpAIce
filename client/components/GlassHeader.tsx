@@ -52,7 +52,7 @@ export function GlassHeader({
   showBackButton = false,
   headerRight,
 }: GlassHeaderProps) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const inputRef = useRef<TextInput>(null);
@@ -147,12 +147,12 @@ export function GlassHeader({
   const secondaryColor =
     typeof theme.textSecondary === "string" ? theme.textSecondary : "#888";
   const glassBg =
-    typeof theme.glass?.background === "string"
-      ? theme.glass.background
+    typeof themeStyle.glass?.background === "string"
+      ? themeStyle.glass.background
       : "rgba(255,255,255,0.1)";
   const glassBorder =
-    typeof theme.glass?.border === "string"
-      ? theme.glass.border
+    typeof themeStyle.glass?.border === "string"
+      ? themeStyle.glass.border
       : "rgba(255,255,255,0.2)";
 
   return (

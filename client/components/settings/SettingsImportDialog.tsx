@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
 
 interface SettingsImportDialogProps {
@@ -19,6 +20,7 @@ export function SettingsImportDialog({
   onClose,
   theme,
 }: SettingsImportDialogProps) {
+  const { style: themeStyle } = useTheme();
   if (Platform.OS !== "web" || !showImportDialog) {
     return null;
   }
@@ -35,14 +37,14 @@ export function SettingsImportDialog({
           You are about to import data from a backup file. Choose how you would like to handle your existing data:
         </ThemedText>
 
-        <View style={[styles.modalOption, { borderColor: theme.glass.border }]}>
+        <View style={[styles.modalOption, { borderColor: themeStyle.glass.border }]}>
           <ThemedText type="body" style={{ fontWeight: "600" }}>Merge</ThemedText>
           <ThemedText type="caption">
             Combine the imported data with your existing data. Items with the same ID will be updated, and new items will be added.
           </ThemedText>
         </View>
 
-        <View style={[styles.modalOption, { borderColor: theme.glass.border }]}>
+        <View style={[styles.modalOption, { borderColor: themeStyle.glass.border }]}>
           <ThemedText type="body" style={{ fontWeight: "600" }}>Replace</ThemedText>
           <ThemedText type="caption">
             Remove all your existing data and replace it entirely with the imported backup. This cannot be undone.

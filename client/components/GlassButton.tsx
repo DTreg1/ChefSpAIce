@@ -119,9 +119,9 @@ export const GlassButton = memo(function GlassButton({
     }
     return {
       borderWidth: themeStyle.glassEffect.borderWidth,
-      borderColor: theme.glass.border,
+      borderColor: themeStyle.glass.border,
     };
-  }, [variant, theme.glass.border]);
+  }, [variant, themeStyle.glass.border]);
 
   const blurTint = useMemo(() => {
     switch (variant) {

@@ -41,7 +41,7 @@ function validatePassword(password: string): string | null {
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { recheckOnboarding, markOnboardingComplete } = useOnboardingStatus();
 
@@ -375,8 +375,8 @@ export default function AuthScreen() {
                     style={[
                       styles.authSocialButton,
                       {
-                        backgroundColor: theme.glass.background,
-                        borderColor: theme.glass.border,
+                        backgroundColor: themeStyle.glass.background,
+                        borderColor: themeStyle.glass.border,
                       },
                     ]}
                     onPress={() => handleSocialAuth("apple")}
@@ -399,8 +399,8 @@ export default function AuthScreen() {
                     style={[
                       styles.authSocialButton,
                       {
-                        backgroundColor: theme.glass.background,
-                        borderColor: theme.glass.border,
+                        backgroundColor: themeStyle.glass.background,
+                        borderColor: themeStyle.glass.border,
                       },
                     ]}
                     onPress={() => handleSocialAuth("google")}
@@ -430,7 +430,7 @@ export default function AuthScreen() {
                 <View
                   style={[
                     styles.authDivider,
-                    { backgroundColor: theme.glass.border },
+                    { backgroundColor: themeStyle.glass.border },
                   ]}
                 />
                 <ThemedText
@@ -444,7 +444,7 @@ export default function AuthScreen() {
                 <View
                   style={[
                     styles.authDivider,
-                    { backgroundColor: theme.glass.border },
+                    { backgroundColor: themeStyle.glass.border },
                   ]}
                 />
               </View>
@@ -456,8 +456,8 @@ export default function AuthScreen() {
               style={[
                 styles.authInputWrapper,
                 {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.background,
+                  borderColor: themeStyle.glass.border,
                 },
               ]}
             >
@@ -487,8 +487,8 @@ export default function AuthScreen() {
               style={[
                 styles.authInputWrapper,
                 {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.background,
+                  borderColor: themeStyle.glass.border,
                 },
               ]}
             >
@@ -547,8 +547,8 @@ export default function AuthScreen() {
                 style={[
                   styles.authInputWrapper,
                   {
-                    backgroundColor: theme.glass.background,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.background,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
               >

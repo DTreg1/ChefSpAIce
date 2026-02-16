@@ -286,8 +286,8 @@ export default function MealPlanScreen() {
               style={[
                 styles.dragHandle,
                 {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.background,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
@@ -396,7 +396,7 @@ export default function MealPlanScreen() {
                         isToday && { borderColor: AppColors.primary, borderWidth: 2 },
                       ]}
                     >
-                      <View style={[styles.tabletDayHeader, { borderBottomColor: theme.glass.border }]}>
+                      <View style={[styles.tabletDayHeader, { borderBottomColor: themeStyle.glass.border }]}>
                         <ThemedText type={isLandscape ? "h4" : "small"} style={styles.tabletDayTitle}>
                           {format(day, isLandscape ? "EEE" : "EEEEE")}
                         </ThemedText>

@@ -29,6 +29,7 @@ import {
   getDaysUntilExpiration,
   formatDate,
 } from "@/lib/storage";
+import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
 
 const SWIPE_THRESHOLD = 20;
@@ -51,6 +52,7 @@ export function SwipeableItemCard({
   theme,
   showHint,
 }: SwipeableItemCardProps) {
+  const { style: themeStyle } = useTheme();
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
 
@@ -278,7 +280,7 @@ export function SwipeableItemCard({
               style={[
                 styles.itemCard,
                 {
-                  borderColor: theme.glass.border,
+                  borderColor: themeStyle.glass.border,
                 },
               ]}
             >

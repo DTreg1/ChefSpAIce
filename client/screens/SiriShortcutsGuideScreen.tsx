@@ -83,7 +83,7 @@ function CodeBlock({ code, theme, onCopy }: { code: string; theme: ReturnType<ty
       </ThemedText>
       <Pressable
         onPress={onCopy}
-        style={[styles.copyButton, { backgroundColor: theme.glass.background }]}
+        style={[styles.copyButton, { backgroundColor: themeStyle.glass.background }]}
         accessibilityLabel="Copy code"
         accessibilityRole="button"
         testID="button-copy-code"
@@ -97,7 +97,7 @@ function CodeBlock({ code, theme, onCopy }: { code: string; theme: ReturnType<ty
 export default function SiriShortcutsGuideScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const { isAuthenticated } = useAuth();
   const { isStandardUser } = useSubscription();
   const [apiKey, setApiKey] = useState<string | null>(null);

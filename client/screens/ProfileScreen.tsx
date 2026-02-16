@@ -42,7 +42,7 @@ import type { ProfileNavigation } from "@/lib/types";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, colorScheme, themePreference, setThemePreference } =
+  const { theme, isDark, colorScheme, themePreference, setThemePreference, style: themeStyle } =
     useTheme();
   const navigation = useNavigation<ProfileNavigation>();
   const { user, isAuthenticated, signOut } = useAuth();
@@ -213,8 +213,8 @@ export default function ProfileScreen() {
                 style={[
                   styles.avatarGlassRing,
                   {
-                    backgroundColor: theme.glass.background,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.background,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
               >
@@ -244,8 +244,8 @@ export default function ProfileScreen() {
                 style={[
                   styles.avatarGlassRing,
                   {
-                    backgroundColor: theme.glass.background,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.background,
+                    borderColor: themeStyle.glass.border,
                   },
                 ]}
               >
@@ -349,11 +349,11 @@ export default function ProfileScreen() {
                         {
                           backgroundColor: isSelected
                             ? AppColors.primary
-                            : theme.glass.background,
+                            : themeStyle.glass.background,
                           borderWidth: 1,
                           borderColor: isSelected
                             ? AppColors.primary
-                            : theme.glass.border,
+                            : themeStyle.glass.border,
                         },
                       ]}
                       testID={`button-theme-${option}`}
@@ -377,7 +377,7 @@ export default function ProfileScreen() {
           </View>
 
           <View
-            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+            style={[styles.divider, { backgroundColor: themeStyle.glass.border }]}
           />
 
           <View style={styles.preferenceRow}>
@@ -469,7 +469,7 @@ export default function ProfileScreen() {
                 <View
                   style={[
                     styles.storageBar,
-                    { backgroundColor: theme.glass.background },
+                    { backgroundColor: themeStyle.glass.background },
                   ]}
                 >
                   <View
@@ -598,7 +598,7 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.menuDivider,
-              { backgroundColor: theme.glass.border },
+              { backgroundColor: themeStyle.glass.border },
             ]}
           />
           <Pressable
@@ -627,7 +627,7 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.menuDivider,
-              { backgroundColor: theme.glass.border },
+              { backgroundColor: themeStyle.glass.border },
             ]}
           />
           <Pressable
@@ -656,7 +656,7 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.menuDivider,
-              { backgroundColor: theme.glass.border },
+              { backgroundColor: themeStyle.glass.border },
             ]}
           />
           <Pressable
@@ -685,7 +685,7 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.menuDivider,
-              { backgroundColor: theme.glass.border },
+              { backgroundColor: themeStyle.glass.border },
             ]}
           />
           <Pressable

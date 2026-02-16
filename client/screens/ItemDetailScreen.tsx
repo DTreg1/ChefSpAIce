@@ -41,7 +41,7 @@ const STORAGE_OPTIONS: { key: StorageLocation; label: string; icon: string }[] =
 
 export default function ItemDetailScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<InventoryStackParamList, "ItemDetail">>();
 
@@ -268,8 +268,8 @@ export default function ItemDetailScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
+                  borderColor: themeStyle.glass.border,
                   borderWidth: 1,
                   color: theme.text,
                 },
@@ -290,8 +290,8 @@ export default function ItemDetailScreen() {
                 style={[
                   styles.readOnlyField,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
+                    borderColor: themeStyle.glass.border,
                     borderWidth: 1,
                   },
                 ]}
@@ -317,8 +317,8 @@ export default function ItemDetailScreen() {
                 style={[
                   styles.readOnlyField,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
+                    borderColor: themeStyle.glass.border,
                     borderWidth: 1,
                   },
                 ]}
@@ -348,8 +348,8 @@ export default function ItemDetailScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
+                    borderColor: themeStyle.glass.border,
                     borderWidth: 1,
                     color: theme.text,
                   },
@@ -372,8 +372,8 @@ export default function ItemDetailScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
+                    borderColor: themeStyle.glass.border,
                     borderWidth: 1,
                     color: theme.text,
                   },
@@ -392,8 +392,8 @@ export default function ItemDetailScreen() {
                 style={[
                   styles.readOnlyField,
                   {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
+                    backgroundColor: themeStyle.glass.backgroundSubtle,
+                    borderColor: themeStyle.glass.border,
                     borderWidth: 1,
                   },
                 ]}
@@ -500,8 +500,8 @@ export default function ItemDetailScreen() {
               style={[
                 styles.dateButtonCompact,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
+                  borderColor: themeStyle.glass.border,
                   flex: 1,
                 },
               ]}
@@ -531,8 +531,8 @@ export default function ItemDetailScreen() {
               style={[
                 styles.dateButtonCompact,
                 {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.backgroundSubtle,
+                  borderColor: themeStyle.glass.border,
                   flex: 1,
                 },
               ]}
@@ -565,8 +565,8 @@ export default function ItemDetailScreen() {
               styles.input,
               styles.textArea,
               {
-                backgroundColor: theme.glass.backgroundSubtle,
-                borderColor: theme.glass.border,
+                backgroundColor: themeStyle.glass.backgroundSubtle,
+                borderColor: themeStyle.glass.border,
                 borderWidth: 1,
                 color: theme.text,
               },

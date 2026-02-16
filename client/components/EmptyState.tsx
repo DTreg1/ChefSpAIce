@@ -24,7 +24,7 @@ export function EmptyState({
   onAction,
   actionDisabled,
 }: EmptyStateProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <View
@@ -37,8 +37,8 @@ export function EmptyState({
         style={[
           styles.iconContainer,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
           },
         ]}
       >

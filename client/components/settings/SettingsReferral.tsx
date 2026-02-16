@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
 
 interface SettingsReferralProps {
@@ -32,6 +33,7 @@ export function SettingsReferral({
   onShareReferral,
   theme,
 }: SettingsReferralProps) {
+  const { style: themeStyle } = useTheme();
   return (
     <GlassCard style={styles.section}>
       <ThemedText type="h4" style={styles.sectionTitle}>
@@ -53,7 +55,7 @@ export function SettingsReferral({
             style={[
               styles.settingRow,
               {
-                backgroundColor: theme.glass.background,
+                backgroundColor: themeStyle.glass.background,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 12,
@@ -111,7 +113,7 @@ export function SettingsReferral({
             style={[
               styles.settingRow,
               {
-                backgroundColor: theme.glass.background,
+                backgroundColor: themeStyle.glass.background,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 12,
@@ -138,7 +140,7 @@ export function SettingsReferral({
             style={[
               styles.settingRow,
               {
-                backgroundColor: theme.glass.background,
+                backgroundColor: themeStyle.glass.background,
                 borderRadius: 8,
                 padding: 12,
               },

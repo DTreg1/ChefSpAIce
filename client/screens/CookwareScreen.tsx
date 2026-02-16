@@ -125,7 +125,7 @@ const GroupedSection = React.memo(function GroupedSection({
   onToggleAppliance: (id: number) => void;
   isAtLimit: boolean;
 }) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   return (
     <GlassCard style={styles.groupCard} contentStyle={styles.groupCardContent}>
@@ -190,7 +190,7 @@ const CookwareItem = React.memo(function CookwareItem({
   isToggling: boolean;
   isAtLimit: boolean;
 }) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
 
   const isDisabled = isAtLimit && !isOwned;
@@ -236,8 +236,8 @@ const CookwareItem = React.memo(function CookwareItem({
           {
             backgroundColor: isOwned
               ? `${AppColors.primary}15`
-              : theme.glass.background,
-            borderColor: isOwned ? AppColors.primary : theme.glass.border,
+              : themeStyle.glass.background,
+            borderColor: isOwned ? AppColors.primary : themeStyle.glass.border,
             opacity: isToggling || isDisabled ? 0.4 : 1,
           },
         ]}
@@ -256,7 +256,7 @@ const CookwareItem = React.memo(function CookwareItem({
             {
               backgroundColor: isOwned
                 ? `${AppColors.primary}10`
-                : theme.glass.backgroundSubtle,
+                : themeStyle.glass.backgroundSubtle,
               borderColor: isOwned ? `${AppColors.primary}30` : "transparent",
             },
           ]}
@@ -295,7 +295,7 @@ const CookwareItem = React.memo(function CookwareItem({
 export default function CookwareScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { entitlements } = useSubscription();
@@ -555,7 +555,7 @@ export default function CookwareScreen() {
             key={appliance.id}
             style={[
               styles.previewItem,
-              { backgroundColor: theme.glass.backgroundSubtle },
+              { backgroundColor: themeStyle.glass.backgroundSubtle },
             ]}
           >
             <Feather

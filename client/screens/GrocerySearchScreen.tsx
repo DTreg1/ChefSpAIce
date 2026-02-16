@@ -111,19 +111,19 @@ function AddedOverlay() {
 
 export default function GrocerySearchScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const inputRef = useRef<TextInput>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [addedProductIds, setAddedProductIds] = useState<Set<string>>(new Set());
 
   const glassBg =
-    typeof theme.glass?.background === "string"
-      ? theme.glass.background
+    typeof themeStyle.glass?.background === "string"
+      ? themeStyle.glass.background
       : "rgba(255,255,255,0.1)";
   const glassBorder =
-    typeof theme.glass?.border === "string"
-      ? theme.glass.border
+    typeof themeStyle.glass?.border === "string"
+      ? themeStyle.glass.border
       : "rgba(255,255,255,0.2)";
   const textColor = typeof theme.text === "string" ? theme.text : "#000";
   const secondaryColor =

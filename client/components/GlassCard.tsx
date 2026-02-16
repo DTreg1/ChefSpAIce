@@ -166,7 +166,7 @@ export function GlassCard({
   accessibilityHint,
   accessibilityRole,
 }: GlassCardProps) {
-  const { theme, isDark, style: themeStyle } = useTheme();
+  const { isDark, style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
 
   const blurIntensity = getBlurIntensity(intensity);
@@ -193,7 +193,7 @@ export function GlassCard({
   const glassRadius = themeStyle.glassEffect.borderRadius.lg;
 
   const glassStyles = {
-    borderColor: theme.glass.border,
+    borderColor: themeStyle.glass.border,
     borderWidth: useLiquidGlass ? 0 : themeStyle.glassEffect.borderWidth,
   };
 
@@ -229,8 +229,8 @@ export function GlassCard({
             styles.card,
             styles.webGlass,
             {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
+              backgroundColor: themeStyle.glass.background,
+              borderColor: themeStyle.glass.border,
               borderRadius: glassRadius,
             },
             style,
@@ -286,8 +286,8 @@ export function GlassCard({
           styles.card,
           styles.webGlass,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
             borderRadius: glassRadius,
           },
           animatedStyle,

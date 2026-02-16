@@ -30,7 +30,7 @@ const TIER_COLORS = {
 export function WasteReductionStats({
   compact = false,
 }: WasteReductionStatsProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const [stats, setStats] = useState<StatsType | null>(null);
   const [monthlyStats, setMonthlyStats] = useState({
     itemsSaved: 0,
@@ -146,7 +146,7 @@ export function WasteReductionStats({
 
         <View style={styles.statsGrid}>
           <View
-            style={[styles.statCard, { backgroundColor: theme.glass.backgroundSubtle }]}
+            style={[styles.statCard, { backgroundColor: themeStyle.glass.backgroundSubtle }]}
             accessibilityRole="text"
             accessibilityLabel={`${stats.totalItemsSavedFromWaste} items saved from waste`}
           >
@@ -159,7 +159,7 @@ export function WasteReductionStats({
           </View>
 
           <View
-            style={[styles.statCard, { backgroundColor: theme.glass.backgroundSubtle }]}
+            style={[styles.statCard, { backgroundColor: themeStyle.glass.backgroundSubtle }]}
             accessibilityRole="text"
             accessibilityLabel={`$${stats.estimatedValueSaved.toFixed(0)} estimated savings`}
           >
@@ -170,7 +170,7 @@ export function WasteReductionStats({
           </View>
         </View>
 
-        <View style={[styles.secondaryStats, { borderTopColor: theme.glass.border }]}>
+        <View style={[styles.secondaryStats, { borderTopColor: themeStyle.glass.border }]}>
           <View
             style={styles.secondaryStat}
             accessibilityRole="text"
@@ -205,7 +205,7 @@ export function WasteReductionStats({
         </View>
 
         {showBadges && stats.badges.length > 0 ? (
-          <View style={[styles.badgesContainer, { borderTopColor: theme.glass.border }]}>
+          <View style={[styles.badgesContainer, { borderTopColor: themeStyle.glass.border }]}>
             <ThemedText type="h4" style={styles.badgesTitle}>
               Earned Badges
             </ThemedText>

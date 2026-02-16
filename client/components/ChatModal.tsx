@@ -46,7 +46,7 @@ const CHAT_MAX_HEIGHT_RATIO = 0.55;
 export function ChatModal() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, style: themeStyle } = useTheme();
   const { isChatOpen, closeChat } = useFloatingChat();
   const { containerRef, onAccessibilityEscape } = useFocusTrap({
     visible: isChatOpen,
@@ -274,7 +274,7 @@ export function ChatModal() {
             styles.inputContainer,
             styles.voiceInputWrapper,
             {
-              borderTopColor: theme.glass.border,
+              borderTopColor: themeStyle.glass.border,
               backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)",
             },
           ]}
@@ -312,7 +312,7 @@ export function ChatModal() {
           style={[
             styles.inputContainer,
             {
-              borderTopColor: theme.glass.border,
+              borderTopColor: themeStyle.glass.border,
               backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)",
             },
           ]}
@@ -424,7 +424,7 @@ export function ChatModal() {
           style={[
             styles.chatContent,
             {
-              borderColor: theme.glass.border,
+              borderColor: themeStyle.glass.border,
               backgroundColor:
                 Platform.OS === "web"
                   ? isDark

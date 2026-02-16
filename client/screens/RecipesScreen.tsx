@@ -395,9 +395,9 @@ export default function RecipesScreen() {
               style={[
                 styles.recipePlaceholder,
                 {
-                  backgroundColor: theme.glass.background,
+                  backgroundColor: themeStyle.glass.background,
                   borderWidth: 1,
-                  borderColor: theme.glass.borderSubtle,
+                  borderColor: themeStyle.glass.borderSubtle,
                 },
               ]}
             >
@@ -506,7 +506,7 @@ export default function RecipesScreen() {
     if (!isTablet) return null;
 
     return (
-      <View style={[styles.previewPanel, { width: previewPanelWidth, borderLeftColor: theme.glass.border }]}>
+      <View style={[styles.previewPanel, { width: previewPanelWidth, borderLeftColor: themeStyle.glass.border }]}>
         {selectedRecipe ? (
           <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewScrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.previewHeader}>
@@ -593,7 +593,7 @@ export default function RecipesScreen() {
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={selectedRecipe.isFavorite ? "Remove from favorites" : "Add to favorites"}
-                style={[styles.previewFavoriteButton, { borderColor: theme.glass.border }]}
+                style={[styles.previewFavoriteButton, { borderColor: themeStyle.glass.border }]}
               >
                 <Feather
                   name="heart"
@@ -655,8 +655,8 @@ export default function RecipesScreen() {
               style={[
                 styles.searchInputContainer,
                 {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
+                  backgroundColor: themeStyle.glass.background,
+                  borderColor: themeStyle.glass.border,
                   borderRadius: themeStyle.glassEffect.borderRadius.md,
                 },
               ]}
@@ -715,10 +715,10 @@ export default function RecipesScreen() {
                         {
                           backgroundColor: isSelected
                             ? AppColors.primary
-                            : theme.glass.background,
+                            : themeStyle.glass.background,
                           borderColor: isSelected
                             ? AppColors.primary
-                            : theme.glass.border,
+                            : themeStyle.glass.border,
                           borderRadius: themeStyle.glassEffect.borderRadius.pill,
                           borderWidth: 1,
                         },
@@ -765,10 +765,10 @@ export default function RecipesScreen() {
                         {
                           backgroundColor: isSelected
                             ? AppColors.accent
-                            : theme.glass.background,
+                            : themeStyle.glass.background,
                           borderColor: isSelected
                             ? AppColors.accent
-                            : theme.glass.border,
+                            : themeStyle.glass.border,
                           borderRadius: themeStyle.glassEffect.borderRadius.pill,
                           borderWidth: 1,
                         },
@@ -831,7 +831,7 @@ export default function RecipesScreen() {
             ref={progressContainerRef}
             style={[
               styles.progressModalContent,
-              { backgroundColor: theme.glass.background },
+              { backgroundColor: themeStyle.glass.background },
             ]}
             onAccessibilityEscape={onProgressEscape}
           >

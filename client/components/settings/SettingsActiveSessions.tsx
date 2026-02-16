@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { apiClient } from "@/lib/api-client";
+import { useTheme } from "@/hooks/useTheme";
 import type { ThemeColors } from "@/lib/types";
 
 interface Session {
@@ -92,6 +93,7 @@ function getRelativeTime(dateStr: string): string {
 }
 
 export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
+  const { style: themeStyle } = useTheme();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,7 +192,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
             {error}
           </ThemedText>
           <Pressable
-            style={[styles.retryButton, { borderColor: theme.glass?.border }]}
+            style={[styles.retryButton, { borderColor: themeStyle.glass?.border }]}
             onPress={fetchSessions}
             testID="button-retry-sessions"
             accessibilityRole="button"
@@ -206,7 +208,7 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
           {sessions.map((session) => (
             <View
               key={session.id}
-              style={[styles.sessionCard, { borderColor: theme.glass?.border || AppColors.border }]}
+              style={[styles.sessionCard, { borderColor: themeStyle.glass?.border || AppColors.border }]}
               testID={`session-card-${session.id}`}
             >
               <View style={styles.sessionInfo}>

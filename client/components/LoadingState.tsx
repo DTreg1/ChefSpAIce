@@ -30,7 +30,7 @@ export function LoadingState({ variant, count }: LoadingStateProps) {
 }
 
 function ListItemSkeleton() {
-  const { isDark, theme, style: themeStyle } = useTheme();
+  const { isDark, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
 
@@ -39,8 +39,8 @@ function ListItemSkeleton() {
       style={[
         styles.listItem,
         {
-          backgroundColor: theme.glass.backgroundStrong,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.backgroundStrong,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.md,
         },
       ]}
@@ -69,7 +69,7 @@ function ListSkeleton({ count }: { count: number }) {
 }
 
 function CardSkeleton() {
-  const { isDark, theme, style: themeStyle } = useTheme();
+  const { isDark, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
 
@@ -78,8 +78,8 @@ function CardSkeleton() {
       style={[
         styles.card,
         {
-          backgroundColor: theme.glass.background,
-          borderColor: theme.glass.border,
+          backgroundColor: themeStyle.glass.background,
+          borderColor: themeStyle.glass.border,
           borderRadius: themeStyle.glassEffect.borderRadius.lg,
         },
       ]}
@@ -113,7 +113,7 @@ function CardGridSkeleton({ count }: { count: number }) {
 }
 
 function DetailSkeleton() {
-  const { isDark, theme, style: themeStyle } = useTheme();
+  const { isDark, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
 
   return (
@@ -125,8 +125,8 @@ function DetailSkeleton() {
         style={[
           styles.detailSection,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
             borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
@@ -150,8 +150,8 @@ function DetailSkeleton() {
         style={[
           styles.detailSection,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
             borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}
@@ -172,7 +172,7 @@ function DetailSkeleton() {
 }
 
 function FullPageSkeleton() {
-  const { isDark, theme, style: themeStyle } = useTheme();
+  const { isDark, style: themeStyle } = useTheme();
   const colorMode = isDark ? "dark" : "light";
 
   return (
@@ -190,8 +190,8 @@ function FullPageSkeleton() {
         style={[
           styles.fullPageSection,
           {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
+            backgroundColor: themeStyle.glass.background,
+            borderColor: themeStyle.glass.border,
             borderRadius: themeStyle.glassEffect.borderRadius.lg,
           },
         ]}

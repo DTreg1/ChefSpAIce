@@ -79,7 +79,7 @@ function LocationChip({
   onPress: () => void;
   shelfLifeDays?: number;
 }) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
   const scale = useSharedValue(1);
   const selectionProgress = useSharedValue(isSelected ? 1 : 0);
   const config = LOCATION_CONFIG[location] || {
@@ -119,12 +119,12 @@ function LocationChip({
     backgroundColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      [theme.glass.background, AppColors.primary],
+      [themeStyle.glass.background, AppColors.primary],
     ),
     borderColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      [theme.glass.border, AppColors.primary],
+      [themeStyle.glass.border, AppColors.primary],
     ),
   }));
 
@@ -238,7 +238,7 @@ export function StorageSuggestionBadge({
   confidence,
   shelfLifeDays,
 }: StorageSuggestionBadgeProps) {
-  const { theme } = useTheme();
+  const { theme, style: themeStyle } = useTheme();
 
   const allLocations: StorageLocation[] = [
     "refrigerator",
@@ -289,7 +289,7 @@ export function StorageSuggestionBadge({
           <View
             style={[
               styles.shelfLifeIndicator,
-              { backgroundColor: theme.glass.background },
+              { backgroundColor: themeStyle.glass.background },
             ]}
             accessibilityLabel={`Shelf life: approximately ${shelfLifeDays} days`}
           >

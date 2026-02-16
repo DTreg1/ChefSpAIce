@@ -130,7 +130,7 @@ export function MealPlanDaySelector({
                     {
                       borderColor: isToday
                         ? AppColors.primary
-                        : theme.glass.border,
+                        : themeStyle.glass.border,
                       borderWidth: isToday ? 2 : 1,
                       borderRadius: themeStyle.glassEffect.borderRadius.md,
                     },
@@ -148,10 +148,10 @@ export function MealPlanDaySelector({
             style={[
               styles.dayCard,
               {
-                backgroundColor: theme.glass.background,
+                backgroundColor: themeStyle.glass.background,
                 borderColor: isToday
                   ? AppColors.primary
-                  : theme.glass.border,
+                  : themeStyle.glass.border,
                 borderWidth: isToday ? 2 : 1,
                 borderRadius: themeStyle.glassEffect.borderRadius.md,
               },
