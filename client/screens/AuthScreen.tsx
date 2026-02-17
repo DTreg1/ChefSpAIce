@@ -49,7 +49,7 @@ export default function AuthScreen() {
     signUp,
   } = useAuth();
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -226,11 +226,6 @@ export default function AuthScreen() {
       ]}
     >
       <AnimatedBackground />
-      <View style={styles.header}>
-        <ThemedText style={{ ...Typography.body, fontWeight: "600", textAlign: "center" }}>
-          {isSignUp ? "Sign Up" : "Sign In"}
-        </ThemedText>
-      </View>
 
       <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
