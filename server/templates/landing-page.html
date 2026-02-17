@@ -872,7 +872,7 @@
     </a>
     <div class="header-buttons">
       <a href="/about" class="btn btn-ghost">About</a>
-      <a href="#signup" class="btn btn-primary" onclick="document.getElementById('hero-email').focus(); return false;" data-testid="button-header-signup">Get Notified</a>
+      <a href="#signup" class="btn btn-primary" onclick="document.getElementById('hero-email').focus(); return false;" data-testid="button-header-signup">Sign Up</a>
     </div>
   </header>
 
@@ -902,14 +902,23 @@
           data-testid="input-hero-email"
           required
         />
+        <input 
+          type="password" 
+          id="hero-password" 
+          placeholder="Password (8+ chars, upper, lower, number)" 
+          class="signup-input"
+          data-testid="input-hero-password"
+          required
+          minlength="8"
+        />
         <button type="submit" class="btn btn-primary signup-btn" data-testid="button-hero-signup">
-          Get Notified
+          Sign Up
         </button>
       </div>
       <p id="hero-message" class="signup-message" data-testid="text-hero-message"></p>
     </form>
     
-    <p class="trial-text">Coming soon to App Store & Google Play</p>
+    <p class="trial-text">Start your free 7-day trial today</p>
   </section>
 
   <!-- Trust Section -->
@@ -1194,8 +1203,8 @@
   <!-- CTA Section -->
   <section class="cta-section">
     <div class="cta-card">
-      <h2 class="cta-title">Be the First to Know</h2>
-      <p class="cta-subtitle">ChefSpAIce is coming soon to the App Store and Google Play. Enter your email to get notified when we launch!</p>
+      <h2 class="cta-title">Ready to Get Started?</h2>
+      <p class="cta-subtitle">Create your account and start your free 7-day trial. No credit card required.</p>
       <form id="cta-signup-form" class="signup-form" data-testid="form-cta-signup">
         <div class="signup-input-group">
           <input 
@@ -1206,13 +1215,22 @@
             data-testid="input-cta-email"
             required
           />
+          <input 
+            type="password" 
+            id="cta-password" 
+            placeholder="Password (8+ chars, upper, lower, number)" 
+            class="signup-input"
+            data-testid="input-cta-password"
+            required
+            minlength="8"
+          />
           <button type="submit" class="btn btn-primary signup-btn" data-testid="button-cta-signup">
-            Notify Me
+            Create Account
           </button>
         </div>
         <p id="cta-message" class="signup-message" data-testid="text-cta-message"></p>
       </form>
-      <p class="cta-note">We'll never share your email. Unsubscribe anytime.</p>
+      <p class="cta-note">Free 7-day trial. No credit card required.</p>
     </div>
   </section>
 
@@ -1276,8 +1294,9 @@
       }
     }
 
-    async function handleSignup(form, emailInput, messageEl) {
+    async function handleSignup(form, emailInput, passwordInput, messageEl) {
       const email = emailInput.value.trim();
+      const password = passwordInput.value;
       
       if (!email) {
         messageEl.textContent = 'Please enter your email address.';
@@ -1285,24 +1304,31 @@
         return;
       }
       
-      messageEl.textContent = 'Signing up...';
+      if (!password || password.length < 8) {
+        messageEl.textContent = 'Password must be at least 8 characters.';
+        messageEl.className = 'signup-message error';
+        return;
+      }
+      
+      messageEl.textContent = 'Creating your account...';
       messageEl.className = 'signup-message loading';
       
       try {
-        const response = await fetch('/api/pre-register', {
+        const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, password }),
         });
         
         const data = await response.json();
         
         if (response.ok && data.success) {
-          messageEl.textContent = data.message;
+          messageEl.textContent = 'Account created! You can now log in from the app.';
           messageEl.className = 'signup-message success';
           emailInput.value = '';
+          passwordInput.value = '';
         } else {
           messageEl.textContent = data.error || 'Something went wrong. Please try again.';
           messageEl.className = 'signup-message error';
@@ -1318,6 +1344,7 @@
       handleSignup(
         this,
         document.getElementById('hero-email'),
+        document.getElementById('hero-password'),
         document.getElementById('hero-message')
       );
     });
@@ -1327,6 +1354,7 @@
       handleSignup(
         this,
         document.getElementById('cta-email'),
+        document.getElementById('cta-password'),
         document.getElementById('cta-message')
       );
     });

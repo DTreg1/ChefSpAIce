@@ -80,12 +80,10 @@ import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
-import { validateBody } from "./middleware/validateBody";
 import { successResponse, asyncHandler } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
 import { hashToken, anonymizeIpAddress } from "./lib/auth-utils";
 import { invalidateSubscriptionCache } from "./lib/subscription-cache";
-import { z } from "zod";
 
 
 /**
@@ -231,49 +229,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/external", externalApiRouter); // External API for Siri Shortcuts integration
   app.use("/api/referral", referralRouter); // Referral system
   app.use("/api/error-report", errorReportRouter); // Client-side crash reports
-
-  // =========================================================================
-  // PRE-REGISTRATION ENDPOINT
-  // Allows users to sign up from the landing page with just their email.
-  // Creates a user account that they can activate later.
-  // =========================================================================
-  const preRegisterSchema = z.object({
-    email: z.string().min(1, "Email is required").email("Invalid email format"),
-    privacyConsent: z.literal(true, { errorMap: () => ({ message: "You must agree to the privacy policy" }) }),
-  });
-
-  app.post("/api/pre-register", validateBody(preRegisterSchema), asyncHandler(async (req: Request, res: Response) => {
-      const { email } = req.body;
-
-      const normalizedEmail = email.toLowerCase().trim();
-
-      // Check if user already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, normalizedEmail))
-        .limit(1);
-
-      if (existingUser) {
-        return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
-      }
-
-      // Create a new pre-registered user
-      const now = new Date();
-      await db.insert(users).values({
-        email: normalizedEmail,
-        displayName: normalizedEmail.split("@")[0],
-        hasCompletedOnboarding: false,
-        isActivated: false,
-        preRegistrationSource: "landing",
-        preRegisteredAt: now,
-        privacyConsentedAt: now,
-        subscriptionStatus: "none",
-        subscriptionTier: "STANDARD",
-      });
-
-      return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
-  }));
 
   // =========================================================================
   // ADMIN ROUTES - Require admin authentication
