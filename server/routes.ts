@@ -8,7 +8,6 @@
  * 
  * PUBLIC ROUTES (no auth required):
  * - /api/auth/* - User authentication (login, register, password reset)
- * - /api/auth/social/* - Social login (Google, Apple)
  * - /api/subscriptions/* - Stripe subscription management
  * - /api/feedback - User feedback collection
  * - /api/cooking-terms - Cooking terminology definitions
@@ -51,7 +50,6 @@ import imageAnalysisRouter from "./routers/platform/ai/image-analysis.router";
 import receiptAnalysisRouter from "./routers/platform/ai/receipt-analysis.router";
 import ingredientsRouter from "./routers/user/ingredients.router";
 import authRouter from "./routers/auth.router";
-import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
 import feedbackRouter from "./routers/feedback.router";
 import logoExportRouter from "./routers/logo-export.router";
@@ -207,8 +205,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", generalLimiter);
   app.use("/api/auth/login", authLimiter);
   app.use("/api/auth/register", authLimiter);
-  app.use("/api/auth/apple", authLimiter);
-  app.use("/api/auth/google", authLimiter);
   app.use("/api/chat", aiLimiter);
   app.use("/api/suggestions", aiLimiter);
   app.use("/api/recipes/generate", aiLimiter);
@@ -217,7 +213,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PUBLIC ROUTES - No authentication required
   // =========================================================================
   app.use("/api/auth", authRouter);           // Login, register, logout
-  app.use("/api/auth/social", socialAuthRouter); // Google/Apple OAuth
   app.use("/api/subscriptions", subscriptionRouter); // Stripe webhooks & portal
   app.use("/api/feedback", feedbackRouter);   // User feedback submission
   app.use("/api/cooking-terms", cookingTermsRouter); // Cooking definitions

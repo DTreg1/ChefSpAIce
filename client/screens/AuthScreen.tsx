@@ -8,9 +8,8 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useNavigation, CommonActions } from "@react-navigation/native";
@@ -48,10 +47,6 @@ export default function AuthScreen() {
   const {
     signIn,
     signUp,
-    signInWithApple,
-    signInWithGoogle,
-    isAppleAuthAvailable,
-    isGoogleAuthAvailable,
   } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(true);
@@ -219,41 +214,6 @@ export default function AuthScreen() {
     }
   };
 
-  const handleSocialAuth = async (provider: "apple" | "google") => {
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      let result;
-      if (provider === "apple") {
-        result = await signInWithApple(undefined);
-      } else {
-        result = await signInWithGoogle(undefined);
-      }
-
-      if (!result.success) {
-        if (result.error !== "User cancelled") {
-          setAuthError(result.error || "Authentication failed");
-        }
-        return;
-      }
-
-      if (result.isNewUser) {
-        if (Platform.OS !== "web") {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-        navigateToOnboarding();
-      } else {
-        await handleReturningUserNavigation();
-      }
-    } catch (err) {
-      logger.error("Social auth error:", err);
-      setAuthError("An unexpected error occurred");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
   return (
     <View
       style={[
@@ -365,90 +325,6 @@ export default function AuthScreen() {
                 {authError}
               </ThemedText>
             </View>
-          )}
-
-          {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
-            <>
-              <View style={styles.authSocialButtons}>
-                {isAppleAuthAvailable && (
-                  <Pressable
-                    style={[
-                      styles.authSocialButton,
-                      {
-                        backgroundColor: themeStyle.glass.background,
-                        borderColor: themeStyle.glass.border,
-                      },
-                    ]}
-                    onPress={() => handleSocialAuth("apple")}
-                    disabled={authLoading}
-                    testID="button-signin-apple"
-                    {...webAccessibilityProps(() => handleSocialAuth("apple"))}
-                    accessibilityRole="button"
-                    accessibilityLabel="Sign in with Apple"
-                    accessibilityState={{ disabled: authLoading }}
-                  >
-                    <Ionicons name="logo-apple" size={24} color={theme.text} />
-                    <ThemedText style={styles.authSocialButtonText}>
-                      Sign in with Apple
-                    </ThemedText>
-                  </Pressable>
-                )}
-
-                {isGoogleAuthAvailable && (
-                  <Pressable
-                    style={[
-                      styles.authSocialButton,
-                      {
-                        backgroundColor: themeStyle.glass.background,
-                        borderColor: themeStyle.glass.border,
-                      },
-                    ]}
-                    onPress={() => handleSocialAuth("google")}
-                    disabled={authLoading}
-                    testID="button-signin-google"
-                    {...webAccessibilityProps(() => handleSocialAuth("google"))}
-                    accessibilityRole="button"
-                    accessibilityLabel="Sign in with Google"
-                    accessibilityState={{ disabled: authLoading }}
-                  >
-                    <Image
-                      source={{ uri: "https://www.google.com/favicon.ico" }}
-                      style={styles.authGoogleIcon}
-                      contentFit="contain"
-                      cachePolicy="memory-disk"
-                      transition={200}
-                      accessibilityLabel="Google logo"
-                    />
-                    <ThemedText style={styles.authSocialButtonText}>
-                      Sign in with Google
-                    </ThemedText>
-                  </Pressable>
-                )}
-              </View>
-
-              <View style={styles.authDividerContainer}>
-                <View
-                  style={[
-                    styles.authDivider,
-                    { backgroundColor: themeStyle.glass.border },
-                  ]}
-                />
-                <ThemedText
-                  style={[
-                    styles.authDividerText,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  or continue with email
-                </ThemedText>
-                <View
-                  style={[
-                    styles.authDivider,
-                    { backgroundColor: themeStyle.glass.border },
-                  ]}
-                />
-              </View>
-            </>
           )}
 
           <View style={styles.authInputContainer}>

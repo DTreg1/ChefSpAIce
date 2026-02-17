@@ -26,7 +26,7 @@ interface AuthUser {
   displayName?: string;
   email: string;
   avatarUrl?: string;
-  provider?: "password" | "apple" | "google";
+  provider?: "password";
   createdAt: string;
 }
 
@@ -292,45 +292,6 @@ describe("AuthContext - 401 Error Handling", () => {
   });
 });
 
-type Platform = "ios" | "android" | "web";
-
-const checkAppleAuthAvailable = (platform: Platform): boolean => platform === "ios";
-const checkGoogleAuthAvailable = (platform: Platform, hasClientId: boolean): boolean =>
-  platform === "android" && hasClientId;
-
-describe("AuthContext - Platform-Specific Auth", () => {
-  describe("Apple Sign In Availability", () => {
-    it("isAppleAuthAvailable returns true on iOS", () => {
-      expect(checkAppleAuthAvailable("ios")).toBe(true);
-    });
-
-    it("isAppleAuthAvailable returns false on Android", () => {
-      expect(checkAppleAuthAvailable("android")).toBe(false);
-    });
-
-    it("isAppleAuthAvailable returns false on web", () => {
-      expect(checkAppleAuthAvailable("web")).toBe(false);
-    });
-  });
-
-  describe("Google Sign In Availability", () => {
-    it("isGoogleAuthAvailable returns true on Android", () => {
-      expect(checkGoogleAuthAvailable("android", true)).toBe(true);
-    });
-
-    it("isGoogleAuthAvailable returns false on iOS", () => {
-      expect(checkGoogleAuthAvailable("ios", true)).toBe(false);
-    });
-
-    it("isGoogleAuthAvailable returns false on web", () => {
-      expect(checkGoogleAuthAvailable("web", true)).toBe(false);
-    });
-
-    it("isGoogleAuthAvailable returns false without client ID", () => {
-      expect(checkGoogleAuthAvailable("android", false)).toBe(false);
-    });
-  });
-});
 
 describe("AuthContext - User Data", () => {
   it("stores user id correctly", () => {
@@ -376,21 +337,13 @@ describe("AuthContext - User Data", () => {
   });
 
   it("stores provider type correctly", () => {
-    const providers: Array<"password" | "apple" | "google"> = [
-      "password",
-      "apple",
-      "google",
-    ];
-
-    providers.forEach((provider) => {
-      const user: AuthUser = {
-        id: "user-123",
-        email: "test@example.com",
-        provider,
-        createdAt: new Date().toISOString(),
-      };
-      expect(user.provider).toBe(provider);
-    });
+    const user: AuthUser = {
+      id: "user-123",
+      email: "test@example.com",
+      provider: "password",
+      createdAt: new Date().toISOString(),
+    };
+    expect(user.provider).toBe("password");
   });
 
   it("stores createdAt timestamp", () => {

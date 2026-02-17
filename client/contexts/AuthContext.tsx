@@ -25,8 +25,6 @@ import {
 import type { RestoreSessionData } from "@/lib/types";
 import {
   isWeb,
-  isIOS,
-  isAndroid,
   AUTH_STORAGE_KEY,
   type AuthUser,
   type StoredAuthData,
@@ -34,13 +32,8 @@ import {
   clearAuthData,
 } from "@/lib/auth-storage";
 import {
-  AppleAuthentication,
-  useGoogleAuth,
-  useAppleWebAuth,
   loginApi,
   registerApi,
-  appleSignInApi,
-  googleSignInApi,
 } from "@/lib/auth-api";
 
 export interface AuthState {
@@ -60,18 +53,10 @@ interface AuthContextType extends AuthState {
     displayName?: string,
     selectedTier?: "pro",
   ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
-  signInWithApple: (
-    selectedTier?: "pro",
-  ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
-  signInWithGoogle: (
-    selectedTier?: "pro",
-  ) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
   signOut: () => Promise<void>;
   completeOnboarding: () => Promise<{ success: boolean; error?: string }>;
   setSignOutCallback: (callback: () => void | Promise<void>) => void;
   isAuthenticated: boolean;
-  isAppleAuthAvailable: boolean;
-  isGoogleAuthAvailable: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -79,12 +64,8 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   isLoading: true,
   isAuthenticated: false,
-  isAppleAuthAvailable: false,
-  isGoogleAuthAvailable: false,
   signIn: async () => ({ success: false }),
   signUp: async () => ({ success: false }),
-  signInWithApple: async () => ({ success: false }),
-  signInWithGoogle: async () => ({ success: false }),
   signOut: async () => {},
   completeOnboarding: async () => ({ success: false }),
   setSignOutCallback: () => {},
@@ -98,7 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token: null,
     isLoading: true,
   });
-  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const signOutCallbackRef = useRef<(() => void | Promise<void>) | null>(null);
   const signOutRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -117,22 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuthErrorCallback();
     };
   }, []);
-
-  const [, , promptGoogleAsync] = useGoogleAuth();
-
-  const [, , promptAppleWebAsync] = useAppleWebAuth();
-
-  useEffect(() => {
-    const checkAppleAuth = async () => {
-      if (isIOS && AppleAuthentication) {
-        const available = await AppleAuthentication.isAvailableAsync();
-        setIsAppleAuthAvailable(available);
-      } else if (isAndroid && !!promptAppleWebAsync) {
-        setIsAppleAuthAvailable(true);
-      }
-    };
-    checkAppleAuth();
-  }, [promptAppleWebAsync]);
 
   useEffect(() => {
     const loadStoredAuth = async () => {
@@ -409,160 +373,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const signInWithApple = useCallback(
-    async (selectedTier?: "pro") => {
-      const result = await appleSignInApi(promptAppleWebAsync, selectedTier);
-      if (!result.success) return result;
-      const { data } = result;
-
-      const userData = data.user;
-      const authToken = data.token;
-
-      const authData: StoredAuthData = {
-        user: {
-          id: userData.id,
-          email: userData.email,
-          displayName: userData.displayName,
-          avatarUrl: userData.avatarUrl,
-          provider: "apple",
-          createdAt: userData.createdAt,
-          hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
-        },
-        token: authToken,
-      };
-
-      await saveAuthData(authData);
-      await storage.setAuthToken(authToken);
-
-      storeKitService.setAuthToken(authToken);
-      storeKitService
-        .setUserId(String(userData.id))
-        .catch((err) => logger.warn("Failed to set StoreKit user ID:", err));
-      storeKitService
-        .syncPendingPurchases()
-        .catch((err) =>
-          logger.warn("Failed to sync pending purchases:", err),
-        );
-
-      const isNewUser = userData.isNewUser === true;
-      logger.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
-
-      if (isNewUser) {
-        await storage.resetForNewUser();
-      }
-
-      setState({
-        user: authData.user,
-        token: authToken,
-        isLoading: false,
-      });
-
-      if (isNewUser) {
-        await storage.syncToCloud();
-      } else {
-        await storage.syncFromCloud();
-      }
-
-      import("@/lib/notifications").then(({ registerForPushNotifications }) => {
-        registerForPushNotifications().catch((err) =>
-          logger.warn("[Auth] Failed to register push notifications after Apple sign in:", err),
-        );
-      });
-
-      return { success: true, isNewUser };
-    },
-    [promptAppleWebAsync],
-  );
-
-  const signInWithGoogle = useCallback(
-    async (selectedTier?: "pro") => {
-      const result = await googleSignInApi(promptGoogleAsync, selectedTier);
-      if (!result.success) return result;
-      const { data } = result;
-
-      const userData = data.user;
-      const authToken = data.token;
-
-      const authData: StoredAuthData = {
-        user: {
-          id: userData.id,
-          email: userData.email,
-          displayName: userData.displayName,
-          avatarUrl: userData.avatarUrl,
-          provider: "google",
-          createdAt: userData.createdAt,
-          hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
-        },
-        token: authToken,
-      };
-
-      await saveAuthData(authData);
-      await storage.setAuthToken(authToken);
-
-      storeKitService.setAuthToken(authToken);
-      storeKitService
-        .setUserId(String(userData.id))
-        .catch((err) => logger.warn("Failed to set StoreKit user ID:", err));
-      storeKitService
-        .syncPendingPurchases()
-        .catch((err) =>
-          logger.warn("Failed to sync pending purchases:", err),
-        );
-
-      const isNewUser = userData.isNewUser === true;
-      logger.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
-
-      if (isNewUser) {
-        await storage.resetForNewUser();
-      }
-
-      setState({
-        user: authData.user,
-        token: authToken,
-        isLoading: false,
-      });
-
-      if (isNewUser) {
-        await storage.syncToCloud();
-      } else {
-        await storage.syncFromCloud();
-      }
-
-      import("@/lib/notifications").then(({ registerForPushNotifications }) => {
-        registerForPushNotifications().catch((err) =>
-          logger.warn("[Auth] Failed to register push notifications after Google sign in:", err),
-        );
-      });
-
-      return { success: true, isNewUser };
-    },
-    [promptGoogleAsync],
-  );
-
-  const isGoogleAuthAvailable = !isWeb && !!promptGoogleAsync;
-
   const value = useMemo(
     () => ({
       ...state,
       isAuthenticated: !!state.user,
-      isAppleAuthAvailable,
-      isGoogleAuthAvailable,
       signIn,
       signUp,
-      signInWithApple,
-      signInWithGoogle,
       signOut,
       completeOnboarding,
       setSignOutCallback,
     }),
     [
       state,
-      isAppleAuthAvailable,
-      isGoogleAuthAvailable,
       signIn,
       signUp,
-      signInWithApple,
-      signInWithGoogle,
       signOut,
       completeOnboarding,
       setSignOutCallback,
