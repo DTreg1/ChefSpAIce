@@ -42,7 +42,7 @@ The app received 3 rejections from Apple App Review, plus 1 additional complianc
 
 ### Fix 5: Fix iPad Auth Errors
 **Apple Guideline:** 2.1 (Performance/Bugs)  
-**Problem:** Apple Sign-In fails on iPad Air 11-inch (M3) with iPadOS 26.1  
+**Problem:** Email/password authentication fails on iPad Air 11-inch (M3) with iPadOS 26.1  
 **Fix:** Add detailed logging, investigate device-specific issues  
 **Type:** Debugging and code fixes
 
@@ -95,7 +95,6 @@ In client/lib/storekit-service.ts, modify the purchase flow to:
 - `client/screens/SubscriptionScreen.tsx` - Subscription UI
 - `client/screens/SettingsScreen.tsx` - Settings with account deletion
 - `server/routers/auth.router.ts` - Auth API endpoints
-- `server/routers/social-auth.router.ts` - Apple/Google Sign-In
 - `shared/schema.ts` - Database schema
 
 ---

@@ -1,6 +1,6 @@
 # Google Play Store Setup Guide
 
-Complete guide to set up ChefSpAIce for Google Play Store submission and Google Sign-In.
+Complete guide to set up ChefSpAIce for Google Play Store submission.
 
 ---
 
@@ -89,68 +89,7 @@ When prompted:
 
 ---
 
-## Part 3: Google Sign-In Setup (OAuth)
-
-This allows users to sign in with their Google account.
-
-### Step 1: Configure OAuth Consent Screen
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Select your project
-3. Go to **APIs & Services > OAuth consent screen**
-4. Select **External** and click **Create**
-5. Fill in:
-   - App name: `ChefSpAIce`
-   - User support email: Your email
-   - Developer contact: Your email
-6. Click **Save and Continue**
-7. Skip Scopes (we only need basic profile)
-8. Add test users if in testing mode
-9. Click **Save and Continue**
-
-### Step 2: Create Android OAuth Client
-
-1. Go to **APIs & Services > Credentials**
-2. Click **Create Credentials > OAuth client ID**
-3. Select **Android**
-4. Fill in:
-   - Name: `ChefSpAIce Android`
-   - Package name: `com.chefspaice.chefspaice.app`
-   - SHA-1 certificate fingerprint: (see below)
-
-#### Get SHA-1 Fingerprint from EAS
-
-Run this command:
-
-```bash
-eas credentials --platform android
-```
-
-Select:
-1. **production** build profile
-2. **Keystore > View credentials**
-
-Copy the **SHA1 Fingerprint** and paste it into Google Cloud Console.
-
-### Step 3: Copy Client ID
-
-After creating the OAuth client, copy the **Client ID**. It looks like:
-
-```
-123456789012-abcdefghijklmnop.apps.googleusercontent.com
-```
-
-### Step 4: Add to Replit Secrets
-
-Add this environment variable in Replit:
-
-| Key | Value |
-|-----|-------|
-| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Your Android OAuth Client ID |
-
----
-
-## Part 4: First Manual Upload
+## Part 3: First Manual Upload
 
 **Important:** Google Play requires at least one manual upload before automated submissions work.
 
@@ -178,7 +117,7 @@ eas build --platform android --profile production
 
 ---
 
-## Part 5: Update eas.json for Android Submit
+## Part 4: Update eas.json for Android Submit
 
 Your `eas.json` should include Android submit configuration:
 
@@ -211,7 +150,7 @@ Your `eas.json` should include Android submit configuration:
 
 ---
 
-## Part 6: Automated Submission
+## Part 5: Automated Submission
 
 Once everything is set up, submit with:
 
@@ -239,15 +178,6 @@ eas build --platform android --profile production --auto-submit
   - Play Console app
   - OAuth client configuration
 
-### "SHA-1 mismatch" for Google Sign-In
-- Make sure you're using the production keystore SHA-1
-- Run `eas credentials --platform android` to get the correct fingerprint
-
-### Google Sign-In not working
-- Verify `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` is set correctly
-- Make sure the OAuth consent screen is configured
-- Check that the package name and SHA-1 match exactly
-
 ---
 
 ## Checklist
@@ -259,7 +189,4 @@ eas build --platform android --profile production --auto-submit
 - [ ] Service account has Play Console permissions
 - [ ] Service account JSON key uploaded to EAS
 - [ ] First AAB manually uploaded to Play Console
-- [ ] OAuth consent screen configured
-- [ ] Android OAuth client created with correct SHA-1
-- [ ] `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` added to Replit secrets
 - [ ] eas.json updated with Android submit configuration

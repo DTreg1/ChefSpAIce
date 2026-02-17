@@ -103,13 +103,6 @@ open ChefSpAIce.xcworkspace
 2. On Subscription screen, tap **Restore Purchases**
 3. **Expected:** Your sandbox purchase is restored
 
-### Test 4: Apple Sign-In (iPad)
-1. On Auth screen, tap **Sign in with Apple**
-2. Complete the Apple Sign-In flow
-3. **Expected:** 
-   - Success → navigates forward
-   - Failure → shows descriptive error message (not generic "failed")
-
 ---
 
 ## Part 5: Simulator Testing with StoreKit Configuration (Optional)
@@ -161,11 +154,6 @@ If you want to test purchases in the Simulator without a real device:
 - Check RevenueCat dashboard for errors
 - Ensure products are "Ready to Submit" in App Store Connect
 
-### Apple Sign-In fails on iPad
-- Ensure iCloud is signed in on the device
-- Go to Settings → Apple ID → iCloud and verify status
-- Try restarting the device
-
 ### Build fails in Xcode
 ```bash
 # Clean build folder
@@ -195,5 +183,4 @@ Save your sandbox tester credentials here:
 - [ ] "Create Account" option is available but optional
 - [ ] Restore Purchases works
 - [ ] Sign Out redirects to Subscription (not Auth)
-- [ ] Apple Sign-In shows helpful errors if it fails
 - [ ] All subscription products appear correctly

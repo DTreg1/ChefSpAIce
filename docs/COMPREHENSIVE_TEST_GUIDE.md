@@ -79,30 +79,6 @@ Test logout functionality:
 6. Refresh the page and verify the user stays logged out
 ```
 
-### 1.5 Social Login (Apple Sign-In)
-
-**Prompt:**
-```
-Test Apple Sign-In flow (requires user assistance for actual Apple auth):
-1. Navigate to Auth screen
-2. Verify "Sign in with Apple" button is visible
-3. Click the Apple sign-in button
-4. [Possible User Help Required] Complete Apple authentication
-5. Verify successful login and trial activation
-```
-
-### 1.6 Social Login (Google Sign-In)
-
-**Prompt:**
-```
-Test Google Sign-In flow (requires user assistance for actual Google auth):
-1. Navigate to Auth screen
-2. Verify "Sign in with Google" button is visible
-3. Click the Google sign-in button
-4. [Possible User Help Required] Complete Google authentication
-5. Verify successful login and trial activation
-```
-
 ---
 
 ## 2. Onboarding Flow

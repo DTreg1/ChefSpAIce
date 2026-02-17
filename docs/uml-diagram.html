@@ -269,8 +269,6 @@
       <div class="item">&bull; auth-storage.ts (token persistence)</div>
       <div class="section-title">Sign-In Methods</div>
       <div class="item">+ signInWithEmail(email, password)</div>
-      <div class="item">+ signInWithApple(): void</div>
-      <div class="item">+ signInWithGoogle(): void</div>
       <div class="item">+ authenticateWithBiometrics(): void</div>
       <div class="section-title">Operations</div>
       <div class="item">+ signUp(): void</div>
@@ -294,29 +292,6 @@
     </div>
   </div>
 
-  <!-- AppleAuth -->
-  <div class="entity" style="top:500px; left:540px; width:180px;">
-    <div class="entity-header header-green">AppleSignIn</div>
-    <div class="entity-body">
-      <div class="section-title">Attributes</div>
-      <div class="item">- appleId: string = null</div>
-      <div class="item">- identityToken: string = null</div>
-      <div class="section-title">Operations</div>
-      <div class="item">+ requestAuth(): Token</div>
-    </div>
-  </div>
-
-  <!-- GoogleAuth -->
-  <div class="entity" style="top:680px; left:440px; width:180px;">
-    <div class="entity-header header-green">GoogleSignIn</div>
-    <div class="entity-body">
-      <div class="section-title">Attributes</div>
-      <div class="item">- googleId: string = null</div>
-      <div class="item">- accessToken: string = null</div>
-      <div class="section-title">Operations</div>
-      <div class="item">+ requestAuth(): Token</div>
-    </div>
-  </div>
 
   <!-- ============================================= -->
   <!-- SUBSCRIPTION -->
@@ -1094,11 +1069,6 @@
     <!-- AuthScreen -> EmailPassword -->
     <path d="M 430 450 L 430 500" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
 
-    <!-- AuthScreen -> AppleSignIn -->
-    <path d="M 530 450 L 630 500" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
-
-    <!-- AuthScreen -> GoogleSignIn -->
-    <path d="M 470 450 L 530 680" stroke="#06D6A0" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
 
     <!-- OnboardingScreen -> DrawerNavigator (Complete) -->
     <line x1="1200" y1="150" x2="1340" y2="150" stroke="#118AB2" stroke-width="2.5" marker-end="url(#arrow-teal)"/>

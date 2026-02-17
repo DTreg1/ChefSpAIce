@@ -32,8 +32,6 @@ The following changes were made:
   - Auth restore from cookie (web)
   - signIn (email/password)
   - signUp (new registration)
-  - signInWithApple
-  - signInWithGoogle
 - Each path calls `storeKitService.setAuthToken()`, `storeKitService.setUserId()`, and `storeKitService.syncPendingPurchases()`
 
 ---

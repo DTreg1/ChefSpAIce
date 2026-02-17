@@ -6,15 +6,14 @@ info:
     AI-powered recipe generation, meal planning, inventory tracking, and grocery shopping integration.
 
     ## Authentication
-    Most endpoints require a Bearer token obtained from `/api/auth/login`,
-    `/api/auth/register`, or social login endpoints via the `BearerAuth` security
-    scheme. Protected endpoints additionally require an active subscription
-    (free trial or paid).
+    Most endpoints require a Bearer token obtained from `/api/auth/login`
+    or `/api/auth/register` via the `BearerAuth` security scheme. Protected 
+    endpoints additionally require an active subscription (free trial or paid).
 
     Endpoints marked with `security: []` are intentionally unauthenticated. These
     fall into four categories:
 
-    - **Auth flow**: Login, registration, password reset, and social sign-in
+    - **Auth flow**: Login, registration, and password reset
       endpoints must be accessible without a token.
     - **Public reference data**: Cooking terms, appliance catalogs, subscription
       pricing, and health checks serve publicly cacheable data.
@@ -56,7 +55,7 @@ info:
     |------|--------|-------|------------|
     | **AI** | 1 min | 10 | Recipe generation, image analysis, chat, voice, scanning |
     | **Write** | 1 min | 60 | Sync mutations, uploads, checkout, imports |
-    | **Auth** | 15 min | 20 | Login, registration, social auth |
+    | **Auth** | 15 min | 20 | Login, registration |
 
     ## Naming Conventions
     This API uses **camelCase** for all property names by default.
@@ -180,7 +179,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: Session Token
-      description: Session token from login/register/social auth endpoints
+      description: Session token from login/register endpoints
     AdminAuth:
       type: http
       scheme: bearer
@@ -3354,205 +3353,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Session not found or does not belong to user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/auth/social/apple:
-    post:
-      tags:
-        - Auth
-      operationId: socialLoginApple
-      summary: Sign in with Apple
-      description: |
-        Authenticates a user via Apple Sign In. Supports both native iOS flow (identity token verification) and web OAuth flow (authorization code exchange). Creates a new user if one does not exist, or links to an existing account by email. Returns user data and a session token.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                identityToken:
-                  type: string
-                  description: Apple identity token (for native iOS flow)
-                authorizationCode:
-                  type: string
-                  description: Apple authorization code (for web OAuth flow)
-                isWebAuth:
-                  type: boolean
-                  description: Set to true for web OAuth flow
-                redirectUri:
-                  type: string
-                  description: Redirect URI used in the web auth request
-                selectedPlan:
-                  type: string
-                  enum:
-                    - monthly
-                    - annual
-                  description: Selected subscription billing plan
-                selectedTier:
-                  type: string
-                  enum:
-                    - basic
-                    - pro
-                  description: Selected subscription tier
-                user:
-                  type: object
-                  properties:
-                    email:
-                      type: string
-                      format: email
-                  description: User info provided by Apple on first sign-in
-      responses:
-        "200":
-          description: Apple sign-in successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    enum:
-                      - true
-                  data:
-                    type: object
-                    properties:
-                      user:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            format: uuid
-                          email:
-                            type: string
-                            format: email
-                          displayName:
-                            type: string
-                            nullable: true
-                          avatarUrl:
-                            type: string
-                            nullable: true
-                          provider:
-                            type: string
-                            enum:
-                              - apple
-                          isNewUser:
-                            type: boolean
-                            description: True if a new account was created
-                          createdAt:
-                            type: string
-                            format: date-time
-                      token:
-                        type: string
-                        description: Bearer token for Authorization header
-                      expiresAt:
-                        type: string
-                        format: date-time
-        "400":
-          description: Incomplete sign-in request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Token verification failed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/auth/social/google:
-    post:
-      tags:
-        - Auth
-      operationId: socialLoginGoogle
-      summary: Sign in with Google
-      description: |
-        Authenticates a user via Google OAuth. Verifies the Google ID token against configured client IDs (web, iOS, Android). Creates a new user if one does not exist, or links to an existing account by email. Returns user data and a session token.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - idToken
-              properties:
-                idToken:
-                  type: string
-                  description: Google OAuth ID token
-                accessToken:
-                  type: string
-                  description: Optional Google access token (stored encrypted)
-                selectedPlan:
-                  type: string
-                  enum:
-                    - monthly
-                    - annual
-                  description: Selected subscription billing plan for new users
-      responses:
-        "200":
-          description: Google sign-in successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    enum:
-                      - true
-                  data:
-                    type: object
-                    properties:
-                      user:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            format: uuid
-                          email:
-                            type: string
-                            format: email
-                          displayName:
-                            type: string
-                            nullable: true
-                          avatarUrl:
-                            type: string
-                            nullable: true
-                          provider:
-                            type: string
-                            enum:
-                              - google
-                          isNewUser:
-                            type: boolean
-                            description: True if a new account was created
-                          createdAt:
-                            type: string
-                            format: date-time
-                      token:
-                        type: string
-                        description: Bearer token for Authorization header
-                      expiresAt:
-                        type: string
-                        format: date-time
-        "400":
-          description: Missing ID token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Invalid Google token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Google authentication not configured on server
           content:
             application/json:
               schema:
