@@ -290,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================================================
   app.use("/api/user/export-data", requireAuth, dataExportRouter);
   app.use("/api/notifications", requireAuth, notificationsRouter);
-  app.use("/api/user/push-token", requireAuth, pushTokenRouter);
+  app.use("/api/user/push-token", pushTokenRouter);
   app.use("/api/analytics/waste-summary", requireAuth, analyticsWasteRouter);
 
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
