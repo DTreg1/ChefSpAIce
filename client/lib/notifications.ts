@@ -216,7 +216,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     if (!authToken) return token;
 
     const { apiClient } = await import("@/lib/api-client");
-    await apiClient.post<void>("/api/user/register-device", {
+    await apiClient.post<void>("/api/user/push-token", {
       token,
       platform: Platform.OS,
     });
