@@ -7,6 +7,7 @@ import {
   Platform,
   TextInput,
   Alert,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -232,7 +233,17 @@ export default function AuthScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.welcomeHeader}></View>
+        <Animated.View
+          entering={FadeIn.duration(400)}
+          style={styles.welcomeHeader}
+        >
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.appIconImage}
+            accessibilityLabel="ChefSpAIce logo"
+          />
+          <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
+        </Animated.View>
 
         <Animated.View
           entering={FadeIn.delay(700).duration(400)}
@@ -588,27 +599,19 @@ const styles = StyleSheet.create({
   },
   welcomeHeader: {
     alignItems: "center",
+    marginTop: Spacing.lg,
     marginBottom: Spacing.lg,
   },
-  appIconContainer: {
+  appIconImage: {
     width: 80,
     height: 80,
     borderRadius: BorderRadius.xl,
-    overflow: "hidden",
-    marginBottom: Spacing.md,
-  },
-  appIconImage: {
-    width: "100%",
-    height: "100%",
+    marginBottom: Spacing.sm,
   },
   appName: {
     ...Typography.h1,
     textAlign: "center",
-    marginBottom: Spacing.xs,
-  },
-  appTagline: {
-    fontSize: Typography.small.fontSize,
-    textAlign: "center",
+    fontWeight: "700",
   },
   featuresContainer: {
     gap: Spacing.sm,
